@@ -37,7 +37,7 @@ export default function AdminLoginPage() {
         className="w-full max-w-[400px] bg-surface-1 border border-border rounded-[2.5rem] p-10 flex flex-col gap-8 shadow-2xl"
       >
         <div className="text-center">
-          <h1 className="text-2xl font-bold font-display uppercase tracking-widest text-primary">Admin Pulso</h1>
+          <h1 className="text-2xl font-bold font-display uppercase tracking-widest text-primary">Painel Voz</h1>
           <p className="text-[10px] text-text-muted uppercase mt-2 tracking-widest">Acesso restrito ao painel de gestão</p>
         </div>
 
@@ -50,7 +50,7 @@ export default function AdminLoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full bg-surface-2 border border-border rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-primary transition-all"
-              placeholder="admin@pulsoeleitoral.com.br"
+              placeholder="admin@vozpublica.com.br"
             />
           </div>
 

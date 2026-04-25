@@ -28,7 +28,7 @@ export async function GET() {
     return new NextResponse(csvContent, {
       headers: {
         'Content-Type': 'text/csv',
-        'Content-Disposition': 'attachment; filename=avaliacoes_pulso.csv'
+        'Content-Disposition': 'attachment; filename=avaliacoes_voz_publica.csv'
       }
     });
   } catch (error) {

@@ -62,7 +62,7 @@ export default function ModeracaoAdmin() {
         {/* Painel de Estatísticas de Segurança */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
           {[
-            { label: 'Total de Pulsos', value: stats.total, color: '#f5f0e8' },
+            { label: 'Total de Vozes', value: stats.total, color: '#f5f0e8' },
             { label: 'Votos Válidos', value: stats.total - stats.suspicious, color: '#10b981' },
             { label: 'Atividade Suspeita', value: stats.suspicious, color: '#f59e0b' },
             { label: 'Bots Detectados', value: stats.bots, color: '#ef4444' }

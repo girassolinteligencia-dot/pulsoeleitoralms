@@ -28,7 +28,7 @@ export const Etapa1: React.FC<Etapa1Props> = ({ userData, setUserData, onNext, c
     >
       <div className="text-center">
         <h1 className="text-4xl font-bold font-display uppercase tracking-tight text-[#f5f0e8]">Identificação</h1>
-        <p className="text-[10px] text-[#7a6e64] uppercase tracking-[0.4em] mt-3 font-bold">Personalize seu Pulso</p>
+        <p className="text-[10px] text-[#7a6e64] uppercase tracking-[0.4em] mt-3 font-bold">Prepare sua Voz</p>
       </div>
 
       <div className="w-full max-w-[320px] flex flex-col gap-8">

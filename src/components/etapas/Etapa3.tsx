@@ -76,7 +76,7 @@ export const Etapa3: React.FC<Etapa3Props> = ({ cargo, cidade, candidatos, onSel
               </p>
               <div className="flex items-center justify-center gap-2 mt-3">
                 <span className="px-3 py-1 rounded-full bg-[#141413] text-[7px] font-bold uppercase text-[#7a6e64] tracking-widest border border-[#3d3128]">
-                  PULSO-2026
+                  VOZ-2026
                 </span>
               </div>
             </div>

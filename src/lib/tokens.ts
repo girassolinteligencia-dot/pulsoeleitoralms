@@ -1,7 +1,7 @@
 /**
- * PULSOELEITORAL - Design Tokens
+ * VOZ PÚBLICA - Design Tokens
  * 
- * Based on the 'Pulso' design system specification.
+ * Based on the 'Voz' design system specification.
  */
 
 export const TOKENS = {

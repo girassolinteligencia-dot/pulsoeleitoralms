@@ -63,7 +63,7 @@ export default function RelatoriosAdmin() {
                 <p className="text-[11px] font-bold uppercase tracking-wider mb-1">{cand.nome}</p>
                 <div className="flex justify-between items-center opacity-60">
                   <span className="text-[8px] uppercase tracking-tighter">{cand.cargo}</span>
-                  <span className="text-[8px] font-bold">{cand.total_avaliacoes} Pulsos</span>
+                  <span className="text-[8px] font-bold">{cand.total_avaliacoes} Vozes</span>
                 </div>
               </button>
             ))}

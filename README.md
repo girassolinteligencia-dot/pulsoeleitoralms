@@ -1,4 +1,4 @@
-# PulsoEleitoral MS-2026
+# VOZ PÚBLICA MS-2026
 
 Plataforma oficial de inteligência e percepção pública para o ciclo eleitoral de 2026 em Mato Grosso do Sul.
 Desenvolvido por **Girassol Inteligência** (Paulo Fernando Garcia Cardoso).

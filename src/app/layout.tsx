@@ -16,7 +16,7 @@ const lora = Lora({
 });
 
 export const metadata: Metadata = {
-  title: "PulsoEleitoral | Mato Grosso do Sul 2026",
+  title: "VOZ PÚBLICA | Mato Grosso do Sul 2026",
   description: "Plataforma pública de avaliação cidadã de candidatos políticos.",
 };
 

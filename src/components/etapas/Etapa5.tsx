@@ -18,7 +18,7 @@ interface Etapa5Props {
 }
 
 export const Etapa5: React.FC<Etapa5Props> = ({ results, candidatoNome, onReset }) => {
-  const totalPulsos = results.reduce((acc, curr) => acc + curr.total, 0);
+  const totalVozes = results.reduce((acc, curr) => acc + curr.total, 0);
 
   return (
     <motion.div 
@@ -34,7 +34,7 @@ export const Etapa5: React.FC<Etapa5Props> = ({ results, candidatoNome, onReset 
       </div>
 
       <div className="text-center mb-10 mt-12">
-        <h2 className="text-2xl font-bold font-display uppercase tracking-tight text-[#f5f0e8]">Pulso Consolidado</h2>
+        <h2 className="text-2xl font-bold font-display uppercase tracking-tight text-[#f5f0e8]">Inteligência da Voz</h2>
         <p className="text-[10px] text-[#7a6e64] uppercase tracking-[0.3em] font-bold mt-3">
           Percepção coletiva: <span className="text-[#d97757]">{candidatoNome}</span>
         </p>
@@ -49,7 +49,7 @@ export const Etapa5: React.FC<Etapa5Props> = ({ results, candidatoNome, onReset 
       <div className="mt-12 w-full max-w-[300px] flex flex-col gap-5">
         <div className="flex justify-between items-center text-[10px] uppercase tracking-[0.2em] font-bold">
           <span className="text-[#7a6e64]">Engajamento Total</span>
-          <span className="text-[#d97757]">{totalPulsos} Pulsos</span>
+          <span className="text-[#d97757]">{totalVozes} Vozes Registradas</span>
         </div>
         
         {/* Barra de Progresso Visual */}

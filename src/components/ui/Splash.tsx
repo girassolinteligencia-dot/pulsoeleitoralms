@@ -26,7 +26,7 @@ export const Splash: React.FC<SplashProps> = ({ onComplete }) => {
           <div className="relative w-64 h-64 mb-8">
             <Image
               src="/gi/logo-256.png"
-              alt="PulsoEleitoral"
+              alt="VOZ PÚBLICA"
               width={256}
               height={256}
               className="animate-logoPulse"
@@ -37,8 +37,8 @@ export const Splash: React.FC<SplashProps> = ({ onComplete }) => {
           {/* Títulos */}
           <div className="text-center space-y-4">
             <h1 className="text-5xl font-bold font-display tracking-tighter">
-              <span className="text-[#f5f0e8]">Pulso</span>
-              <span className="text-[#d97757]">Eleitoral</span>
+              <span className="text-[#f5f0e8]">VOZ</span>
+              <span className="text-[#d97757]">PÚBLICA</span>
             </h1>
             
             {/* Divisor Gradiente */}

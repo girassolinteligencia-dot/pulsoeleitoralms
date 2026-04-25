@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Erro ao processar pulso:', error);
-    return NextResponse.json({ error: 'Erro interno no processamento do pulso.' }, { status: 500 });
+    console.error('Erro ao processar voz:', error);
+    return NextResponse.json({ error: 'Erro interno no processamento da manifestação.' }, { status: 500 });
   }
 }

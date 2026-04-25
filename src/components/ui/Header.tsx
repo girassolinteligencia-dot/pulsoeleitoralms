@@ -13,7 +13,7 @@ export const Header: React.FC = () => {
         <div className="relative w-10 h-10">
           <Image
             src="/gi/logo-64.png"
-            alt="PulsoEleitoral"
+            alt="VOZ PÚBLICA"
             width={40}
             height={40}
             className="animate-logoPulse"
@@ -21,7 +21,7 @@ export const Header: React.FC = () => {
         </div>
         <div className="flex flex-col">
           <h1 className="text-sm font-bold font-display uppercase tracking-widest text-[#f5f0e8]">
-            Pulso<span className="text-[#d97757]">Eleitoral</span>
+            VOZ<span className="text-[#d97757]">PÚBLICA</span>
           </h1>
           <span className="text-[7px] font-bold text-[#7a6e64] uppercase tracking-[0.4em]">Mato Grosso do Sul 2026</span>
         </div>

@@ -68,7 +68,7 @@ export default function AvaliarPage() {
       setCandidatos(data.filter((c: Candidato) => c.cargo === cargoStr));
       setStep(3);
     } catch (error) {
-      console.error(error);
+      console.error('Erro ao processar voz:', error);
     } finally {
       setLoading(false);
     }
@@ -154,7 +154,7 @@ export default function AvaliarPage() {
             exit={{ opacity: 0 }}
             className="w-full h-full flex items-center justify-center text-[#d97757] font-display uppercase tracking-[0.5em] text-[10px] animate-pulse"
           >
-            Sincronizando Pulso...
+            Sincronizando Voz...
           </motion.div>
         ) : (
           <>

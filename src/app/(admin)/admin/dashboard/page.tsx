@@ -65,7 +65,7 @@ export default function AdminDashboard() {
       <aside className="w-72 border-r border-border bg-surface-1 p-10 flex flex-col gap-12">
         <div className="flex flex-col gap-2">
            <h1 className="text-2xl font-bold font-display uppercase tracking-widest text-primary">Admin</h1>
-           <p className="text-[9px] text-text-muted uppercase font-bold tracking-widest opacity-50">Pulso Eleitoral v1.0</p>
+           <p className="text-[9px] text-text-muted uppercase font-bold tracking-widest opacity-50">Voz Pública v1.0</p>
         </div>
         
         <nav className="flex flex-col gap-6">
@@ -113,7 +113,7 @@ export default function AdminDashboard() {
               <p className="text-[10px] text-primary uppercase font-bold tracking-widest">Baixar Auditoria CSV</p>
             </a>
             <div className="bg-surface-1 border border-border rounded-2xl px-8 py-5 text-center min-w-[140px]">
-              <p className="text-[9px] text-text-muted uppercase font-bold tracking-widest">Total Pulsos</p>
+              <p className="text-[9px] text-text-muted uppercase font-bold tracking-widest">Vozes Coletadas</p>
               <p className="text-2xl font-bold text-primary mt-2">1.248</p>
             </div>
           </div>
@@ -122,7 +122,7 @@ export default function AdminDashboard() {
         <div className="grid grid-cols-3 gap-8">
            <div className="col-span-2 bg-white/[0.02] backdrop-blur-3xl border border-white/5 rounded-[2.5rem] p-10">
               <div className="flex justify-between items-center mb-10">
-                <h3 className="text-sm font-bold uppercase tracking-widest">Pulsos Recentes</h3>
+                <h3 className="text-sm font-bold uppercase tracking-widest">Vozes Recentes</h3>
                 <span className="px-3 py-1 bg-positive/10 text-positive text-[8px] font-bold uppercase rounded-full animate-pulse">Live</span>
               </div>
               
@@ -142,7 +142,7 @@ export default function AdminDashboard() {
                   </div>
                 ))}
                 {recentEvaluations.length === 0 && (
-                   <p className="text-center py-20 text-text-muted text-[10px] uppercase tracking-widest opacity-40">Aguardando novos pulsos...</p>
+                   <p className="text-center py-20 text-text-muted text-[10px] uppercase tracking-widest opacity-40">Aguardando novas manifestações...</p>
                 )}
               </div>
            </div>

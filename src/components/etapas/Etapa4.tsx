@@ -126,11 +126,11 @@ export const Etapa4: React.FC<Etapa4Props> = ({
                 : 'bg-[#1c1814] text-[#7a6e64] opacity-40 cursor-not-allowed border border-[#3d3128]'
             }`}
           >
-            {isSubmitting ? 'Sincronizando...' : 'Confirmar Pulso'}
+            {isSubmitting ? 'Sincronizando...' : 'Ecoar Voz'}
           </button>
           
           <p className="text-[8px] text-[#7a6e64] uppercase tracking-widest opacity-60">
-            {evaluations.length === 0 ? 'Toque nos fragmentos para avaliar' : `${evaluations.length} atributos vinculados`}
+            {evaluations.length === 0 ? 'Toque nos fragmentos para avaliar' : `${evaluations.length} atributos vinculados à sua voz`}
           </p>
         </div>
       </div>

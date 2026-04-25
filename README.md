@@ -1,63 +1,52 @@
-# Pulso Eleitoral
+# PulsoEleitoral MS-2026
 
-Plataforma independente de monitoramento de sentimento eleitoral e pesquisas de opinião em tempo real.
+Plataforma oficial de inteligência e percepção pública para o ciclo eleitoral de 2026 em Mato Grosso do Sul.
+Desenvolvido por **Girassol Inteligência** (Paulo Fernando Garcia Cardoso).
 
-## 🚀 Tecnologias
+## 🚀 Stack Tecnológica
 
-- **Framework**: Next.js 16 (App Router)
-- **Linguagem**: TypeScript
-- **Estilização**: Tailwind CSS v4 / Vanilla CSS
-- **Banco de Dados**: Supabase (PostgreSQL)
-- **CI/CD**: GitHub Actions + Vercel
+- **Frontend**: Next.js 14+ (App Router) / React 18+
+- **Linguagem**: TypeScript (Strict Mode)
+- **Visual**: Tailwind CSS v4 / Framer Motion / GSAP (Plasma Fragments)
+- **Tipografia**: Poppins (Display) & Lora (Body)
+- **Backend**: Next.js API Routes / Prisma ORM
+- **Infraestrutura**: Supabase (PostgreSQL + RLS) / Vercel
+- **Auditoria**: Sistema Anti-robô (Fingerprint, Honeypot, Timing Analysis)
 
-## 📦 Setup Inicial
+## 📦 Estrutura de Pastas
 
-1. **Clone o repositório**:
+- `src/app/(public)`: Fluxo de avaliação para o cidadão.
+- `src/app/(admin)`: Painel de inteligência e moderação (Restrito).
+- `src/components/fragmento`: Sistema de física de plasma (5 camadas).
+- `src/components/etapas`: Workflow modular da experiência de usuário.
+- `prisma/`: Definições de schema e migrações de auditoria.
+
+## 🛠️ Setup de Desenvolvimento
+
+1. **Configuração do Ambiente**:
+   Certifique-se de ter o arquivo `.env` configurado com a `DATABASE_URL` utilizando o Pooler (porta 6543) para migrações Prisma estáveis.
+
+2. **Migrações e Client**:
    ```bash
-   git clone https://github.com/[usuario]/pulsoeleitoral.git
-   cd pulsoeleitoral
+   npx prisma generate
+   npx prisma db push
    ```
 
-2. **Instale as dependências**:
+3. **Início Rápido**:
    ```bash
    npm install
-   ```
-
-3. **Configure as variáveis de ambiente**:
-   Copie o arquivo `.env.example` para `.env.local` e preencha com suas credenciais:
-   ```bash
-   cp .env.example .env.local
-   ```
-
-4. **Inicie o servidor de desenvolvimento**:
-   ```bash
    npm run dev
    ```
 
-## 🛠️ Convenções de Desenvolvimento
+## 🛡️ Auditoria e Segurança
 
-### Commits (Conventional Commits)
-
-Seguimos o padrão de commits semânticos:
-- `feat`: Nova funcionalidade
-- `fix`: Correção de bug
-- `chore`: Configuração, dependências
-- `style`: Ajuste visual sem lógica
-- `refactor`: Refatoração sem mudança de comportamento
-- `docs`: Documentação
-
-### Branches
-
-- `main`: Ambiente de produção.
-- `develop`: Ambiente de integração e homologação.
-
-## 🧪 CI/CD
-
-Temos um workflow de CI automatizado via GitHub Actions que executa:
-1. Instalação de dependências
-2. Linting (`npm run lint`)
-3. Build de verificação (`npm run build`)
+A plataforma utiliza um sistema de física orgânica (Fragmentos) e monitoramento de comportamento para mitigar ataques de bots e manipulação de massa. Cada pulso é validado através de:
+- **Hash de Identidade**: Fingerprint único por dispositivo.
+- **Análise Temporal**: Bloqueio de submissões com tempo de interação suspeito.
+- **RLS**: Row Level Security em nível de banco de dados para todas as tabelas.
 
 ---
 
-© 2026 Pulso Eleitoral • Plataforma Independente
+© 2026 **Girassol Inteligência** • *Tecnologia a serviço da transparência eleitoral.*
+Responsável Técnico: Paulo Fernando Garcia Cardoso
+

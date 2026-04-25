@@ -7,33 +7,25 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { 
       candidatoId, 
-      avaliacoes, // Array de { atributoId, valor }
+      avaliacoes, 
       fingerprint,
       startTime,
       endTime,
       honeypot 
     } = body;
 
-    // 1. Honeypot check
-    if (honeypot) {
-      return NextResponse.json({ error: 'Bot detected' }, { status: 403 });
-    }
-
-    // 2. Timing validation (< 8s is suspicious)
-    if (isSuspiciousTiming(startTime, endTime)) {
-      console.warn('Suspicious timing detected for submission');
-      // We still record it but could flag it or block it in a more advanced setup
-    }
-
-    // 3. Get IP and User Agent
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || '127.0.0.1';
     const userAgent = req.headers.get('user-agent') || 'unknown';
-
-    // 4. Generate hashes
     const ipHash = generateSecureHash(ip);
     const fingerprintHash = generateSecureHash(fingerprint);
+    const duration = endTime - startTime;
 
-    // 5. Check for active blocks
+    // Detecção de anomalias
+    const isBot = !!honeypot;
+    const isSuspicious = isSuspiciousTiming(startTime, endTime);
+    const isValid = !isBot && !isSuspicious;
+
+    // 1. Verificação de Bloqueios
     const activeBlock = await prisma.bloqueio.findFirst({
       where: {
         hash: { in: [ipHash, fingerprintHash] },
@@ -45,29 +37,78 @@ export async function POST(req: NextRequest) {
     });
 
     if (activeBlock) {
-      return NextResponse.json({ error: 'Access blocked' }, { status: 429 });
+      return NextResponse.json({ error: 'Acesso bloqueado por segurança.' }, { status: 429 });
     }
 
-    // 6. Record evaluations in a transaction
-    await prisma.$transaction(
-      avaliacoes.map((av: { atributoId: string, valor: number }) => 
-        prisma.avaliacao.create({
-          data: {
-            candidato_id: candidatoId,
-            atributo_id: av.atributoId,
-            valor: av.valor,
-            fingerprint_hash: fingerprintHash,
-            ip_hash: ipHash,
-            user_agent: userAgent
-          }
-        })
-      )
-    );
+    // 2. Processamento da Avaliação
+    await prisma.$transaction(async (tx) => {
+      // Criar as avaliações
+      const created = await Promise.all(
+        avaliacoes.map((av: { atributoId: string, valor: number }) => 
+          tx.avaliacao.create({
+            data: {
+              candidato_id: candidatoId,
+              atributo_id: av.atributoId,
+              valor: av.valor,
+              is_valid: isValid,
+              fingerprint_hash: fingerprintHash,
+              ip_hash: ipHash,
+              user_agent: userAgent,
+              duration_ms: duration,
+              honeypot_triggered: isBot,
+              device_info: { 
+                ua: userAgent,
+                platform: req.headers.get('sec-ch-ua-platform') || 'unknown'
+              }
+            }
+          })
+        )
+      );
 
-    return NextResponse.json({ success: true });
+      // Se for válido, atualizar estatísticas
+      if (isValid) {
+        await tx.candidato.update({
+          where: { id: candidatoId },
+          data: { total_avaliacoes: { increment: avaliacoes.length } }
+        });
+
+        const cand = await tx.candidato.findUnique({
+          where: { id: candidatoId },
+          select: { campanha_id: true }
+        });
+
+        if (cand) {
+          await tx.campanha.update({
+            where: { id: cand.campanha_id },
+            data: { total_votos: { increment: 1 } }
+          });
+        }
+      } else {
+        // Log de Auditoria para atividade suspeita
+        await tx.auditLog.create({
+          data: {
+            acao: isBot ? 'BOT_DETECTED' : 'SUSPICIOUS_TIMING',
+            entidade: 'Avaliacao',
+            entidade_id: candidatoId,
+            detalhes: {
+              ip_hash: ipHash,
+              duration_ms: duration,
+              fingerprint: fingerprintHash
+            }
+          }
+        });
+      }
+
+      return created;
+    });
+
+    return NextResponse.json({ 
+      success: true, 
+      status: isValid ? 'confirmed' : 'flagged' 
+    });
 
   } catch (error) {
-    console.error('Error submitting evaluation:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error('Erro ao processar pulso:', error);
+    return NextResponse.json({ error: 'Erro interno no processamento do pulso.' }, { status: 500 });
   }
 }

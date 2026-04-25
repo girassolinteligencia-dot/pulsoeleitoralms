@@ -11,14 +11,19 @@ datasource db {
 }
 
 model Campanha {
-  id          String   @id @default(cuid())
-  nome        String
-  slug        String   @unique
-  data_inicio DateTime @default(now())
-  data_fim    DateTime?
+  id                 String   @id @default(cuid())
+  nome               String
+  slug               String   @unique
+  status             String   @default("ativo") // ativo, pausado, encerrado
+  total_votos        Int      @default(0)
+  media_consolidada  Float    @default(0)
+  last_calc_at       DateTime?
+  meta_config        Json?    // Configurações extras (pesos, limites)
+  data_inicio        DateTime @default(now())
+  data_fim           DateTime?
   
-  candidatos  Candidato[]
-  atributos   CampanhaAtributo[]
+  candidatos         Candidato[]
+  atributos          CampanhaAtributo[]
 
   @@map("campanhas")
 }
@@ -26,7 +31,9 @@ model Campanha {
 model Atributo {
   id          String   @id @default(cuid())
   nome        String   @unique
+  descricao   String?
   icone       String?
+  polaridade  Int      @default(1) // 1: Positivo, -1: Negativo
   
   campanhas   CampanhaAtributo[]
   avaliacoes  Avaliacao[]
@@ -46,32 +53,44 @@ model CampanhaAtributo {
 }
 
 model Candidato {
-  id          String   @id @default(cuid())
-  nome        String
-  cargo       String
-  foto_url    String?
-  cidade      String
-  bairro      String?
-  campanha_id String
+  id                 String   @id @default(cuid())
+  nome               String
+  partido            String?
+  numero             String?
+  cargo              String
+  foto_url           String?
+  cidade             String
+  bairro             String?
+  status_verificacao Boolean  @default(false)
+  total_avaliacoes   Int      @default(0)
+  campanha_id        String
   
-  campanha    Campanha @relation(fields: [campanha_id], references: [id])
-  avaliacoes  Avaliacao[]
+  campanha           Campanha @relation(fields: [campanha_id], references: [id])
+  avaliacoes         Avaliacao[]
 
   @@map("candidatos")
 }
 
 model Avaliacao {
-  id               String   @id @default(cuid())
-  candidato_id     String
-  atributo_id      String
-  valor            Int      // 1 (Positivo) ou -1 (Negativo)
-  fingerprint_hash String
-  ip_hash          String
-  user_agent       String?
-  criado_em        DateTime @default(now())
+  id                 String   @id @default(cuid())
+  candidato_id       String
+  atributo_id        String
+  valor              Int      // 1 ou -1
+  is_valid           Boolean  @default(true)
+  
+  // Auditoria e Anti-robô
+  fingerprint_hash   String
+  ip_hash            String
+  user_agent         String?
+  duration_ms        Int?     // Tempo entre start e end
+  honeypot_triggered Boolean  @default(false)
+  device_info        Json?    // Resolução, SO, Navegador
+  geo_location       Json?    // Cidade aproximada via IP
+  
+  criado_em          DateTime @default(now())
 
-  candidato        Candidato @relation(fields: [candidato_id], references: [id])
-  atributo         Atributo @relation(fields: [atributo_id], references: [id])
+  candidato          Candidato @relation(fields: [candidato_id], references: [id])
+  atributo           Atributo  @relation(fields: [atributo_id], references: [id])
 
   @@index([candidato_id])
   @@index([fingerprint_hash])
@@ -81,10 +100,22 @@ model Avaliacao {
 
 model Bloqueio {
   id          String   @id @default(cuid())
-  hash        String   @unique // Pode ser IP ou Fingerprint
+  hash        String   @unique // IP ou Fingerprint
   motivo      String?
   expira_em   DateTime?
   criado_em   DateTime @default(now())
 
   @@map("bloqueios")
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  acao        String   // EX: "VOTO_INVALIDADO", "CAMPANHA_CRIADA"
+  entidade    String   // EX: "Avaliacao", "Campanha"
+  entidade_id String
+  detalhes    Json?
+  usuario_id  String?  // ID do Admin (se houver)
+  criado_em   DateTime @default(now())
+
+  @@map("audit_logs")
 }

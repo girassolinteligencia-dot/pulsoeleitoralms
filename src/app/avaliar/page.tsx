@@ -63,13 +63,20 @@ export default function AvaliarPage() {
   const fetchCandidatos = async (cargoStr: string) => {
     setLoading(true);
     try {
-      // Usando a cidade do userData conforme a especificação
-      const res = await fetch(`/api/candidatos?campanha=ms-2024&cidade=${userData.cidade}`);
+      const res = await fetch(
+        `/api/candidatos?campanha=ms-2026&cidade=${userData.cidade}`
+      );
       const data = await res.json();
-      setCandidatos(data.filter((c: Candidato) => c.cargo === cargoStr));
+      
+      // Garante que data é array antes de filtrar
+      const lista = Array.isArray(data) ? data : [];
+      setCandidatos(lista.filter((c: Candidato) => c.cargo === cargoStr));
       setStep(3);
     } catch (error) {
-      console.error('Erro ao processar voz:', error);
+      console.error('Erro ao buscar candidatos:', error);
+      // Avança mesmo com erro para não travar o usuário
+      setCandidatos([]);
+      setStep(3);
     } finally {
       setLoading(false);
     }

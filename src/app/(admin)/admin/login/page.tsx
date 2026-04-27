@@ -37,8 +37,10 @@ export default function AdminLoginPage() {
         className="w-full max-w-[400px] bg-surface-1 border border-border rounded-[2.5rem] p-10 flex flex-col gap-8 shadow-2xl"
       >
         <div className="text-center">
-          <h1 className="text-2xl font-bold font-display uppercase tracking-widest text-primary">Painel Voz</h1>
-          <p className="text-[10px] text-text-muted uppercase mt-2 tracking-widest">Acesso restrito ao painel de gestão</p>
+          <h1 className="text-2xl font-bold font-display uppercase tracking-widest text-[#f5f0e8]">
+            VOZ<span className="text-[#d97757]">PÚBLICA</span>
+          </h1>
+          <p className="text-[10px] text-text-muted uppercase mt-2 tracking-widest">Painel de Gestão e Inteligência</p>
         </div>
 
         <form onSubmit={handleLogin} className="flex flex-col gap-6">

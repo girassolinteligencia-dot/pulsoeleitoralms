@@ -13,25 +13,26 @@ interface Atributo {
 
 export default function AtributosAdmin() {
   const [atributos, setAtributos] = useState<Atributo[]>([]);
-  const [loading, setLoading] = useState(true);
   const [editingAtributo, setEditingAtributo] = useState<Partial<Atributo> | null>(null);
 
-  async function fetchAtributos() {
-    setLoading(true);
-    try {
-      const res = await fetch('/api/admin/atributos');
-      const data = await res.json();
-      setAtributos(data);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  }
-
   useEffect(() => {
-    fetchAtributos();
+    const loadAtributos = async () => {
+      try {
+        const res = await fetch('/api/admin/atributos');
+        const data = await res.json();
+        setAtributos(data);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    loadAtributos();
   }, []);
+
+  const fetchAtributos = async () => {
+    const res = await fetch('/api/admin/atributos');
+    const data = await res.json();
+    setAtributos(data);
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -18,11 +18,18 @@ export const Splash: React.FC<SplashProps> = ({ onComplete }) => {
     <AnimatePresence>
       {isVisible && (
         <motion.div
-          className="fixed inset-0 z-[100] bg-[#141413] flex flex-col items-center justify-center"
-          exit={{ opacity: 0, scale: 0.97 }}
-          transition={{ duration: 0.7, ease: 'easeInOut' }}
+          key="splash-container"
+          className="fixed inset-0 z-[100] bg-[#141413] flex flex-col items-center justify-center overflow-hidden"
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.5 }}
         >
-          {/* Logo Central com logoPulse */}
+          {/* Background Decorativo: Aura de Dados */}
+          <div className="absolute inset-0 z-0 opacity-30 flex items-center justify-center pointer-events-none">
+            <div className="w-[150%] h-[150%] bg-[radial-gradient(circle_at_50%_50%,#d9775733,transparent_70%)] blur-3xl animate-pulse" />
+          </div>
+
+          <div className="relative z-10 flex flex-col items-center">
+            {/* Logo Central com logoPulse */}
           <div className="relative w-64 h-64 mb-8">
             <Image
               src="/gi/logo-256.png"
@@ -51,22 +58,21 @@ export const Splash: React.FC<SplashProps> = ({ onComplete }) => {
 
           {/* Badge Girassol */}
           <div className="mt-12 flex items-center gap-2 px-4 py-2 bg-[#c8933a]/10 rounded-full border border-[#c8933a]/20">
-            <Image src="/gi/logo-32.png" alt="GI" width={24} height={24} />
+            <Image src="/gi/girassol-logo.png" alt="GI" width={24} height={24} className="rounded-full" />
             <span className="text-[#c8933a] text-[10px] font-bold uppercase tracking-widest">
               Girassol Inteligência
             </span>
           </div>
 
-          {/* CTA Iniciar */}
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => setIsVisible(false)}
-            onAnimationComplete={() => !isVisible && onComplete()}
+            onClick={() => { setIsVisible(false); onComplete(); }}
             className="mt-16 bg-[#d97757] text-[#f5f0e8] px-12 py-5 rounded-full font-bold text-xs uppercase tracking-[0.3em] shadow-xl shadow-[#d97757]/20"
           >
             Começar avaliação →
           </motion.button>
+          </div>
         </motion.div>
       )}
     </AnimatePresence>

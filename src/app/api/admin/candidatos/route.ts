@@ -21,11 +21,12 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { nome, cargo, cidade, bairro, foto_url, campanha_id } = body;
-
+    const { nome, partido, numero, cargo, cidade, bairro, foto_url, campanha_id } = body;
     const candidato = await prisma.candidato.create({
       data: {
         nome,
+        partido,
+        numero,
         cargo,
         cidade,
         bairro,

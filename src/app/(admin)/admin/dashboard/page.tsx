@@ -64,7 +64,9 @@ export default function AdminDashboard() {
       {/* Sidebar */}
       <aside className="w-72 border-r border-border bg-surface-1 p-10 flex flex-col gap-12">
         <div className="flex flex-col gap-2">
-           <h1 className="text-2xl font-bold font-display uppercase tracking-widest text-primary">Admin</h1>
+           <h1 className="text-2xl font-bold font-display uppercase tracking-widest text-[#f5f0e8]">
+             VOZ<span className="text-[#d97757]">PÚBLICA</span> <span className="opacity-30 ml-2">ADMIN</span>
+           </h1>
            <p className="text-[9px] text-text-muted uppercase font-bold tracking-widest opacity-50">Voz Pública v1.0</p>
         </div>
         

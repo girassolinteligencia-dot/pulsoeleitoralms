@@ -39,9 +39,12 @@ export const RadarChart: React.FC<RadarChartProps> = ({ data }) => {
           <Radar
             name="Avaliação"
             dataKey="valor"
-            stroke={TOKENS.COLORS.PRIMARY}
-            fill={TOKENS.COLORS.PRIMARY}
-            fillOpacity={0.4}
+            stroke={TOKENS.COLORS.ORANGE}
+            fill={TOKENS.COLORS.ORANGE}
+            fillOpacity={0.5}
+            dot={{ r: 3, fill: TOKENS.COLORS.ORANGE, fillOpacity: 1 }}
+            animationDuration={1500}
+            filter="drop-shadow(0 0 8px rgba(217, 119, 87, 0.6))"
           />
         </RechartsRadar>
       </ResponsiveContainer>

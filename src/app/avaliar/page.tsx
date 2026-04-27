@@ -10,6 +10,7 @@ import { Etapa2 } from '@/components/etapas/Etapa2';
 import { Etapa3 } from '@/components/etapas/Etapa3';
 import { Etapa4 } from '@/components/etapas/Etapa4';
 import { Etapa5 } from '@/components/etapas/Etapa5';
+import { Fragmento } from '@/components/fragmento/Fragmento';
 
 interface Atributo {
   id: string;
@@ -146,15 +147,33 @@ export default function AvaliarPage() {
       />
 
       <AnimatePresence mode="wait">
-        {loading ? (
+        {loading || isSubmitting ? (
           <motion.div 
-            key="loading"
+            key="processing"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="w-full h-full flex items-center justify-center text-[#d97757] font-display uppercase tracking-[0.5em] text-[10px] animate-pulse"
+            className="w-full h-full flex flex-col items-center justify-center gap-8"
           >
-            Sincronizando Voz...
+            <div className="relative w-32 h-32 flex items-center justify-center">
+              <div className="absolute inset-0 animate-pulse bg-[#d97757]/10 rounded-full blur-3xl scale-150" />
+              <Fragmento id="sync-frag" label="" type="positivo" />
+            </div>
+            <div className="flex flex-col items-center gap-2">
+              <span className="text-[#d97757] font-display uppercase tracking-[0.5em] text-[10px] font-bold">
+                {isSubmitting ? 'Ecoando sua Voz...' : 'Sincronizando Dados...'}
+              </span>
+              <div className="flex gap-1">
+                {[0, 1, 2].map(i => (
+                  <motion.div
+                    key={i}
+                    className="w-1 h-1 rounded-full bg-[#d97757]"
+                    animate={{ opacity: [0.2, 1, 0.2] }}
+                    transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
+                  />
+                ))}
+              </div>
+            </div>
           </motion.div>
         ) : (
           <>

@@ -17,18 +17,17 @@ export default function RelatoriosAdmin() {
   const [candidatos, setCandidatos] = useState<CandidatoRelatorio[]>([]);
   const [selectedCandidato, setSelectedCandidato] = useState<CandidatoRelatorio | null>(null);
 
-  async function fetchRelatorio() {
-    try {
-      const res = await fetch('/api/admin/relatorios');
-      const data = await res.json();
-      setCandidatos(data);
-    } catch (error) {
-      console.error(error);
-    }
-  }
-
   useEffect(() => {
-    fetchRelatorio();
+    const loadRelatorio = async () => {
+      try {
+        const res = await fetch('/api/admin/relatorios');
+        const data = await res.json();
+        setCandidatos(data);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    loadRelatorio();
   }, []);
 
   return (

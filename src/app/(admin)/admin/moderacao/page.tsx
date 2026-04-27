@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Header } from '@/components/ui/Header';
 
 interface Avaliacao {
@@ -21,20 +20,26 @@ export default function ModeracaoAdmin() {
   const [avaliacoes, setAvaliacoes] = useState<Avaliacao[]>([]);
   const [stats, setStats] = useState({ total: 0, suspicious: 0, bots: 0 });
 
-  async function fetchAvaliacoes() {
-    try {
-      const res = await fetch('/api/admin/moderacao');
-      const data = await res.json();
-      setAvaliacoes(data.avaliacoes);
-      setStats(data.stats);
-    } catch (error) {
-      console.error(error);
-    }
-  }
-
   useEffect(() => {
-    fetchAvaliacoes();
+    const loadData = async () => {
+      try {
+        const res = await fetch('/api/admin/moderacao');
+        const data = await res.json();
+        setAvaliacoes(data.avaliacoes);
+        setStats(data.stats);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    loadData();
   }, []);
+
+  const fetchAvaliacoes = async () => {
+    const res = await fetch('/api/admin/moderacao');
+    const data = await res.json();
+    setAvaliacoes(data.avaliacoes);
+    setStats(data.stats);
+  };
 
   const toggleValidity = async (id: string, currentStatus: boolean) => {
     try {

@@ -4,15 +4,14 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
+    "postinstall": "prisma generate",
     "start": "next start",
     "lint": "eslint",
     "import-data": "ts-node scripts/import_candidatos.ts",
     "vincular-atributos": "ts-node scripts/vincular_atributos.ts",
-    "upload-assets": "ts-node scripts/upload_assets.ts"
-  },
-  "prisma": {
-    "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
+    "upload-assets": "ts-node scripts/upload_assets.ts",
+    "push": "powershell ./scripts/sync.ps1"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

@@ -4,6 +4,7 @@ import React, { useRef } from 'react';
 import { motion } from 'framer-motion';
 import { FragmentoNucleo } from './FragmentoNucleo';
 import { FragmentoCampo } from './FragmentoCampo';
+import { FragmentoMembrana } from './FragmentoMembrana';
 import { FragmentoSatelite } from './FragmentoSatelite';
 import { useFragmentoFisica } from '@/hooks/useFragmentoFisica';
 import styles from '@/styles/fragmento.module.css';
@@ -44,8 +45,8 @@ export const Fragmento: React.FC<FragmentoProps> = ({ id, label, type, onClick, 
       }}
       initial={{ scale: 0, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
-      whileHover={{ scale: 1.1 }}
-      whileTap={{ scale: 0.95 }}
+      whileHover={{ scale: 1.15 }}
+      whileTap={{ scale: 0.9 }}
       onClick={onClick}
     >
       {/* Camada 3: Campo (Halo) */}
@@ -55,31 +56,26 @@ export const Fragmento: React.FC<FragmentoProps> = ({ id, label, type, onClick, 
       <FragmentoNucleo type={type} />
 
       {/* Camada 2: Membrana */}
-      <div 
-        className={styles.membrane} 
-        style={{
-          position: 'absolute',
-          inset: '5%',
-          border: `1.5px dashed ${color}`,
-          borderRadius: '50%',
-          opacity: 0.6,
-          animation: 'spin 10s linear infinite'
-        }} 
-      />
+      <FragmentoMembrana color={color} />
 
       {/* Camada 4: Satélites */}
       <FragmentoSatelite id={id} />
 
       {/* Rótulo */}
-      <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] font-bold uppercase tracking-widest text-[var(--mid-gray)] font-display">
+      <motion.span 
+        className="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap text-[9px] font-bold uppercase tracking-[0.3em] text-[var(--mid-gray)] font-display"
+        initial={{ opacity: 0, y: 5 }}
+        animate={{ opacity: 0.6, y: 0 }}
+        whileHover={{ opacity: 1, color: '#f5f0e8' }}
+      >
         {label}
-      </span>
+      </motion.span>
 
       {/* Camada 5: Trilha (Implementada via motion trail) */}
       <motion.div
-        className="absolute inset-0 bg-current rounded-full blur-xl pointer-events-none"
-        animate={{ opacity: [0.4, 0] }}
-        transition={{ duration: 0.3 }}
+        className="absolute inset-0 bg-current rounded-full blur-2xl pointer-events-none"
+        animate={{ opacity: [0.3, 0] }}
+        transition={{ duration: 0.4 }}
       />
     </motion.div>
   );

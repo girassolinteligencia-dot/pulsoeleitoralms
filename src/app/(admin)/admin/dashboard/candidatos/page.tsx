@@ -1,16 +1,28 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { prisma } from '@/lib/prisma'; // Note: Client side fetching usually uses fetch() but I'll use the API
+interface Candidato {
+  id: string;
+  nome: string;
+  partido: string | null;
+  numero: string | null;
+  cargo: string;
+  cidade: string;
+  campanha?: {
+    nome: string;
+  };
+}
 
 export default function ManageCandidatos() {
-  const [candidatos, setCandidatos] = useState<any[]>([]);
+  const [candidatos, setCandidatos] = useState<Candidato[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [newCand, setNewCand] = useState({
     nome: '',
     cargo: 'Governador',
     cidade: 'Campo Grande',
+    partido: '',
+    numero: '',
     campanha_id: 'camp-1' // Mock for now
   });
 
@@ -56,6 +68,8 @@ export default function ManageCandidatos() {
           <thead>
             <tr className="border-b border-border bg-surface-2/50">
               <th className="px-8 py-5 text-[10px] uppercase font-bold text-text-muted tracking-widest">Nome</th>
+              <th className="px-8 py-5 text-[10px] uppercase font-bold text-text-muted tracking-widest">Partido</th>
+              <th className="px-8 py-5 text-[10px] uppercase font-bold text-text-muted tracking-widest">Número</th>
               <th className="px-8 py-5 text-[10px] uppercase font-bold text-text-muted tracking-widest">Cargo</th>
               <th className="px-8 py-5 text-[10px] uppercase font-bold text-text-muted tracking-widest">Cidade</th>
               <th className="px-8 py-5 text-[10px] uppercase font-bold text-text-muted tracking-widest">Campanha</th>
@@ -66,6 +80,8 @@ export default function ManageCandidatos() {
             {candidatos.map(cand => (
               <tr key={cand.id} className="border-b border-border/50 hover:bg-white/[0.02] transition-colors">
                 <td className="px-8 py-5 text-xs font-bold text-text">{cand.nome}</td>
+                <td className="px-8 py-5 text-[10px] font-bold text-[#d97757]">{cand.partido || '-'}</td>
+                <td className="px-8 py-5 text-[10px] font-mono text-text-muted">{cand.numero || '-'}</td>
                 <td className="px-8 py-5 text-[10px] uppercase font-medium text-text-muted">{cand.cargo}</td>
                 <td className="px-8 py-5 text-[10px] uppercase font-medium text-text-muted">{cand.cidade}</td>
                 <td className="px-8 py-5 text-[10px] uppercase font-medium text-primary">{cand.campanha?.nome}</td>
@@ -86,11 +102,25 @@ export default function ManageCandidatos() {
           <form onSubmit={handleCreate} className="w-full max-w-[400px] bg-surface-1 border border-border rounded-[2.5rem] p-10 flex flex-col gap-6 shadow-2xl">
             <h3 className="text-sm font-bold uppercase tracking-widest text-primary">Novo Candidato</h3>
             <input 
-              className="bg-surface-2 border border-border rounded-xl px-5 py-4 text-xs" 
+              className="bg-surface-2 border border-border rounded-xl px-5 py-4 text-xs text-white" 
               placeholder="Nome do Candidato"
               value={newCand.nome}
               onChange={e => setNewCand({...newCand, nome: e.target.value})}
             />
+            <div className="flex gap-3">
+              <input 
+                className="flex-1 bg-surface-2 border border-border rounded-xl px-5 py-4 text-xs text-white" 
+                placeholder="Partido"
+                value={newCand.partido}
+                onChange={e => setNewCand({...newCand, partido: e.target.value})}
+              />
+              <input 
+                className="w-24 bg-surface-2 border border-border rounded-xl px-5 py-4 text-xs text-white" 
+                placeholder="Nº"
+                value={newCand.numero}
+                onChange={e => setNewCand({...newCand, numero: e.target.value})}
+              />
+            </div>
             <div className="flex gap-4">
               <button type="submit" className="flex-1 bg-primary text-white py-4 rounded-full font-bold text-[10px] uppercase tracking-widest">Salvar</button>
               <button type="button" onClick={() => setShowModal(false)} className="flex-1 bg-surface-2 text-text py-4 rounded-full font-bold text-[10px] uppercase tracking-widest">Cancelar</button>

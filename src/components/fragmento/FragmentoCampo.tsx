@@ -14,6 +14,12 @@ interface FragmentoCampoProps {
 export const FragmentoCampo: React.FC<FragmentoCampoProps> = ({ color }) => {
   return (
     <motion.div
+      variants={{
+        initial: { opacity: 0.15, scale: 0.95 },
+        hover: { opacity: 0.4, scale: 1.2 },
+      }}
+      initial="initial"
+      whileHover="hover"
       style={{
         position: 'absolute',
         top: '-20%',
@@ -22,7 +28,7 @@ export const FragmentoCampo: React.FC<FragmentoCampoProps> = ({ color }) => {
         height: '140%',
         background: `radial-gradient(circle, ${color} 0%, transparent 70%)`,
         borderRadius: '50%',
-        filter: 'blur(12px)',
+        filter: 'blur(15px)',
         zIndex: -1,
         pointerEvents: 'none',
       }}

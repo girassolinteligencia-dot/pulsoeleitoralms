@@ -20,12 +20,13 @@ async function main() {
     try {
       console.log(`Executing: ${statement.substring(0, 50)}...`);
       await prisma.$executeRawUnsafe(statement);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
       // Ignore "already exists" errors for policies and views
-      if (error.message.includes('already exists')) {
+      if (err.message.includes('already exists')) {
         console.warn(`Statement already applied: ${statement.substring(0, 30)}`);
       } else {
-        console.error(`Error executing statement: ${error.message}`);
+        console.error(`Error executing statement: ${err.message}`);
       }
     }
   }

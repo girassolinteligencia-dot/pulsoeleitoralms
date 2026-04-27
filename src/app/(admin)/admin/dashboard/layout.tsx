@@ -24,7 +24,9 @@ export default function DashboardLayout({
         'girassolinteligencia@gmail.com'
       ];
 
-      if (!currentSession || !currentSession.user?.email || !ALLOWED_EMAILS.includes(currentSession.user.email)) {
+      const userEmail = currentSession?.user?.email?.toLowerCase().trim() || '';
+
+      if (!currentSession || !ALLOWED_EMAILS.includes(userEmail)) {
         // Se houver sessão mas o e-mail não for autorizado, forçar logout
         if (currentSession) {
           supabase.auth.signOut();

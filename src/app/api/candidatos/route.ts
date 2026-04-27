@@ -9,7 +9,8 @@ export async function GET(req: NextRequest) {
   try {
     // Para cargos estaduais/federais, a cidade no banco é 'MATO GROSSO DO SUL'
     // Então não devemos filtrar pela cidade selecionada pelo usuário nesses casos
-    const isCargoEstadual = ['Governador', 'Senador', 'Deputado Federal', 'Deputado Estadual', 'Presidente'].includes(cargo || '');
+    const normalizedCargo = (cargo || '').toLowerCase().trim();
+    const isCargoEstadual = ['governador', 'senador', 'deputado federal', 'deputado estadual', 'presidente'].includes(normalizedCargo);
 
     const candidatos = await prisma.candidato.findMany({
       where: {

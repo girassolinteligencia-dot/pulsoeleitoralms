@@ -17,7 +17,18 @@ export default function DashboardLayout({
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
-      if (!currentSession) {
+      // Lista de e-mails com permissão total no painel administrativo
+      const ALLOWED_EMAILS = [
+        'paulo@vozpublica.com.br',
+        'contato@vozpublica.com.br',
+        'girassolinteligencia@gmail.com'
+      ];
+
+      if (!currentSession || !currentSession.user?.email || !ALLOWED_EMAILS.includes(currentSession.user.email)) {
+        // Se houver sessão mas o e-mail não for autorizado, forçar logout
+        if (currentSession) {
+          supabase.auth.signOut();
+        }
         router.push('/admin/login');
       } else {
         setSession(currentSession);

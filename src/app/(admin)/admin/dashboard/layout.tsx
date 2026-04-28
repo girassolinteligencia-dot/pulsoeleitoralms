@@ -15,6 +15,11 @@ export default function DashboardLayout({
   const router = useRouter();
   const pathname = usePathname();
 
+  const handleLogout = () => {
+    localStorage.removeItem('admin_bypass');
+    supabase.auth.signOut().then(() => router.push('/admin/login'));
+  };
+
   useEffect(() => {
     // Definimos os e-mails permitidos
     const ALLOWED_EMAILS = [
@@ -24,6 +29,12 @@ export default function DashboardLayout({
     ];
 
     const checkSession = async () => {
+      // Bypass de Emergência
+      if (localStorage.getItem('admin_bypass') === 'true') {
+        setLoading(false);
+        return;
+      }
+
       const { data: { session: currentSession } } = await supabase.auth.getSession();
       
       const userEmail = currentSession?.user?.email?.toLowerCase().trim() || '';
@@ -86,7 +97,7 @@ export default function DashboardLayout({
           </button>
         ))}
         <button 
-          onClick={() => supabase.auth.signOut().then(() => router.push('/admin/login'))}
+          onClick={handleLogout}
           className="flex flex-col items-center gap-1 text-negative opacity-60"
         >
           <span className="text-xl">🚪</span>
@@ -126,7 +137,7 @@ export default function DashboardLayout({
         <div className="mt-auto flex flex-col gap-4">
            <p className="text-[8px] text-text-muted uppercase tracking-widest px-4 truncate opacity-40">User: {session?.user?.email}</p>
            <button 
-            onClick={() => supabase.auth.signOut().then(() => router.push('/admin/login'))}
+            onClick={handleLogout}
             className="flex items-center gap-4 text-left text-[10px] uppercase font-bold text-negative tracking-[0.3em] hover:opacity-70 transition-opacity"
           >
             <span>🚪</span> Sair do Sistema

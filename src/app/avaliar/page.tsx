@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useGiroscopio } from '@/hooks/useGiroscopio';
 import { Splash } from '@/components/ui/Splash';
@@ -10,6 +10,7 @@ import { Etapa2 } from '@/components/etapas/Etapa2';
 import { Etapa3 } from '@/components/etapas/Etapa3';
 import { Etapa4 } from '@/components/etapas/Etapa4';
 import { Etapa5 } from '@/components/etapas/Etapa5';
+import { Etapa6 } from '@/components/etapas/Etapa6';
 import { Fragmento } from '@/components/fragmento/Fragmento';
 
 interface Atributo {
@@ -23,7 +24,7 @@ interface Candidato {
   cargo: string;
   cidade: string;
   foto_url?: string;
-  campanha: {
+  campanha?: {
     atributos: { atributo: Atributo }[];
   };
 }
@@ -38,14 +39,39 @@ export default function AvaliarPage() {
   const [showSplash, setShowSplash] = useState(true);
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [config, setConfig] = useState<any>(null);
   
   const [userData, setUserData] = useState({
     nome: '',
+    ideologia: '',
+    sexo: '',
+    cor: '',
+    escolaridade: '',
+    estadoCivil: '',
+    faixaSalarial: '',
+    religiao: '',
+    ocupacao: '',
+    filhos: '',
+    orientacaoSexual: '',
+    deficiencia: '',
+    tempoResidencia: '',
     cidade: '',
-    perfil: [] as string[]
+    bairro: '',
   });
 
-  const [cargo, setCargo] = useState('');
+  useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        const res = await fetch('/api/configuracoes/public');
+        const data = await res.json();
+        setConfig(data);
+      } catch (error) {
+        console.error('Erro ao carregar configurações:', error);
+      }
+    };
+    loadConfig();
+  }, []);
+
   const [candidatos, setCandidatos] = useState<Candidato[]>([]);
   const [candidato, setCandidato] = useState<Candidato | null>(null);
 
@@ -58,23 +84,19 @@ export default function AvaliarPage() {
   const parallax = useGiroscopio();
 
   const cidades = ['Campo Grande', 'Dourados', 'Três Lagoas', 'Ponta Porã', 'Corumbá', 'Naviraí', 'Nova Andradina', 'Aquidauana', 'Sidrolândia', 'Paranaíba'];
-  const perfis = ['Conservador', 'Liberal', 'Progressista', 'Moderado', 'Independente'];
-
-  const fetchCandidatos = async (cargoStr: string) => {
+  
+  const fetchCandidatos = async (query: string = '') => {
     setLoading(true);
     try {
       const res = await fetch(
-        `/api/candidatos?cidade=${encodeURIComponent(userData.cidade)}&cargo=${encodeURIComponent(cargoStr)}`
+        `/api/candidatos?cidade=${encodeURIComponent(userData.cidade)}&bairro=${encodeURIComponent(userData.bairro)}&search=${encodeURIComponent(query)}`
       );
       const data = await res.json();
       const lista = Array.isArray(data) ? data : [];
       setCandidatos(lista);
-      setStep(3);
     } catch (error) {
       console.error('Erro ao buscar candidatos:', error);
-      // Avança mesmo com erro para não travar o usuário
       setCandidatos([]);
-      setStep(3);
     } finally {
       setLoading(false);
     }
@@ -83,7 +105,7 @@ export default function AvaliarPage() {
   const handleCandidatoSelect = (cand: Candidato) => {
     startTimeRef.current = Date.now();
     setCandidato(cand);
-    setStep(4);
+    setStep(5);
   };
 
   const handleAttributeClick = (atributoId: string, valor: number) => {
@@ -107,7 +129,8 @@ export default function AvaliarPage() {
           fingerprint: 'fp_' + Math.random().toString(36).substr(2, 9),
           startTime: startTimeRef.current,
           endTime: Date.now(),
-          honeypot: !!honeypotValue
+          honeypot: !!honeypotValue,
+          perfil: userData
         })
       });
 
@@ -115,7 +138,7 @@ export default function AvaliarPage() {
         const resResults = await fetch(`/api/resultados/${candidato?.id}`);
         const dataResults = await resResults.json();
         setResults(dataResults);
-        setStep(5);
+        setStep(6);
       }
     } catch (error) {
       console.error(error);
@@ -142,7 +165,7 @@ export default function AvaliarPage() {
         />
       </div>
 
-      {/* Camada 3: Fundo Dinâmico (Parallax max 12px) */}
+      {/* Camada 3: Fundo Dinâmico (Parallax) */}
       <div 
         className="absolute inset-0 z-0 opacity-20 pointer-events-none"
         style={{
@@ -151,7 +174,6 @@ export default function AvaliarPage() {
         }}
       />
 
-      {/* Container Principal com Margens Seguras e Rolagem Interna controlada */}
       <div className="relative z-10 w-full h-full flex flex-col pt-safe pb-safe px-safe overflow-hidden">
         <AnimatePresence mode="wait">
           {loading || isSubmitting ? (
@@ -167,7 +189,7 @@ export default function AvaliarPage() {
                 <Fragmento id="sync-frag" label="" type="positivo" />
               </div>
               <div className="flex flex-col items-center gap-2">
-                <span className="text-[#d97757] font-display uppercase tracking-[0.5em] text-[10px] font-bold">
+                <span className="text-[#d97757] font-display uppercase tracking-[0.5em] text-[10px] font-bold shadow-sm">
                   {isSubmitting ? 'Ecoando sua Voz...' : 'Sincronizando Dados...'}
                 </span>
                 <div className="flex gap-1">
@@ -187,40 +209,50 @@ export default function AvaliarPage() {
               {step === 1 && (
                 <Etapa1 
                   userData={userData} 
-                  setUserData={setUserData} 
+                  setUserData={setUserData as any} 
                   onNext={() => setStep(2)} 
-                  cidades={cidades}
-                  perfis={perfis}
+                  config={config}
                 />
               )}
               {step === 2 && (
                 <Etapa2 
-                  cidade={userData.cidade}
-                  onSelect={(c) => { setCargo(c); fetchCandidatos(c); }} 
+                  userData={userData} 
+                  setUserData={setUserData as any} 
+                  onNext={() => setStep(3)} 
                   onBack={() => setStep(1)} 
+                  config={config}
                 />
               )}
               {step === 3 && (
                 <Etapa3 
-                  cargo={cargo}
-                  cidade={userData.cidade}
-                  candidatos={candidatos}
-                  onSelect={handleCandidatoSelect}
+                  userData={userData}
+                  setUserData={setUserData as any}
+                  onNext={() => { setStep(4); fetchCandidatos(); }}
                   onBack={() => setStep(2)}
+                  cidades={cidades}
                 />
               )}
-              {step === 4 && candidato && (
+              {step === 4 && (
                 <Etapa4 
+                  candidatos={candidatos}
+                  onSelect={handleCandidatoSelect}
+                  onBack={() => setStep(3)}
+                  onSearch={fetchCandidatos}
+                />
+              )}
+              {step === 5 && candidato && (
+                <Etapa5 
                   candidato={candidato}
                   evaluations={evaluations}
                   onAttributeClick={handleAttributeClick}
                   onSubmit={submitEvaluation}
                   isSubmitting={isSubmitting}
                   parallax={parallax}
+                  config={config}
                 />
               )}
-              {step === 5 && (
-                <Etapa5 
+              {step === 6 && (
+                <Etapa6 
                   results={results}
                   candidatoNome={candidato?.nome || ''}
                   onReset={() => window.location.reload()}

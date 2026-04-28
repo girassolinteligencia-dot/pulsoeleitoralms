@@ -5,15 +5,27 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const cidade = searchParams.get('cidade');
   const cargo = searchParams.get('cargo');
+  const search = searchParams.get('search') || '';
 
   try {
-    // Para cargos estaduais/federais, a cidade no banco é 'MATO GROSSO DO SUL'
-    // Então não devemos filtrar pela cidade selecionada pelo usuário nesses casos
+    // Buscar ano ativo nos parâmetros da plataforma
+    const paramAno = await prisma.parametroPlataforma.findUnique({
+      where: { chave: 'geral_ano_pleito' }
+    });
+    const anoAtivo = paramAno ? (paramAno.valor as number) : 2024;
+
     const normalizedCargo = (cargo || '').toLowerCase().trim();
     const isCargoEstadual = ['governador', 'senador', 'deputado federal', 'deputado estadual', 'presidente'].includes(normalizedCargo);
 
     const candidatos = await prisma.candidato.findMany({
       where: {
+        ano_eleicao: anoAtivo,
+        ...(search && {
+          nome: {
+            contains: search,
+            mode: 'insensitive'
+          }
+        }),
         ...(!isCargoEstadual && cidade && {
           cidade: {
             equals: cidade,

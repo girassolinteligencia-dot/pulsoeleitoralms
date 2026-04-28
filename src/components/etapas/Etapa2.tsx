@@ -2,86 +2,138 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Fragmento } from '../fragmento/Fragmento';
 
 interface Etapa2Props {
-  onSelect: (cargo: string) => void;
+  userData: {
+    sexo: string;
+    cor: string;
+    escolaridade: string;
+    estadoCivil: string;
+    faixaSalarial: string;
+    religiao: string;
+    ocupacao: string;
+    filhos: string;
+    orientacaoSexual: string;
+    deficiencia: string;
+    tempoResidencia: string;
+  };
+  setUserData: (data: any) => void;
+  onNext: () => void;
   onBack: () => void;
-  cidade: string;
+  config?: any;
 }
 
-export const Etapa2: React.FC<Etapa2Props> = ({ onSelect, onBack, cidade }) => {
-  const cargos = [
-    { label: 'Presidente', icon: '🇧🇷' },
-    { label: 'Governador', icon: '🏛️' },
-    { label: 'Senador', icon: '⚖️' },
-    { label: 'Deputado Federal', icon: '🤝' },
-    { label: 'Deputado Estadual', icon: '📝' },
-    { label: 'Prefeito', icon: '🏙️' },
-    { label: 'Vereador', icon: '🏠' }
-  ];
+export const Etapa2: React.FC<Etapa2Props> = ({ userData, setUserData, onNext, onBack, config }) => {
+  const options = {
+    sexo: ['Masculino', 'Feminino', 'Outro', 'Prefiro não dizer'],
+    cor: ['Branca', 'Preta', 'Parda', 'Amarela', 'Indígena', 'Outra'],
+    escolaridade: ['Sem Instrução', 'Fundamental', 'Médio', 'Superior', 'Pós-graduação', 'Doutorado/Mestrado'],
+    estadoCivil: ['Solteiro(a)', 'Casado(a)', 'Divorciado(a)', 'Viúvo(a)', 'União Estável'],
+    faixaSalarial: ['Até 1 salário', '1 a 3 salários', '3 a 6 salários', '6 a 10 salários', 'Acima de 10 salários'],
+    religiao: ['Católica', 'Evangélica', 'Espírita', 'Matriz Africana', 'Ateu/Agnóstico', 'Outra'],
+    ocupacao: ['Setor Privado', 'Servidor Público', 'Autônomo', 'Desempregado', 'Estudante', 'Aposentado'],
+    filhos: ['Nenhum', '1 filho', '2 filhos', '3 ou mais'],
+    orientacaoSexual: ['Heterossexual', 'LGBTQIAPN+', 'Outra', 'Prefiro não dizer'],
+    deficiencia: ['Nenhuma', 'Física', 'Visual', 'Auditiva', 'Intelectual/Outra'],
+    tempoResidencia: ['Menos de 2 anos', '2 a 5 anos', '5 a 10 anos', 'Mais de 10 anos'],
+  };
 
-  return (
-    <>
-      {/* Background Decorativo: Micro-fragmentos */}
-      <div className="absolute inset-0 z-0 opacity-10 pointer-events-none overflow-hidden">
-        <div className="absolute top-[10%] left-[5%]">
-          <Fragmento id="e2-bg-1" label="" type="positivo" style={{ width: '100px', height: '100px', filter: 'blur(20px)' }} />
-        </div>
-        <div className="absolute bottom-[20%] right-[10%]">
-          <Fragmento id="e2-bg-2" label="" type="negativo" style={{ width: '80px', height: '80px', filter: 'blur(15px)' }} />
-        </div>
-        <div className="absolute top-[40%] right-[20%]">
-          <Fragmento id="e2-bg-3" label="" type="perfil" style={{ width: '120px', height: '120px', filter: 'blur(25px)' }} />
-        </div>
-      </div>
+  const activeFields = config?.onboarding_campos || {
+    sexo: true, cor: true, escolaridade: true, estadoCivil: true, faixaSalarial: true,
+    religiao: true, ocupacao: true, filhos: true, orientacaoSexual: true, deficiencia: true, tempoResidencia: true
+  };
 
-      <motion.div 
-        className="relative z-10 w-full h-full flex flex-col items-center px-6 gap-6 overflow-y-auto pt-24 pb-safe no-scrollbar"
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 1.05, filter: 'blur(10px)' }}
-        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-      >
-        <div className="text-center shrink-0">
-          <span className="text-[8px] font-bold text-[#d97757] uppercase tracking-[0.4em] mb-2 block">Selecione a</span>
-          <h1 className="text-3xl font-bold font-display uppercase tracking-tight text-[#f5f0e8]">Esfera</h1>
-          <p className="text-[9px] text-[#7a6e64] uppercase tracking-widest mt-2 font-bold leading-relaxed px-4">
-            Cargos em <span className="text-[#c8933a]">{cidade}</span>
-          </p>
-        </div>
+  const isComplete = (
+    (!activeFields.sexo || userData.sexo) &&
+    (!activeFields.cor || userData.cor) &&
+    (!activeFields.escolaridade || userData.escolaridade) &&
+    (!activeFields.estadoCivil || userData.estadoCivil) &&
+    (!activeFields.faixaSalarial || userData.faixaSalarial) &&
+    (!activeFields.religiao || userData.religiao) &&
+    (!activeFields.ocupacao || userData.ocupacao) &&
+    (!activeFields.filhos || userData.filhos) &&
+    (!activeFields.orientacaoSexual || userData.orientacaoSexual) &&
+    (!activeFields.deficiencia || userData.deficiencia) &&
+    (!activeFields.tempoResidencia || userData.tempoResidencia)
+  );
 
-        <div className="grid grid-cols-1 gap-2 w-full max-w-[340px] pb-4">
-          {cargos.map((c) => (
-            <motion.button 
-              key={c.label}
-              whileHover={{ x: 5, backgroundColor: '#1c1814', borderColor: '#d97757' }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => onSelect(c.label)}
-              className="w-full bg-[#1c1814]/50 backdrop-blur-md border border-[#3d3128] rounded-2xl py-4 px-5 text-[10px] uppercase font-bold tracking-[0.2em] text-[#f5f0e8] text-left flex justify-between items-center transition-all group"
+  const renderSelect = (label: string, field: keyof typeof options, current: string) => {
+    if (activeFields[field] === false) return null;
+
+    return (
+      <div className="flex flex-col gap-2 w-full">
+        <label className="text-[9px] uppercase font-bold text-[#d97757] tracking-widest ml-1 drop-shadow-[0_0_8px_rgba(217,119,87,0.3)]">
+          {label}
+        </label>
+        <div className="grid grid-cols-2 gap-2">
+          {options[field].map((opt) => (
+            <button
+              key={opt}
+              onClick={() => setUserData({ ...userData, [field]: opt })}
+              className={`py-3 px-3 rounded-xl border text-[10px] font-bold uppercase tracking-tighter transition-all duration-300 ${
+                current === opt 
+                  ? 'bg-[#d97757] border-[#d97757] text-[#f5f0e8] shadow-[0_0_15px_rgba(217,119,87,0.3)]' 
+                  : 'bg-[#1c1814]/50 border-[#3d3128] text-[#7a6e64] hover:border-[#7a6e64]'
+              }`}
             >
-              <div className="flex items-center gap-4">
-                <span className="w-8 h-8 rounded-full bg-[#141413] flex items-center justify-center text-base group-hover:bg-[#d97757]/20 transition-colors">
-                  {c.icon}
-                </span>
-                {c.label}
-              </div>
-              <span className="text-[#d97757] opacity-50 group-hover:opacity-100 transition-all">
-                →
-              </span>
-            </motion.button>
+              {opt}
+            </button>
           ))}
         </div>
-        
-        <div className="mt-auto pb-8">
-          <button 
-            onClick={onBack} 
-            className="px-6 py-3 rounded-full bg-[#1c1814]/50 border border-[#3d3128] text-[8px] uppercase font-bold text-[#7a6e64] tracking-[0.3em] hover:text-[#f5f0e8] transition-colors"
-          >
-            ← Voltar
-          </button>
-        </div>
-      </motion.div>
-    </>
+      </div>
+    );
+  };
+
+  return (
+    <motion.div 
+      className="relative z-10 w-full h-full flex flex-col items-center px-6 gap-6 overflow-y-auto pt-24 pb-safe no-scrollbar"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.5 }}
+    >
+      <div className="text-center shrink-0">
+        <h1 className="text-3xl font-bold font-display uppercase tracking-tight text-[#f5f0e8] drop-shadow-[0_0_15px_rgba(245,240,232,0.3)]">
+          {config?.onboarding_etapa2_titulo || 'Perfil'}
+        </h1>
+        <p className="text-[10px] text-[#b0aea5] uppercase tracking-[0.4em] mt-2 font-bold">
+          DADOS DEMOGRÁFICOS
+        </p>
+      </div>
+
+      <div className="w-full max-w-[340px] flex flex-col gap-6 pb-10">
+        {renderSelect('Sexo', 'sexo', userData.sexo)}
+        {renderSelect('Cor/Raça', 'cor', userData.cor)}
+        {renderSelect('Escolaridade', 'escolaridade', userData.escolaridade)}
+        {renderSelect('Estado Civil', 'estadoCivil', userData.estadoCivil)}
+        {renderSelect('Renda Mensal', 'faixaSalarial', userData.faixaSalarial)}
+        {renderSelect('Religião', 'religiao', userData.religiao)}
+        {renderSelect('Ocupação', 'ocupacao', userData.ocupacao)}
+        {renderSelect('Filhos', 'filhos', userData.filhos)}
+        {renderSelect('Orientação Sexual', 'orientacaoSexual', userData.orientacaoSexual)}
+        {renderSelect('Deficiência', 'deficiencia', userData.deficiencia)}
+        {renderSelect('Tempo de Residência', 'tempoResidencia', userData.tempoResidencia)}
+      </div>
+
+      <div className="mt-auto pb-8 flex flex-col items-center gap-4 w-full">
+        <button 
+          onClick={() => onNext()}
+          disabled={!isComplete}
+          className={`w-full max-w-[300px] px-14 py-5 rounded-full font-bold text-[10px] uppercase tracking-[0.4em] transition-all duration-700 ${
+            isComplete
+              ? 'bg-[#d97757] text-[#f5f0e8] shadow-[0_0_50px_rgba(217,119,87,0.4)] scale-100 opacity-100' 
+              : 'bg-[#1c1814] text-[#7a6e64] opacity-20 scale-95 cursor-not-allowed border border-[#3d3128]'
+          }`}
+        >
+          Avançar
+        </button>
+        <button 
+          onClick={onBack} 
+          className="text-[9px] uppercase font-bold text-[#7a6e64] tracking-[0.3em] hover:text-[#f5f0e8] transition-colors"
+        >
+          ← Voltar
+        </button>
+      </div>
+    </motion.div>
   );
 };

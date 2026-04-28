@@ -59,6 +59,7 @@ model Candidato {
   numero             String?
   cargo              String
   foto_url           String?
+  ano_eleicao        Int      @default(2024)
   cidade             String
   bairro             String?
   status             String   @default("Ativo") // Ativo, Inativo
@@ -119,4 +120,15 @@ model AuditLog {
   criado_em   DateTime @default(now())
 
   @@map("audit_logs")
+}
+
+model ParametroPlataforma {
+  id          String   @id @default(cuid())
+  chave       String   @unique
+  valor       Json
+  grupo       String   @default("geral")
+  descricao   String?
+  updatedAt   DateTime @updatedAt
+
+  @@map("parametros_plataforma")
 }

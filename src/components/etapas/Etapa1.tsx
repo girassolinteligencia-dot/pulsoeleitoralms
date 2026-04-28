@@ -2,31 +2,28 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-
 import { Fragmento } from '../fragmento/Fragmento';
 
 interface Etapa1Props {
   userData: {
     nome: string;
-    cidade: string;
-    perfil: string[];
+    ideologia: string;
   };
-  setUserData: React.Dispatch<React.SetStateAction<{ nome: string; cidade: string; perfil: string[] }>>;
+  setUserData: (data: any) => void;
   onNext: () => void;
-  cidades: string[];
-  perfis: string[];
+  config?: any;
 }
 
-export const Etapa1: React.FC<Etapa1Props> = ({ userData, setUserData, onNext, cidades, perfis }) => {
-  const isComplete = userData.nome && userData.cidade && userData.perfil.length > 0;
+export const Etapa1: React.FC<Etapa1Props> = ({ userData, setUserData, onNext, config }) => {
+  const ideologias = [
+    { id: 'esquerda', label: 'Progressista', color: '#a8c47a' },
+    { id: 'centro-esquerda', label: 'Centro-Esquerda', color: '#8fb88e' },
+    { id: 'centro', label: 'Moderado', color: '#c8933a' },
+    { id: 'centro-direita', label: 'Centro-Direita', color: '#d99d57' },
+    { id: 'direita', label: 'Conservador', color: '#d97757' },
+  ];
 
-  const togglePerfil = (p: string) => {
-    if (userData.perfil.includes(p)) {
-      setUserData({ ...userData, perfil: userData.perfil.filter(item => item !== p) });
-    } else if (userData.perfil.length < 3) {
-      setUserData({ ...userData, perfil: [...userData.perfil, p] });
-    }
-  };
+  const isComplete = userData.nome && userData.ideologia;
 
   return (
     <motion.div 
@@ -37,75 +34,70 @@ export const Etapa1: React.FC<Etapa1Props> = ({ userData, setUserData, onNext, c
       transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
     >
       <div className="text-center shrink-0">
-        <h1 className="text-3xl md:text-4xl font-bold font-display uppercase tracking-tight text-[#f5f0e8]">Identificação</h1>
-        <p className="text-[9px] text-[#7a6e64] uppercase tracking-[0.4em] mt-2 font-bold">Prepare sua Voz</p>
+        <h1 className="text-3xl md:text-4xl font-bold font-display uppercase tracking-tight text-[#f5f0e8] drop-shadow-[0_0_15px_rgba(245,240,232,0.3)]">
+          {config?.onboarding_etapa1_titulo || 'Identificação'}
+        </h1>
+        <p className="text-[10px] text-[#b0aea5] uppercase tracking-[0.4em] mt-3 font-bold drop-shadow-sm">
+          Sincronize seu Perfil
+        </p>
       </div>
 
-      <div className="w-full max-w-[340px] flex flex-col gap-6">
-        <div className="flex flex-col gap-2">
-          <label className="text-[9px] uppercase font-bold text-[#d97757] tracking-widest ml-1">Como deseja ser chamado?</label>
+      <div className="w-full max-w-[340px] flex flex-col gap-8">
+        <div className="flex flex-col gap-3">
+          <label className="text-[10px] uppercase font-bold text-[#d97757] tracking-widest ml-1 drop-shadow-[0_0_8px_rgba(217,119,87,0.3)]">
+            Como deseja ser chamado?
+          </label>
           <input 
             type="text" 
             value={userData.nome}
             onChange={(e) => setUserData({ ...userData, nome: e.target.value })}
-            className="w-full bg-[#1c1814] border border-[#3d3128] rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-[#d97757]/50 transition-all placeholder:text-[#7a6e64]/30 text-[#f5f0e8]"
+            className="w-full bg-[#1c1814]/80 border border-[#3d3128] rounded-2xl px-6 py-5 text-sm focus:outline-none focus:border-[#d97757] transition-all placeholder:text-[#7a6e64]/50 text-[#f5f0e8] shadow-inner"
             placeholder="Seu nome ou apelido"
           />
         </div>
 
-        <div className="flex flex-col gap-2">
-          <label className="text-[9px] uppercase font-bold text-[#d97757] tracking-widest ml-1">Sua Localidade (MS)</label>
-          <div className="relative">
-            <select 
-              value={userData.cidade}
-              onChange={(e) => setUserData({ ...userData, cidade: e.target.value })}
-              title="Selecione sua cidade"
-              className="w-full bg-[#1c1814] border border-[#3d3128] rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-[#d97757]/50 transition-all appearance-none text-[#f5f0e8] cursor-pointer"
-            >
-              <option value="" className="bg-[#141413]">Selecione sua cidade...</option>
-              {cidades.map(c => <option key={c} value={c} className="bg-[#141413]">{c}</option>)}
-            </select>
-            <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-[#d97757]">
-              ↓
-            </div>
-          </div>
-        </div>
-
-        <div className="relative">
-          <p className="text-[9px] uppercase font-bold text-[#d97757] tracking-widest mb-6 text-center">Seu Perfil de Eleitor</p>
+        <div className="flex flex-col gap-6">
+          <label className="text-[10px] uppercase font-bold text-[#d97757] tracking-widest text-center drop-shadow-[0_0_8px_rgba(217,119,87,0.3)]">
+            Sua Linha Ideológica
+          </label>
           
-          {/* Fragment Cloud - Optimized for Mobile Viewport */}
-          <div className="flex flex-wrap justify-center items-center gap-x-8 gap-y-10 min-h-[140px] px-2">
-            {perfis.map(p => {
-              const isSelected = userData.perfil.includes(p);
+          <div className="flex flex-col gap-3">
+            {ideologias.map((item) => {
+              const isSelected = userData.ideologia === item.id;
               return (
-                <div key={p} className="relative">
-                  <Fragmento 
-                    id={`perfil-${p}`}
-                    label={p}
-                    type="perfil"
-                    onClick={() => togglePerfil(p)}
-                    style={{ 
-                      width: isSelected ? '64px' : '56px', 
-                      height: isSelected ? '64px' : '56px',
-                      opacity: isSelected ? 1 : 0.5,
-                      filter: isSelected ? 'none' : 'grayscale(100%) brightness(0.7)',
-                      transition: 'all 0.5s cubic-bezier(0.16, 1, 0.3, 1)'
-                    }}
-                  />
-                  {isSelected && (
-                    <motion.div 
-                      layoutId="perfil-indicator"
-                      className="absolute -top-1 -right-1 w-3 h-3 bg-[#d97757] rounded-full shadow-[0_0_10px_#d97757] z-50"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
+                <button
+                  key={item.id}
+                  onClick={() => setUserData({ ...userData, ideologia: item.id })}
+                  className={`group relative w-full py-4 px-6 rounded-2xl border transition-all duration-500 flex items-center justify-between ${
+                    isSelected 
+                      ? 'bg-[#1c1814] border-[#d97757] shadow-[0_0_20px_rgba(217,119,87,0.15)]' 
+                      : 'bg-transparent border-[#3d3128] hover:border-[#7a6e64]'
+                  }`}
+                >
+                  <span className={`text-xs font-bold uppercase tracking-wider transition-colors ${
+                    isSelected ? 'text-[#f5f0e8]' : 'text-[#7a6e64] group-hover:text-[#b0aea5]'
+                  }`}>
+                    {item.label}
+                  </span>
+                  
+                  <div className="flex items-center gap-2">
+                    <div 
+                      className="w-2 h-2 rounded-full shadow-[0_0_8px_currentColor]" 
+                      style={{ color: item.color, backgroundColor: item.color }} 
                     />
-                  )}
-                </div>
+                    {isSelected && (
+                      <motion.div 
+                        layoutId="check-ideology"
+                        className="w-4 h-4 bg-[#d97757] rounded-full flex items-center justify-center text-[8px] text-white"
+                      >
+                        ✓
+                      </motion.div>
+                    )}
+                  </div>
+                </button>
               );
             })}
           </div>
-          <p className="text-[8px] text-center text-[#7a6e64] uppercase mt-6 opacity-70 tracking-widest font-bold">Até 3 características (Toque p/ vincular)</p>
         </div>
       </div>
 
@@ -113,13 +105,13 @@ export const Etapa1: React.FC<Etapa1Props> = ({ userData, setUserData, onNext, c
         <button 
           onClick={() => onNext()}
           disabled={!isComplete}
-          className={`relative z-50 px-12 py-5 rounded-full font-bold text-[10px] uppercase tracking-[0.4em] transition-all duration-700 ${
+          className={`relative z-50 px-14 py-5 rounded-full font-bold text-[10px] uppercase tracking-[0.4em] transition-all duration-700 ${
             isComplete
-              ? 'bg-[#d97757] text-[#f5f0e8] shadow-[0_0_50px_rgba(217,119,87,0.4)] scale-100 hover:scale-105 active:scale-95 cursor-pointer opacity-100' 
+              ? 'bg-[#d97757] text-[#f5f0e8] shadow-[0_0_50px_rgba(217,119,87,0.4)] scale-100 hover:scale-105 active:scale-95 cursor-pointer' 
               : 'bg-[#1c1814] text-[#7a6e64] opacity-20 scale-95 cursor-not-allowed border border-[#3d3128]'
           }`}
         >
-          Iniciar Experiência
+          Avançar
         </button>
       </div>
     </motion.div>

@@ -28,14 +28,27 @@ export default function AdminDashboard() {
   }, []);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+    const checkAuth = async () => {
+      // Verifica Bypass de Emergência primeiro
+      const hasBypass = localStorage.getItem('admin_bypass') === 'true';
+      
+      if (hasBypass) {
+        fetchRecent();
+        setLoading(false);
+        return;
+      }
+
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      
       if (!currentSession) {
         router.push('/admin/login');
       } else {
         fetchRecent();
       }
       setLoading(false);
-    });
+    };
+
+    checkAuth();
 
     // Real-time subscription
     const channel = supabase

@@ -1,30 +1,45 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { motion } from 'framer-motion';
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
+  const [accessCode, setAccessCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setMessage(null);
 
+    // Rota de Emergência
+    if (accessCode === 'GI2026') {
+      localStorage.setItem('admin_bypass', 'true');
+      router.push('/admin/dashboard');
+      return;
+    }
+
+    const getURL = () => {
+      let url = window.location.origin;
+      return url.endsWith('/') ? url : `${url}/`;
+    };
+
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: `${window.location.origin}/admin/dashboard`,
+        emailRedirectTo: `${getURL()}admin/dashboard`,
       },
     });
 
     if (error) {
       setMessage({ type: 'error', text: error.message });
     } else {
-      setMessage({ type: 'success', text: 'Link de acesso enviado para seu e-mail!' });
+      setMessage({ type: 'success', text: 'Link de acesso enviado para o seu e-mail!' });
     }
     setLoading(false);
   };
@@ -60,11 +75,25 @@ export default function AdminLoginPage() {
             <div className="relative group">
               <input 
                 type="email" 
-                required
+                required={!accessCode}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full bg-white/5 border border-white/5 focus:border-primary/50 outline-none rounded-2xl px-6 py-5 text-sm text-white transition-all placeholder:text-white/20"
                 placeholder="admin@vozpublica.gov"
+              />
+              <div className="absolute inset-0 rounded-2xl border border-primary/20 opacity-0 group-focus-within:opacity-100 pointer-events-none transition-opacity" />
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <label className="text-[8px] uppercase font-bold text-text-muted tracking-[0.3em] ml-4">Código Master (Bypass)</label>
+            <div className="relative group">
+              <input 
+                type="password" 
+                value={accessCode}
+                onChange={(e) => setAccessCode(e.target.value)}
+                className="w-full bg-white/5 border border-white/5 focus:border-primary/50 outline-none rounded-2xl px-6 py-5 text-sm text-white transition-all placeholder:text-white/20"
+                placeholder="••••••"
               />
               <div className="absolute inset-0 rounded-2xl border border-primary/20 opacity-0 group-focus-within:opacity-100 pointer-events-none transition-opacity" />
             </div>

@@ -30,7 +30,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     const checkAuth = async () => {
       // Verifica Bypass de Emergência primeiro
-      const hasBypass = localStorage.getItem('admin_bypass') === 'true';
+      const hasBypass = typeof window !== 'undefined' && localStorage.getItem('admin_bypass') === 'true';
       
       if (hasBypass) {
         fetchRecent();
@@ -44,23 +44,23 @@ export default function AdminDashboard() {
         router.push('/admin/login');
       } else {
         fetchRecent();
+        
+        // Ativa Real-time apenas com sessão real para evitar erros de JWT
+        const channel = supabase
+          .channel('avaliacoes_realtime')
+          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'avaliacoes' }, () => {
+            fetchRecent();
+          })
+          .subscribe();
+
+        return () => {
+          supabase.removeChannel(channel);
+        };
       }
       setLoading(false);
     };
 
     checkAuth();
-
-    // Real-time subscription
-    const channel = supabase
-      .channel('avaliacoes_realtime')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'avaliacoes' }, () => {
-        fetchRecent();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, [router, fetchRecent]);
 
   if (loading) return (

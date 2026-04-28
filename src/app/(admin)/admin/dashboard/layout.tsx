@@ -48,18 +48,22 @@ export default function DashboardLayout({
       }
     };
 
-    // Escuta mudanças de estado (útil para quando o Magic Link acabou de processar a URL)
+    // Escuta mudanças de estado
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
+      const hasBypass = typeof window !== 'undefined' && localStorage.getItem('admin_bypass') === 'true';
+      
       if (event === 'SIGNED_IN') {
         const userEmail = currentSession?.user?.email?.toLowerCase().trim() || '';
         if (ALLOWED_EMAILS.includes(userEmail)) {
           setSession(currentSession);
           setLoading(false);
         } else {
-          supabase.auth.signOut().then(() => router.push('/admin/login'));
+          supabase.auth.signOut().then(() => {
+            if (!hasBypass) router.push('/admin/login');
+          });
         }
       } else if (event === 'SIGNED_OUT') {
-        router.push('/admin/login');
+        if (!hasBypass) router.push('/admin/login');
       }
     });
 

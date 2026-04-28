@@ -45,13 +45,14 @@ async function importCandidatos() {
     const idx = {
       sq_cand: header.indexOf('SQ_CANDIDATO'),
       nome: header.indexOf('NM_CANDIDATO'),
+      nome_urna: header.indexOf('NM_URNA_CANDIDATO'),
       cargo: header.indexOf('DS_CARGO'),
       uf: header.indexOf('SG_UF'),
       ue: header.indexOf('NM_UE'),
       situacao: header.indexOf('DS_SITUACAO_CANDIDATURA'),
     };
 
-    console.log(`Mapeamento: SQ=${idx.sq_cand}, Nome=${idx.nome}, Cargo=${idx.cargo}`);
+    console.log(`Mapeamento: SQ=${idx.sq_cand}, Nome=${idx.nome}, Urna=${idx.nome_urna}, Cargo=${idx.cargo}`);
 
     let count = 0;
     let photosCount = 0;
@@ -66,6 +67,7 @@ async function importCandidatos() {
     for (const cells of cellsList) {
       const sqCand = cells[idx.sq_cand];
       const nome = cells[idx.nome];
+      const nomeUrna = cells[idx.nome_urna];
       const cargo = cells[idx.cargo];
       const uf = cells[idx.uf];
       const cidade = cells[idx.ue];
@@ -77,9 +79,10 @@ async function importCandidatos() {
       
       const item = {
         id: `cand-${sqCand}`,
-        nome,
+        nome: `${nomeUrna} (${nome})`, // Concatenar nome de urna para facilitar busca
         cargo,
         cidade,
+        ano_eleicao: parseInt(year),
         foto_url: hasPhoto ? `/candidatos/${photoName}` : null,
         campanha_id: campanha.id,
       };

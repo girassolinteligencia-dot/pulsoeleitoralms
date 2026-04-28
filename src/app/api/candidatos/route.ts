@@ -27,10 +27,20 @@ export async function GET(req: NextRequest) {
           }
         }),
         ...(!isCargoEstadual && cidade && {
-          cidade: {
-            equals: cidade,
-            mode: 'insensitive'
-          }
+          OR: [
+            {
+              cidade: {
+                equals: cidade,
+                mode: 'insensitive'
+              }
+            },
+            {
+              cidade: {
+                equals: 'MATO GROSSO DO SUL',
+                mode: 'insensitive'
+              }
+            }
+          ]
         }),
         ...(cargo && {
           cargo: {

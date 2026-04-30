@@ -1,24 +1,45 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-// GET all candidates for admin
+// GET candidates for admin with pagination
 export async function GET(req: NextRequest) {
   try {
-    const candidatos = await prisma.candidato.findMany({
-      where: {
-        ano_eleicao: {
-          in: [2022, 2024]
+    const { searchParams } = new URL(req.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '50');
+    const search = searchParams.get('search') || '';
+    const skip = (page - 1) * limit;
+
+    const where = {
+      ano_eleicao: { in: [2022, 2024] },
+      ...(search && {
+        nome: {
+          contains: search,
+          mode: 'insensitive' as const,
         }
-      },
-      include: {
-        campanha: true
-      },
-      orderBy: { nome: 'asc' }
+      }),
+    };
+
+    const [candidatos, total] = await Promise.all([
+      prisma.candidato.findMany({
+        where,
+        include: { campanha: true },
+        orderBy: { nome: 'asc' },
+        take: limit,
+        skip,
+      }),
+      prisma.candidato.count({ where }),
+    ]);
+
+    return NextResponse.json({
+      data: candidatos,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
     });
-    return NextResponse.json(candidatos);
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error('Erro ao buscar candidatos admin:', error);
+    return NextResponse.json({ data: [], total: 0, page: 1, totalPages: 0 }, { status: 200 });
   }
 }
 
@@ -46,3 +67,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
+

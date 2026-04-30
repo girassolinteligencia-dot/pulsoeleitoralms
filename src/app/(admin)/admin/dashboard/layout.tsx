@@ -82,6 +82,7 @@ export default function DashboardLayout({
 
   const navItems = [
     { id: 'home', label: 'Início', icon: '📊', path: '/admin/dashboard' },
+    { id: 'campanhas', label: 'Campanhas', icon: '📢', path: '/admin/dashboard/campanhas' },
     { id: 'candidatos', label: 'Candidatos', icon: '👥', path: '/admin/dashboard/candidatos' },
     { id: 'bloqueios', label: 'Segurança', icon: '🛡️', path: '/admin/dashboard/bloqueios' },
   ];
@@ -129,13 +130,7 @@ export default function DashboardLayout({
               {item.label}
             </button>
           ))}
-          <button 
-            onClick={() => router.push('/admin/dashboard/campanhas')}
-            className="flex items-center gap-4 text-left text-[11px] uppercase font-bold text-text-muted hover:text-white transition-all tracking-[0.2em]"
-          >
-            <span className="text-lg opacity-40">📢</span>
-            Campanhas
-          </button>
+
         </nav>
 
         <div className="mt-auto flex flex-col gap-4">

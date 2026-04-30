@@ -81,10 +81,13 @@ export default function DashboardLayout({
   );
 
   const navItems = [
-    { id: 'home', label: 'Início', icon: '📊', path: '/admin/dashboard' },
+    { id: 'home', label: 'Início', icon: '🏠', path: '/admin/dashboard' },
     { id: 'campanhas', label: 'Campanhas', icon: '📢', path: '/admin/dashboard/campanhas' },
     { id: 'candidatos', label: 'Candidatos', icon: '👥', path: '/admin/dashboard/candidatos' },
-    { id: 'parametros', label: 'Parâmetros', icon: '⚙️', path: '/admin/dashboard/parametros' },
+    { id: 'atributos', label: 'Atributos', icon: '🏷️', path: '/admin/atributos' },
+    { id: 'moderacao', label: 'Moderação', icon: '⚖️', path: '/admin/moderacao' },
+    { id: 'relatorios', label: 'Relatórios', icon: '📊', path: '/admin/relatorios' },
+    { id: 'configuracoes', label: 'Configurações', icon: '⚙️', path: '/admin/dashboard/configuracoes' },
     { id: 'bloqueios', label: 'Segurança', icon: '🛡️', path: '/admin/dashboard/bloqueios' },
   ];
 

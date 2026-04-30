@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 
 /**
  * GET /api/admin/atributos
- * Retorna todos os atributos cadastrados.
+ * Retorna todos os atributos cadastrados (incluindo os ocultos, para o admin).
  */
 export async function GET() {
   try {
@@ -22,9 +22,15 @@ export async function GET() {
  */
 export async function POST(req: NextRequest) {
   try {
-    const { nome, descricao, polaridade, icone } = await req.json();
+    const { nome, descricao, polaridade, icone, visivel } = await req.json();
     const atributo = await prisma.atributo.create({
-      data: { nome, descricao, polaridade, icone }
+      data: { 
+        nome, 
+        descricao, 
+        polaridade, 
+        icone,
+        visivel: visivel !== undefined ? visivel : true
+      }
     });
     return NextResponse.json(atributo);
   } catch {
@@ -34,14 +40,22 @@ export async function POST(req: NextRequest) {
 
 /**
  * PUT /api/admin/atributos
- * Atualiza um atributo existente.
+ * Atualiza um atributo existente (nome, descricao, polaridade, visibilidade).
  */
 export async function PUT(req: NextRequest) {
   try {
-    const { id, nome, descricao, polaridade, icone } = await req.json();
+    const { id, nome, descricao, polaridade, icone, visivel } = await req.json();
+    const data: Record<string, unknown> = {};
+    
+    if (nome !== undefined) data.nome = nome;
+    if (descricao !== undefined) data.descricao = descricao;
+    if (polaridade !== undefined) data.polaridade = polaridade;
+    if (icone !== undefined) data.icone = icone;
+    if (visivel !== undefined) data.visivel = visivel;
+
     const atributo = await prisma.atributo.update({
       where: { id },
-      data: { nome, descricao, polaridade, icone }
+      data
     });
     return NextResponse.json(atributo);
   } catch {

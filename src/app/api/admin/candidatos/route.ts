@@ -68,3 +68,28 @@ export async function POST(req: NextRequest) {
   }
 }
 
+
+// PATCH update a candidate
+export async function PATCH(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { id, nome, partido, numero, cargo, cidade, foto_url } = body;
+    
+    const candidato = await prisma.candidato.update({
+      where: { id },
+      data: {
+        nome,
+        partido,
+        numero,
+        cargo,
+        cidade,
+        foto_url
+      }
+    });
+
+    return NextResponse.json(candidato);
+  } catch (error) {
+    console.error('Erro ao atualizar candidato:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}

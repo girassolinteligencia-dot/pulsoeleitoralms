@@ -16,6 +16,7 @@ import { Fragmento } from '@/components/fragmento/Fragmento';
 interface Atributo {
   id: string;
   nome: string;
+  polaridade: number;
 }
 
 interface Candidato {
@@ -135,13 +136,24 @@ export default function AvaliarPage() {
       });
 
       if (res.ok) {
-        const resResults = await fetch(`/api/resultados/${candidato?.id}`);
-        const dataResults = await resResults.json();
-        setResults(dataResults);
+        // Try to fetch results, but don't block advancement if this fails
+        try {
+          const resResults = await fetch(`/api/resultados/${candidato?.id}`);
+          const dataResults = await resResults.json();
+          setResults(Array.isArray(dataResults) ? dataResults : []);
+        } catch {
+          console.warn('Não foi possível carregar resultados');
+          setResults([]);
+        }
         setStep(6);
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        console.error('Erro ao enviar avaliação:', errorData);
+        alert('Ocorreu um erro ao enviar sua avaliação. Tente novamente.');
       }
     } catch (error) {
-      console.error(error);
+      console.error('Erro de conexão:', error);
+      alert('Erro de conexão. Verifique sua internet e tente novamente.');
     } finally {
       setIsSubmitting(false);
     }

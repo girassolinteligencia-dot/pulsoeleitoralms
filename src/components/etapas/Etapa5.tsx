@@ -7,7 +7,7 @@ import Image from 'next/image';
 interface Atributo {
   id: string;
   nome: string;
-  tipo: 'positivo' | 'negativo';
+  polaridade: number;
 }
 
 interface Candidato {
@@ -16,6 +16,9 @@ interface Candidato {
   cargo: string;
   cidade: string;
   foto_url?: string;
+  campanha?: {
+    atributos: { atributo: Atributo }[];
+  };
 }
 
 interface Etapa5Props {
@@ -34,51 +37,14 @@ export const Etapa5: React.FC<Etapa5Props> = ({
   onAttributeClick, 
   onSubmit, 
   isSubmitting,
-  parallax,
-  config
+  parallax
 }) => {
-  const atributosFixos: Atributo[] = [
-    { id: 'pos1', nome: 'Ficha Limpa', tipo: 'positivo' },
-    { id: 'pos2', nome: 'Experiência', tipo: 'positivo' },
-    { id: 'pos3', nome: 'Propostas Claras', tipo: 'positivo' },
-    { id: 'pos4', nome: 'Liderança', tipo: 'positivo' },
-    { id: 'pos5', nome: 'Diálogo', tipo: 'positivo' },
-    { id: 'pos6', nome: 'Inovação', tipo: 'positivo' },
-    { id: 'pos7', nome: 'Transparência', tipo: 'positivo' },
-    { id: 'pos8', nome: 'Compromisso Social', tipo: 'positivo' },
-    { id: 'pos9', nome: 'Empatia', tipo: 'positivo' },
-    { id: 'pos10', nome: 'Conhecimento Técnico', tipo: 'positivo' },
-    { id: 'pos11', nome: 'Honestidade', tipo: 'positivo' },
-    { id: 'pos12', nome: 'Foco em Resultados', tipo: 'positivo' },
-    { id: 'pos13', nome: 'Visão de Futuro', tipo: 'positivo' },
-    { id: 'pos14', nome: 'Sustentabilidade', tipo: 'positivo' },
-    { id: 'pos15', nome: 'Ética Profissional', tipo: 'positivo' },
-    { id: 'neg1', nome: 'Corrupção', tipo: 'negativo' },
-    { id: 'neg2', nome: 'Promessas Vazias', tipo: 'negativo' },
-    { id: 'neg3', nome: 'Inexperiência', tipo: 'negativo' },
-    { id: 'neg4', nome: 'Radicalismo', tipo: 'negativo' },
-    { id: 'neg5', nome: 'Falta de Ética', tipo: 'negativo' },
-    { id: 'neg6', nome: 'Oportunismo', tipo: 'negativo' },
-    { id: 'neg7', nome: 'Negligência', tipo: 'negativo' },
-    { id: 'neg8', nome: 'Autoritarismo', tipo: 'negativo' },
-    { id: 'neg9', nome: 'Incoerência', tipo: 'negativo' },
-    { id: 'neg10', nome: 'Populismo', tipo: 'negativo' },
-    { id: 'neg11', nome: 'Nepotismo', tipo: 'negativo' },
-    { id: 'neg12', nome: 'Falta de Preparo', tipo: 'negativo' },
-    { id: 'neg13', nome: 'Arrogância', tipo: 'negativo' },
-    { id: 'neg14', nome: 'Desorganização', tipo: 'negativo' },
-    { id: 'neg15', nome: 'Manipulação', tipo: 'negativo' },
-  ];
+  // Extract ALL attributes from the candidate's campaign — unified, no division
+  const allAttributes = (candidato.campanha?.atributos?.map(a => a.atributo) || [])
+    .sort((a, b) => a.nome.localeCompare(b.nome));
 
-  const atributosAtivos = config?.avaliacao_atributos_ativos || atributosFixos.map((a: any) => a.id);
-  const atributosFiltrados = atributosFixos.filter(a => atributosAtivos.includes(a.id));
-
-  // Show only first 5 positive and first 5 negative by default
-  const positivos = atributosFiltrados.filter(a => a.tipo === 'positivo').slice(0, 5);
-  const negativos = atributosFiltrados.filter(a => a.tipo === 'negativo').slice(0, 5);
-
-  const totalVisivel = positivos.length + negativos.length;
-  const progresso = (evaluations.length / totalVisivel) * 100;
+  const totalVisivel = allAttributes.length;
+  const progresso = totalVisivel > 0 ? (evaluations.length / totalVisivel) * 100 : 0;
 
   return (
     <motion.div 
@@ -156,93 +122,57 @@ export const Etapa5: React.FC<Etapa5Props> = ({
           Selecione as características que você associa a este candidato
         </motion.p>
 
-        {/* Positive Attributes Section */}
-        <div className="w-full flex flex-col gap-2">
-          <div className="flex items-center gap-2 mb-1">
-            <div className="w-2.5 h-2.5 rounded-full bg-[#3a9a5c]" />
-            <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-[#3a9a5c] font-display">
-              Qualidades
-            </span>
+        {/* Unified Attributes — No polarity division */}
+        {allAttributes.length > 0 && (
+          <div className="w-full flex flex-col gap-2">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-2.5 h-2.5 rounded-full bg-[#d97757]" />
+              <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-[#d97757] font-display">
+                Características
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {allAttributes.map((item, i) => {
+                const isSelected = evaluations.some(e => e.atributoId === item.id);
+                return (
+                  <motion.button
+                    key={item.id}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: i * 0.03 }}
+                    onClick={() => onAttributeClick(item.id, item.polaridade)}
+                    disabled={isSelected}
+                    className={`
+                      relative px-5 py-3.5 rounded-2xl text-[12px] font-bold uppercase tracking-[0.15em] font-display
+                      transition-all duration-300 cursor-pointer select-none
+                      ${isSelected 
+                        ? 'bg-[#d97757] text-[#f5f0e8] shadow-[0_0_20px_rgba(217,119,87,0.4)] scale-95 opacity-80' 
+                        : 'bg-[#1c1814] text-[#b0aea5] border border-[#3d3128] hover:border-[#d97757] hover:text-[#d97757] hover:shadow-[0_0_15px_rgba(217,119,87,0.15)] active:scale-95'
+                      }
+                    `}
+                  >
+                    {isSelected && (
+                      <motion.span 
+                        className="absolute top-1 right-1.5 text-[10px]"
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                      >
+                        ✓
+                      </motion.span>
+                    )}
+                    {item.nome}
+                  </motion.button>
+                );
+              })}
+            </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {positivos.map((item, i) => {
-              const isSelected = evaluations.some(e => e.atributoId === item.id);
-              return (
-                <motion.button
-                  key={item.id}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: i * 0.06 }}
-                  onClick={() => onAttributeClick(item.id, 1)}
-                  disabled={isSelected}
-                  className={`
-                    relative px-5 py-3.5 rounded-2xl text-[12px] font-bold uppercase tracking-[0.15em] font-display
-                    transition-all duration-300 cursor-pointer select-none
-                    ${isSelected 
-                      ? 'bg-[#3a9a5c] text-[#f5f0e8] shadow-[0_0_20px_rgba(58,154,92,0.4)] scale-95 opacity-80' 
-                      : 'bg-[#1c1814] text-[#b0aea5] border border-[#3d3128] hover:border-[#3a9a5c] hover:text-[#3a9a5c] hover:shadow-[0_0_15px_rgba(58,154,92,0.15)] active:scale-95'
-                    }
-                  `}
-                >
-                  {isSelected && (
-                    <motion.span 
-                      className="absolute top-1 right-1.5 text-[10px]"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                    >
-                      ✓
-                    </motion.span>
-                  )}
-                  {item.nome}
-                </motion.button>
-              );
-            })}
+        )}
+        
+        {totalVisivel === 0 && (
+          <div className="w-full py-12 flex flex-col items-center justify-center border border-dashed border-[#3d3128] rounded-3xl opacity-50">
+            <span className="text-[10px] uppercase tracking-widest font-bold text-[#7a6e64]">Nenhum atributo disponível</span>
           </div>
-        </div>
-
-        {/* Negative Attributes Section */}
-        <div className="w-full flex flex-col gap-2 mt-2">
-          <div className="flex items-center gap-2 mb-1">
-            <div className="w-2.5 h-2.5 rounded-full bg-[#c94444]" />
-            <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-[#c94444] font-display">
-              Pontos Negativos
-            </span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {negativos.map((item, i) => {
-              const isSelected = evaluations.some(e => e.atributoId === item.id);
-              return (
-                <motion.button
-                  key={item.id}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.3 + i * 0.06 }}
-                  onClick={() => onAttributeClick(item.id, -1)}
-                  disabled={isSelected}
-                  className={`
-                    relative px-5 py-3.5 rounded-2xl text-[12px] font-bold uppercase tracking-[0.15em] font-display
-                    transition-all duration-300 cursor-pointer select-none
-                    ${isSelected 
-                      ? 'bg-[#c94444] text-[#f5f0e8] shadow-[0_0_20px_rgba(201,68,68,0.4)] scale-95 opacity-80' 
-                      : 'bg-[#1c1814] text-[#b0aea5] border border-[#3d3128] hover:border-[#c94444] hover:text-[#c94444] hover:shadow-[0_0_15px_rgba(201,68,68,0.15)] active:scale-95'
-                    }
-                  `}
-                >
-                  {isSelected && (
-                    <motion.span 
-                      className="absolute top-1 right-1.5 text-[10px]"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                    >
-                      ✓
-                    </motion.span>
-                  )}
-                  {item.nome}
-                </motion.button>
-              );
-            })}
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Fixed Bottom Action Bar */}

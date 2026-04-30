@@ -15,15 +15,25 @@ interface RecentEvaluation {
 export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [recentEvaluations, setRecentEvaluations] = useState<RecentEvaluation[]>([]);
+  const [stats, setStats] = useState({ totalEvaluations: 0 });
   const router = useRouter();
 
   const fetchRecent = useCallback(async () => {
     try {
-      const res = await fetch('/api/admin/recent-evaluations');
-      const data = await res.json();
-      setRecentEvaluations(data);
+      const [resRecent, resStats] = await Promise.all([
+        fetch('/api/admin/recent-evaluations'),
+        fetch('/api/admin/stats')
+      ]);
+      
+      const [dataRecent, dataStats] = await Promise.all([
+        resRecent.json(),
+        resStats.json()
+      ]);
+
+      setRecentEvaluations(dataRecent);
+      setStats(dataStats);
     } catch (error) {
-      console.error('Error fetching recent evaluations:', error);
+      console.error('Error fetching dashboard data:', error);
     }
   }, []);
 
@@ -86,7 +96,7 @@ export default function AdminDashboard() {
           </a>
           <div className="bg-surface-1 border border-border rounded-2xl px-6 py-4 md:px-8 md:py-5 text-center min-w-[140px] flex-1 md:flex-none">
             <p className="text-[8px] md:text-[9px] text-text-muted uppercase font-bold tracking-widest">Total Avaliações</p>
-            <p className="text-xl md:text-2xl font-bold text-primary mt-1 md:mt-2">1.248</p>
+            <p className="text-xl md:text-2xl font-bold text-primary mt-1 md:mt-2">{stats.totalEvaluations.toLocaleString('pt-BR')}</p>
           </div>
         </div>
       </header>

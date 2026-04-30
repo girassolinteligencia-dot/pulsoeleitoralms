@@ -27,6 +27,11 @@ export async function GET(req: NextRequest) {
             atributos: {
               include: {
                 atributo: true
+              },
+              where: {
+                atributo: {
+                  visivel: true
+                }
               }
             }
           }

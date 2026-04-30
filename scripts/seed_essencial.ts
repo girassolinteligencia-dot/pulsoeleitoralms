@@ -11,14 +11,39 @@ async function seedEssentials() {
 
   // ─── 1. CRIAR ATRIBUTOS ────────────────────────────────────────
   const atributosData = [
-    { nome: 'Honestidade',     descricao: 'Integridade e transparência na conduta pública',  icone: '🛡️', polaridade: 1 },
-    { nome: 'Competência',     descricao: 'Capacidade técnica e administrativa',              icone: '🎯', polaridade: 1 },
-    { nome: 'Liderança',       descricao: 'Capacidade de mobilizar e guiar a comunidade',     icone: '🏛️', polaridade: 1 },
-    { nome: 'Comunicação',     descricao: 'Clareza e acessibilidade na comunicação pública',  icone: '📢', polaridade: 1 },
-    { nome: 'Compromisso Social', descricao: 'Atenção às causas sociais e ao bem-estar coletivo', icone: '🤝', polaridade: 1 },
-    { nome: 'Corrupção',       descricao: 'Envolvimento em esquemas de corrupção',             icone: '💰', polaridade: -1 },
-    { nome: 'Nepotismo',       descricao: 'Favorecimento de familiares e aliados',             icone: '👨‍👩‍👧', polaridade: -1 },
-    { nome: 'Populismo',       descricao: 'Promessas sem viabilidade técnica ou fiscal',       icone: '🎭', polaridade: -1 },
+    // Positivos (15)
+    { nome: 'Ficha Limpa',       descricao: 'Histórico político sem condenações',                icone: '✨', polaridade: 1 },
+    { nome: 'Experiência',       descricao: 'Vivência e histórico em gestão pública',            icone: '📚', polaridade: 1 },
+    { nome: 'Propostas Claras',  descricao: 'Plano de governo objetivo e viável',                icone: '📝', polaridade: 1 },
+    { nome: 'Liderança',         descricao: 'Capacidade de mobilizar e guiar a comunidade',      icone: '🏛️', polaridade: 1 },
+    { nome: 'Diálogo',           descricao: 'Abertura para ouvir a população e oposição',        icone: '🗣️', polaridade: 1 },
+    { nome: 'Inovação',          descricao: 'Busca por novas soluções e tecnologias',            icone: '💡', polaridade: 1 },
+    { nome: 'Transparência',     descricao: 'Clareza e acesso aos dados públicos',               icone: '🔍', polaridade: 1 },
+    { nome: 'Compromisso Social',descricao: 'Atenção às causas sociais e bem-estar coletivo',    icone: '🤝', polaridade: 1 },
+    { nome: 'Empatia',           descricao: 'Capacidade de entender e sentir a dor do outro',    icone: '❤️', polaridade: 1 },
+    { nome: 'Conhecimento Técnico', descricao: 'Domínio sobre administração e políticas públicas', icone: '🎓', polaridade: 1 },
+    { nome: 'Honestidade',       descricao: 'Integridade e retidão na conduta pública',          icone: '🛡️', polaridade: 1 },
+    { nome: 'Foco em Resultados',descricao: 'Orientação para entregas e efetividade',            icone: '🎯', polaridade: 1 },
+    { nome: 'Visão de Futuro',   descricao: 'Planejamento a longo prazo',                        icone: '🔭', polaridade: 1 },
+    { nome: 'Sustentabilidade',  descricao: 'Preocupação com o meio ambiente',                   icone: '🌱', polaridade: 1 },
+    { nome: 'Ética Profissional',descricao: 'Conduta moral no ambiente de trabalho',             icone: '⚖️', polaridade: 1 },
+
+    // Negativos (15)
+    { nome: 'Corrupção',         descricao: 'Envolvimento em esquemas de desvio',                icone: '💰', polaridade: -1 },
+    { nome: 'Promessas Vazias',  descricao: 'Falar sem cumprir ou sem viabilidade',              icone: '🎈', polaridade: -1 },
+    { nome: 'Inexperiência',     descricao: 'Falta de conhecimento em gestão pública',           icone: '📉', polaridade: -1 },
+    { nome: 'Radicalismo',       descricao: 'Postura extrema e aversão ao diálogo',              icone: '🔥', polaridade: -1 },
+    { nome: 'Falta de Ética',    descricao: 'Comportamento imoral ou inadequado',                icone: '🛑', polaridade: -1 },
+    { nome: 'Oportunismo',       descricao: 'Aproveitar-se de situações para ganho próprio',     icone: '🦊', polaridade: -1 },
+    { nome: 'Negligência',       descricao: 'Omissão no cuidado com a coisa pública',            icone: '🙈', polaridade: -1 },
+    { nome: 'Autoritarismo',     descricao: 'Imposição de vontades sem consultar o povo',        icone: '👑', polaridade: -1 },
+    { nome: 'Incoerência',       descricao: 'Contradição entre discurso e prática',              icone: '🎭', polaridade: -1 },
+    { nome: 'Populismo',         descricao: 'Medidas imediatistas apenas para ganhar apoio',     icone: '🎪', polaridade: -1 },
+    { nome: 'Nepotismo',         descricao: 'Favorecimento de familiares e amigos',              icone: '👨‍👩‍👧', polaridade: -1 },
+    { nome: 'Falta de Preparo',  descricao: 'Desconhecimento dos problemas reais da cidade',     icone: '🤷', polaridade: -1 },
+    { nome: 'Arrogância',        descricao: 'Soberba e distanciamento do eleitor',               icone: '😤', polaridade: -1 },
+    { nome: 'Desorganização',    descricao: 'Gestão caótica e sem planejamento',                 icone: '🌪️', polaridade: -1 },
+    { nome: 'Manipulação',       descricao: 'Uso de mentiras para enganar a população',          icone: '🕸️', polaridade: -1 },
   ];
 
   console.log('📝 Criando atributos...');

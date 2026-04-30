@@ -34,6 +34,7 @@ model Atributo {
   descricao   String?
   icone       String?
   polaridade  Int      @default(1) // 1: Positivo, -1: Negativo
+  visivel     Boolean  @default(true) // Controle de visibilidade no frontend
   
   campanhas   CampanhaAtributo[]
   avaliacoes  Avaliacao[]

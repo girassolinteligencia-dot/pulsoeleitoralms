@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { adminFetch } from '@/lib/adminClient';
 
 interface Atributo {
   id: string;
@@ -20,7 +21,7 @@ export default function AtributosAdmin() {
   useEffect(() => {
     const loadAtributos = async () => {
       try {
-        const res = await fetch('/api/admin/atributos');
+        const res = await adminFetch('/api/admin/atributos');
         const data = await res.json();
         setAtributos(data);
       } catch (error) {
@@ -31,7 +32,7 @@ export default function AtributosAdmin() {
   }, []);
 
   const fetchAtributos = async () => {
-    const res = await fetch('/api/admin/atributos');
+    const res = await adminFetch('/api/admin/atributos');
     const data = await res.json();
     setAtributos(data);
   };
@@ -41,7 +42,7 @@ export default function AtributosAdmin() {
     if (!editingAtributo?.nome) return;
 
     try {
-      const res = await fetch('/api/admin/atributos', {
+      const res = await adminFetch('/api/admin/atributos', {
         method: editingAtributo.id ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editingAtributo)
@@ -59,7 +60,7 @@ export default function AtributosAdmin() {
   const handleToggleVisivel = async (atributo: Atributo) => {
     setTogglingId(atributo.id);
     try {
-      const res = await fetch('/api/admin/atributos', {
+      const res = await adminFetch('/api/admin/atributos', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 

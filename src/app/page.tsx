@@ -66,7 +66,7 @@ export default function LandingPage() {
               <div className="w-full h-full rounded-2xl bg-[#1c1814] flex items-center justify-center overflow-hidden relative">
                 <Image 
                   src="/gi/logo-256.png" 
-                  alt="Voz Pública Logo" 
+                  alt="Pulso Eleitoral MS Logo" 
                   width={64}
                   height={64}
                   className="w-12 h-12 sm:w-16 sm:h-16 object-contain"
@@ -96,7 +96,7 @@ export default function LandingPage() {
               className="text-sm sm:text-lg md:text-xl text-[#b0aea5] max-w-lg mx-auto leading-relaxed px-4"
               style={{ fontFamily: TOKENS.FONTS.BODY }}
             >
-              A plataforma de inteligência e percepção pública do Mato Grosso do Sul. <br className="hidden sm:block" />
+              PULSO ELEITORAL MS é a plataforma de inteligência e percepção pública do Mato Grosso do Sul. <br className="hidden sm:block" />
               Um espaço seguro, projetado para que sua visão modele as Eleições de 2026.
             </motion.p>
           </div>
@@ -126,7 +126,7 @@ export default function LandingPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 1, delay: 1.2 }}
-            className="mt-12 flex items-center gap-6 sm:gap-8 text-[#7a6e64] text-[8px] sm:text-[10px] uppercase tracking-widest font-bold"
+            className="mt-12 flex flex-wrap items-center justify-center gap-5 sm:gap-8 text-[#7a6e64] text-[8px] sm:text-[10px] uppercase tracking-widest font-bold"
           >
             <span className="flex items-center gap-1.5">
               <div className="w-1 h-1 rounded-full bg-[#d97757]" />
@@ -140,6 +140,12 @@ export default function LandingPage() {
               <div className="w-1 h-1 rounded-full bg-[#a8c47a]" />
               MS-2026
             </span>
+            <Link href="/privacidade" className="hover:text-[#d97757] transition-colors">
+              Privacidade
+            </Link>
+            <Link href="/termos" className="hover:text-[#d97757] transition-colors">
+              Termos
+            </Link>
           </motion.div>
         </motion.div>
       </div>

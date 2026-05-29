@@ -1,4 +1,4 @@
--- Migração Manual para VOZ PÚBLICA
+-- Migração Manual para PULSO ELEITORAL MS
 
 -- Adicionar campo status em campanhas
 DO $$ 

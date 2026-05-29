@@ -6,6 +6,7 @@ import { RadarChart } from '@/components/resultado/RadarChart';
 import { PercepcaoDashboard } from '@/components/resultado/PercepcaoDashboard';
 import Image from 'next/image';
 import { Fragmento } from '../fragmento/Fragmento';
+import { CandidatePhoto } from '@/components/ui/CandidatePhoto';
 
 interface ResultData {
   atributo: string;
@@ -17,78 +18,83 @@ interface Etapa6Props {
   results: ResultData[];
   advancedResults: any;
   candidatoNome: string;
+  candidatoCargo?: string;
+  candidatoCidade?: string;
+  candidatoPartido?: string;
+  candidatoFotoUrl?: string | null;
   onReset: () => void;
 }
 
-export const Etapa6: React.FC<Etapa6Props> = ({ results, advancedResults, candidatoNome, onReset }) => {
-  const totalVozes = results.reduce((acc, curr) => acc + curr.total, 0);
-
+export const Etapa6: React.FC<Etapa6Props> = ({
+  results,
+  advancedResults,
+  candidatoNome,
+  candidatoCargo,
+  candidatoCidade,
+  candidatoPartido,
+  candidatoFotoUrl,
+  onReset,
+}) => {
   return (
     <motion.div 
-      className="relative w-full h-full flex flex-col items-center pt-20 px-6 overflow-y-auto pb-safe no-scrollbar"
+      className="relative w-full h-full flex flex-col items-center pt-16 px-3 overflow-y-auto pb-safe no-scrollbar"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 1 }}
     >
-      <div className="shrink-0 flex items-center gap-2 px-4 py-2 bg-[#c8933a]/10 rounded-full border border-[#c8933a]/20 mb-8">
+      <div className="shrink-0 flex items-center gap-2 px-4 py-2 bg-[#c8933a]/10 rounded-full border border-[#c8933a]/20 mb-5">
         <Image src="/gi/logo-32.png" alt="GI" width={16} height={16} />
-        <span className="text-[#c8933a] text-[7px] font-bold uppercase tracking-widest">Auditoria Pública MS-2026</span>
+        <span className="text-[#c8933a] text-[7px] font-bold uppercase tracking-widest">Percepção Pública MS</span>
       </div>
 
-      <div className="text-center mb-8 shrink-0">
-        <h2 className="text-xl font-bold font-display uppercase tracking-tight text-[#f5f0e8] drop-shadow-[0_0_15px_rgba(245,240,232,0.3)]">Inteligência da Voz</h2>
-        <p className="text-[10px] text-[#b0aea5] uppercase tracking-[0.3em] font-bold mt-2 leading-relaxed">
-          Percepção coletiva: <br/>
-          <span className="text-[#d97757]">{candidatoNome}</span>
-        </p>
+      <div className="text-center mb-4 shrink-0 w-full max-w-md">
+        <h2 className="text-xl font-bold font-display uppercase tracking-tight text-[#f5f0e8] drop-shadow-[0_0_15px_rgba(245,240,232,0.3)]">
+          Inteligência do Pulso
+        </h2>
       </div>
 
-      <div className="relative w-full max-w-[360px] aspect-square flex items-center justify-center shrink-0">
+      <section className="w-full max-w-md mb-5 bg-[#1c1814]/60 border border-[#3d3128] rounded-xl p-3 flex items-center gap-3 shrink-0">
+        <div className="w-[64px] h-[84px] rounded-lg overflow-hidden border border-[#d97757]/30 bg-[#141413] shrink-0 shadow-[0_0_24px_rgba(217,119,87,0.12)]">
+          <CandidatePhoto src={candidatoFotoUrl} alt={candidatoNome || 'Candidato'} size={96} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <span className="text-[8px] text-[#d97757] uppercase tracking-[0.2em] font-bold">
+            Percepção coletiva
+          </span>
+          <h3 className="mt-2 text-[13px] font-bold font-display uppercase tracking-[0.06em] text-[#f5f0e8] leading-snug break-words">
+            {candidatoNome}
+          </h3>
+          <p className="mt-2 text-[8px] text-[#7a6e64] uppercase tracking-[0.12em] font-bold leading-relaxed break-words">
+            {[candidatoCargo, candidatoPartido, candidatoCidade].filter(Boolean).join(' • ')}
+          </p>
+        </div>
+      </section>
+
+      <section className="w-full max-w-md mb-5 shrink-0">
+        <div className="mb-3 px-1">
+          <span className="text-[9px] uppercase tracking-[0.22em] text-[#f5f0e8] font-bold">
+            Gráfico radar / teia de aranha
+          </span>
+        </div>
+        <div className="relative w-full aspect-square flex items-center justify-center">
         <div className="absolute inset-0 z-0 flex items-center justify-center opacity-20 blur-3xl pointer-events-none scale-150">
           <Fragmento id="result-core" label="" type="positivo" />
         </div>
         
-        <div className="relative z-10 w-full h-full bg-[#1c1814]/40 backdrop-blur-xl rounded-[3rem] border border-[#3d3128] p-2 shadow-2xl flex items-center justify-center">
+        <div className="relative z-10 w-full h-full bg-[#1c1814]/40 backdrop-blur-xl rounded-2xl border border-[#3d3128] p-2 shadow-2xl flex items-center justify-center">
           <RadarChart data={results} />
         </div>
-      </div>
-
-      <motion.div 
-        className="mt-8 w-full max-w-[340px] flex flex-col gap-4 shrink-0"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5, duration: 0.8 }}
-      >
-        <div className="flex justify-between items-end px-1">
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[8px] text-[#7a6e64] uppercase tracking-[0.4em] font-bold">Engajamento</span>
-            <span className="text-xl font-bold font-display text-[#f5f0e8] tabular-nums">{totalVozes.toLocaleString()}</span>
-          </div>
-          <span className="text-[9px] text-[#d97757] font-bold uppercase tracking-widest pb-1">Vozes Ativas</span>
         </div>
-        
-        <div className="h-1.5 w-full bg-[#1c1814] rounded-full overflow-hidden border border-[#3d3128]/50 shadow-[0_0_10px_rgba(217,119,87,0.1)]">
-          <motion.div 
-            className="h-full bg-gradient-to-r from-[#d97757] via-[#c8933a] to-[#d97757] bg-[length:200%_100%]" 
-            initial={{ width: 0 }} 
-            animate={{ width: '100%', backgroundPosition: ['0% 0%', '100% 0%'] }} 
-            transition={{ 
-              width: { duration: 1.5, ease: 'circOut' },
-              backgroundPosition: { duration: 4, repeat: Infinity, ease: 'linear' }
-            }} 
-          />
-        </div>
-      </motion.div>
+      </section>
 
-      {/* Advanced Indicators Dashboard */}
-      <div className="w-full mt-12 mb-8 max-w-[340px]">
+      <div className="w-full mb-8 max-w-md">
         <PercepcaoDashboard data={advancedResults} />
       </div>
 
-      <div className="mt-auto pt-8 pb-12 w-full flex flex-col items-center gap-6">
+      <div className="mt-auto pt-4 pb-10 w-full flex flex-col items-center gap-6">
         <motion.button 
           onClick={onReset} 
-          className="w-full max-w-[240px] py-5 rounded-full bg-[#1c1814] text-[#f5f0e8] border border-[#3d3128] font-bold text-[9px] uppercase tracking-[0.5em] transition-all shadow-xl hover:border-[#d97757]"
+          className="w-full max-w-[240px] py-4 rounded-full bg-[#1c1814] text-[#f5f0e8] border border-[#3d3128] font-bold text-[9px] uppercase tracking-[0.32em] transition-all shadow-xl hover:border-[#d97757]"
         >
           Nova Manifestação
         </motion.button>

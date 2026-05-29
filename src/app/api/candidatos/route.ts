@@ -1,33 +1,67 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { buildPublicCandidateWhere, getPublicScopeConfig } from '@/lib/publicScope';
+import { getFotoUrl } from '@/lib/supabase';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const search = searchParams.get('search') || '';
+  const search = (searchParams.get('search') || '').trim();
 
   try {
-    // Query de candidatos restrita aos anos de 2022 e 2024
-
+    // Cidade/bairro informados pelo usuario sao variaveis do respondente.
+    // A busca publica deve manter todos os candidatos ativos disponiveis.
+    const scopeConfig = await getPublicScopeConfig();
     const candidatos = await prisma.candidato.findMany({
-      where: {
-        status: 'Ativo',
-        ano_eleicao: {
-          in: [2022, 2024]
-        },
+      where: buildPublicCandidateWhere(scopeConfig, {
         ...(search && {
-          nome: {
-            contains: search,
-            mode: 'insensitive'
-          }
+          OR: [
+            {
+              nome: {
+                contains: search,
+                mode: 'insensitive'
+              }
+            },
+            {
+              cargo: {
+                contains: search,
+                mode: 'insensitive'
+              }
+            },
+            {
+              partido: {
+                contains: search,
+                mode: 'insensitive'
+              }
+            },
+            {
+              cidade: {
+                contains: search,
+                mode: 'insensitive'
+              }
+            }
+          ]
         }),
-      },
+      }),
+      orderBy: { nome: 'asc' },
       take: 50,
-      include: {
+      select: {
+        id: true,
+        nome: true,
+        partido: true,
+        cargo: true,
+        cidade: true,
+        foto_url: true,
         campanha: {
-          include: {
+          select: {
             atributos: {
-              include: {
-                atributo: true
+              select: {
+                atributo: {
+                  select: {
+                    id: true,
+                    nome: true,
+                    polaridade: true
+                  }
+                }
               },
               where: {
                 atributo: {
@@ -40,7 +74,12 @@ export async function GET(req: NextRequest) {
       }
     });
 
-    return NextResponse.json(candidatos);
+    return NextResponse.json(
+      candidatos.map((candidato) => ({
+        ...candidato,
+        foto_url: getFotoUrl(candidato.foto_url),
+      }))
+    );
   } catch (error) {
     console.error('Erro ao buscar candidatos:', error);
     return NextResponse.json([], { status: 200 });

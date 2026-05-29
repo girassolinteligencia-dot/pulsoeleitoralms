@@ -15,8 +15,8 @@ const roboto = Roboto({
 });
 
 export const metadata: Metadata = {
-  title: "VOZ PÚBLICA | Mato Grosso do Sul 2026",
-  description: "Plataforma pública de avaliação cidadã de candidatos políticos.",
+  title: "PULSO ELEITORAL MS | Mato Grosso do Sul 2026",
+  description: "Plataforma de inteligência e percepção pública eleitoral de Mato Grosso do Sul.",
 };
 
 export default function RootLayout({

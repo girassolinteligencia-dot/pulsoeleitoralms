@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import Image from 'next/image';
+import { CandidatePhoto } from '@/components/ui/CandidatePhoto';
 
 interface Atributo {
   id: string;
@@ -78,7 +78,7 @@ export const Etapa5: React.FC<Etapa5Props> = ({
       </AnimatePresence>
 
       {/* Content Container */}
-      <div className="relative z-10 w-full max-w-md flex flex-col items-center gap-3 px-5 pt-16 pb-28">
+      <div className="relative z-10 w-full max-w-2xl flex flex-col items-center gap-3 px-4 sm:px-5 pt-16 pb-32">
         
         {/* Candidate Header — Compact */}
         <motion.div 
@@ -92,21 +92,15 @@ export const Etapa5: React.FC<Etapa5Props> = ({
             className="relative w-[48px] h-[48px] flex-shrink-0 rounded-full border-2 border-[#d97757] overflow-hidden shadow-[0_0_20px_rgba(217,119,87,0.2)] bg-[#1c1814]"
             style={{ x: parallax.x * 2, y: parallax.y * 2 }}
           >
-            {candidato.foto_url ? (
-              <Image src={candidato.foto_url} alt={candidato.nome} width={48} height={48} className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-[#d97757]/40 bg-[#1c1814]">
-                <span className="text-[8px] font-bold uppercase tracking-wider">{candidato.nome.split(' ')[0]}</span>
-              </div>
-            )}
+            <CandidatePhoto src={candidato.foto_url} alt={candidato.nome} />
           </motion.div>
 
           {/* Candidate Info */}
-          <div className="flex flex-col min-w-0">
+          <div className="flex flex-col min-w-0 flex-1">
             <h2 className="text-sm font-bold font-display uppercase tracking-[0.1em] text-[#f5f0e8] truncate">
               {candidato.nome}
             </h2>
-            <p className="text-[9px] text-[#b0aea5] font-body uppercase tracking-[0.2em] mt-0.5 font-bold">
+            <p className="text-[9px] text-[#b0aea5] font-body uppercase tracking-[0.16em] sm:tracking-[0.2em] mt-0.5 font-bold truncate">
               {candidato.cargo} · {candidato.cidade}
             </p>
           </div>
@@ -120,11 +114,11 @@ export const Etapa5: React.FC<Etapa5Props> = ({
             transition={{ type: 'spring', stiffness: 50, damping: 15 }}
           />
         </div>
-        <div className="w-full flex justify-between items-center -mt-2">
-          <p className="text-[9px] text-[#7a6e64] uppercase tracking-[0.4em] font-bold">
+        <div className="w-full flex justify-between items-center gap-3 -mt-2">
+          <p className="text-[8px] sm:text-[9px] text-[#7a6e64] uppercase tracking-[0.22em] sm:tracking-[0.4em] font-bold leading-relaxed">
             Associação de Perfil
           </p>
-          <p className="text-[9px] text-[#d97757] uppercase tracking-[0.4em] font-bold">
+          <p className="text-[8px] sm:text-[9px] text-[#d97757] uppercase tracking-[0.22em] sm:tracking-[0.4em] font-bold text-right shrink-0">
             {evaluations.length} / {minimoSelecao} (Mínimo)
           </p>
         </div>
@@ -142,7 +136,7 @@ export const Etapa5: React.FC<Etapa5Props> = ({
         {/* Unified Attributes — No polarity division */}
         {visibleAttributes.length > 0 && (
           <div className="w-full flex flex-col gap-1.5 mt-1">
-            <div className="flex flex-wrap gap-1.5 justify-center">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {visibleAttributes.map((item, i) => {
                 const isSelected = evaluations.some(e => e.atributoId === item.id);
                 return (
@@ -153,8 +147,8 @@ export const Etapa5: React.FC<Etapa5Props> = ({
                     transition={{ delay: i * 0.01 }}
                     onClick={() => onAttributeClick(item.id, item.polaridade)}
                     className={`
-                      relative px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-[0.1em] font-display
-                      transition-all duration-200 cursor-pointer select-none
+                      relative min-h-11 px-3 py-2 rounded-xl text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.08em] font-display
+                      transition-all duration-200 cursor-pointer select-none leading-snug break-words
                       ${isSelected 
                         ? 'bg-[#d97757] text-[#f5f0e8] shadow-[0_0_15px_rgba(217,119,87,0.3)] scale-95' 
                         : 'bg-[#1c1814] text-[#b0aea5] border border-[#3d3128] hover:border-[#d97757] hover:text-[#d97757] active:scale-95'
@@ -186,11 +180,11 @@ export const Etapa5: React.FC<Etapa5Props> = ({
       </div>
 
       {/* Fixed Bottom Action Bar */}
-      <div className="fixed bottom-0 left-0 w-full z-50 bg-gradient-to-t from-[#141413] via-[#141413]/95 to-transparent pt-4 pb-6 px-6 flex flex-col items-center gap-2">
+      <div className="fixed bottom-0 left-0 w-full z-50 bg-gradient-to-t from-[#141413] via-[#141413]/95 to-transparent pt-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] px-4 sm:px-6 flex flex-col items-center gap-2">
         <button 
           onClick={onNext}
           disabled={!canSubmit || isSubmitting}
-          className={`w-full max-w-md py-3 rounded-xl font-bold text-xs uppercase tracking-[0.2em] transition-all duration-500 font-display ${
+          className={`w-full max-w-md py-3.5 rounded-xl font-bold text-xs uppercase tracking-[0.18em] transition-all duration-500 font-display ${
             canSubmit 
               ? 'bg-gradient-to-r from-[#d97757] to-[#c8933a] text-[#f5f0e8] shadow-[0_0_30px_rgba(217,119,87,0.3)] hover:shadow-[0_0_50px_rgba(217,119,87,0.4)] active:scale-[0.98]' 
               : 'bg-[#1c1814] text-[#7a6e64] opacity-40 border border-[#3d3128] cursor-not-allowed'
@@ -208,4 +202,3 @@ export const Etapa5: React.FC<Etapa5Props> = ({
     </motion.div>
   );
 };
-

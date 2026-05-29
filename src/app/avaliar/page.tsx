@@ -24,6 +24,7 @@ interface Atributo {
 interface Candidato {
   id: string;
   nome: string;
+  partido?: string;
   cargo: string;
   cidade: string;
   foto_url?: string;
@@ -45,7 +46,6 @@ export default function AvaliarPage() {
   const [config, setConfig] = useState<any>(null);
   
   const [userData, setUserData] = useState({
-    nome: '',
     ideologia: '',
     sexo: '',
     cor: '',
@@ -60,6 +60,11 @@ export default function AvaliarPage() {
     tempoResidencia: '',
     cidade: '',
     bairro: '',
+    uf: '',
+    localidadeOrigem: '',
+    bairrosPossiveis: [] as { bairro: string; registros?: number; proporcao?: number }[],
+    bairroConfianca: null as number | null,
+    precisaConfirmarBairro: false,
   });
 
   useEffect(() => {
@@ -85,18 +90,46 @@ export default function AvaliarPage() {
   const [advancedResults, setAdvancedResults] = useState<any>(null);
   const [honeypotValue, setHoneypotValue] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const startTimeRef = useRef<number>(0);
+  const [sessionToken, setSessionToken] = useState<string | null>(null);
+  const fingerprintRef = useRef('');
   
   const parallax = useGiroscopio();
 
+  const getFingerprint = () => {
+    if (!fingerprintRef.current) {
+      fingerprintRef.current = `fp_${globalThis.crypto?.randomUUID?.() || Math.random().toString(36).slice(2)}`;
+    }
+
+    return fingerprintRef.current;
+  };
+
   const cidades = ['Campo Grande', 'Dourados', 'Três Lagoas', 'Ponta Porã', 'Corumbá', 'Naviraí', 'Nova Andradina', 'Aquidauana', 'Sidrolândia', 'Paranaíba'];
+
+  const needsRegionStep = () => (
+    !userData.cidade ||
+    !userData.bairro ||
+    userData.precisaConfirmarBairro ||
+    userData.localidadeOrigem === 'manual_pendente'
+  );
+
+  const goToCandidateSearch = () => {
+    if (needsRegionStep()) {
+      setStep(3);
+      return;
+    }
+
+    setStep(4);
+    fetchCandidatos();
+  };
   
   const fetchCandidatos = async (query: string = '') => {
     setLoading(true);
     try {
-      const res = await fetch(
-        `/api/candidatos?cidade=${encodeURIComponent(userData.cidade)}&bairro=${encodeURIComponent(userData.bairro)}&search=${encodeURIComponent(query)}`
-      );
+      const params = new URLSearchParams({
+        search: query,
+      });
+
+      const res = await fetch(`/api/candidatos?${params.toString()}`);
       const data = await res.json();
       const lista = Array.isArray(data) ? data : [];
       setCandidatos(lista);
@@ -108,10 +141,33 @@ export default function AvaliarPage() {
     }
   };
 
-  const handleCandidatoSelect = (cand: Candidato) => {
-    startTimeRef.current = Date.now();
-    setCandidato(cand);
-    setStep(5);
+  const handleCandidatoSelect = async (cand: Candidato) => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/avaliar/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          candidatoId: cand.id,
+          fingerprint: getFingerprint(),
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Não foi possível iniciar a sessão de avaliação.');
+      }
+
+      const data = await res.json();
+      setSessionToken(data.token);
+      setEvaluations([]);
+      setCandidato(cand);
+      setStep(5);
+    } catch (error) {
+      console.error('Erro ao iniciar sessão de avaliação:', error);
+      alert('Não foi possível iniciar a avaliação. Tente novamente.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleAttributeClick = (atributoId: string, valor: number) => {
@@ -127,10 +183,34 @@ export default function AvaliarPage() {
 
   const submitEvaluation = async (finalAprovacao?: boolean, finalExpectativa?: boolean) => {
     if (isSubmitting) return;
+    if (!sessionToken) {
+      alert('Sessão de avaliação expirada. Selecione o candidato novamente.');
+      setStep(4);
+      return;
+    }
     setIsSubmitting(true);
 
     const curAprovacao = finalAprovacao !== undefined ? finalAprovacao : aprovacao;
     const curExpectativa = finalExpectativa !== undefined ? finalExpectativa : expectativaVitoria;
+    const perfilManifestacao = {
+      ideologia: userData.ideologia,
+      sexo: userData.sexo,
+      cor: userData.cor,
+      escolaridade: userData.escolaridade,
+      estadoCivil: userData.estadoCivil,
+      faixaSalarial: userData.faixaSalarial,
+      religiao: userData.religiao,
+      ocupacao: userData.ocupacao,
+      filhos: userData.filhos,
+      orientacaoSexual: userData.orientacaoSexual,
+      deficiencia: userData.deficiencia,
+      tempoResidencia: userData.tempoResidencia,
+      cidade: userData.cidade,
+      bairro: userData.bairro,
+      uf: userData.uf || 'MS',
+      localidadeOrigem: userData.localidadeOrigem || 'manual',
+      bairroConfianca: userData.bairroConfianca,
+    };
 
     try {
       await new Promise(resolve => setTimeout(resolve, 1200));
@@ -141,11 +221,10 @@ export default function AvaliarPage() {
         body: JSON.stringify({
           candidatoId: candidato?.id,
           avaliacoes: evaluations,
-          fingerprint: 'fp_' + Math.random().toString(36).substr(2, 9),
-          startTime: startTimeRef.current,
-          endTime: Date.now(),
+          fingerprint: getFingerprint(),
+          sessionToken,
           honeypot: !!honeypotValue,
-          perfil: userData,
+          perfil: perfilManifestacao,
           aprovacao: curAprovacao,
           expectativaVitoria: curExpectativa
         })
@@ -222,7 +301,7 @@ export default function AvaliarPage() {
               </div>
               <div className="flex flex-col items-center gap-2">
                 <span className="text-[#d97757] font-display uppercase tracking-[0.5em] text-[10px] font-bold shadow-sm">
-                  {isSubmitting ? 'Ecoando sua Voz...' : 'Sincronizando Dados...'}
+                  {isSubmitting ? 'Registrando seu Pulso...' : 'Sincronizando Dados...'}
                 </span>
                 <div className="flex gap-1">
                   {[0, 1, 2].map(i => (
@@ -250,7 +329,7 @@ export default function AvaliarPage() {
                 <Etapa2 
                   userData={userData} 
                   setUserData={setUserData as any} 
-                  onNext={() => setStep(3)} 
+                  onNext={goToCandidateSearch} 
                   onBack={() => setStep(1)} 
                   config={config}
                 />
@@ -268,8 +347,10 @@ export default function AvaliarPage() {
                 <Etapa4 
                   candidatos={candidatos}
                   onSelect={handleCandidatoSelect}
-                  onBack={() => setStep(3)}
+                  onBack={() => setStep(2)}
+                  onEditRegion={() => setStep(3)}
                   onSearch={fetchCandidatos}
+                  regionLabel={[userData.bairro, userData.cidade, userData.uf || 'MS'].filter(Boolean).join(' • ')}
                 />
               )}
               {step === 5 && candidato && (
@@ -304,6 +385,10 @@ export default function AvaliarPage() {
                   results={results}
                   advancedResults={advancedResults}
                   candidatoNome={candidato?.nome || ''}
+                  candidatoCargo={candidato?.cargo}
+                  candidatoCidade={candidato?.cidade}
+                  candidatoPartido={candidato?.partido}
+                  candidatoFotoUrl={candidato?.foto_url}
                   onReset={() => window.location.reload()}
                 />
               )}

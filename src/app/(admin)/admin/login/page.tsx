@@ -1,44 +1,47 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { motion } from 'framer-motion';
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
-  const [accessCode, setAccessCode] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
-  const router = useRouter();
+  const [mode, setMode] = useState<'password' | 'magic'>('password');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setMessage(null);
 
-    // Rota de Emergência
-    if (accessCode === 'GI2026') {
-      localStorage.setItem('admin_bypass', 'true');
-      router.push('/admin/dashboard');
-      return;
-    }
-
     const getURL = () => {
       const url = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
       return url.endsWith('/') ? url : `${url}/`;
     };
 
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: `${getURL()}admin/dashboard`,
-      },
-    });
+    const { error } = mode === 'password'
+      ? await supabase.auth.signInWithPassword({
+          email,
+          password,
+        })
+      : await supabase.auth.signInWithOtp({
+          email,
+          options: {
+            emailRedirectTo: `${getURL()}admin/dashboard`,
+            shouldCreateUser: false,
+          },
+        });
 
     if (error) {
       setMessage({ type: 'error', text: error.message });
     } else {
+      if (mode === 'password') {
+        window.location.href = '/admin/dashboard';
+        return;
+      }
+
       setMessage({ type: 'success', text: 'Link de acesso enviado para o seu e-mail!' });
     }
     setLoading(false);
@@ -63,41 +66,61 @@ export default function AdminLoginPage() {
             transition={{ delay: 0.2 }}
             className="text-3xl md:text-4xl font-bold font-display uppercase tracking-[0.3em] text-[#f5f0e8]"
           >
-            VOZ<span className="text-primary">PÚBLICA</span>
+            PULSO<span className="text-primary">ELEITORAL</span>
           </motion.h1>
           <div className="h-px w-12 bg-primary/40 mx-auto mt-4 mb-3" />
-          <p className="text-[9px] text-text-muted uppercase font-bold tracking-[0.4em] opacity-60">Admin Intelligence</p>
+          <p className="text-[9px] text-text-muted uppercase font-bold tracking-[0.4em] opacity-60">MS Intelligence</p>
         </div>
 
         <form onSubmit={handleLogin} className="flex flex-col gap-8">
+          <div className="grid grid-cols-2 gap-2 bg-white/5 p-1 rounded-2xl border border-white/5">
+            <button
+              type="button"
+              onClick={() => setMode('password')}
+              className={`py-3 rounded-xl text-[9px] font-bold uppercase tracking-widest transition-all ${mode === 'password' ? 'bg-primary text-white' : 'text-text-muted hover:text-white'}`}
+            >
+              Senha
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode('magic')}
+              className={`py-3 rounded-xl text-[9px] font-bold uppercase tracking-widest transition-all ${mode === 'magic' ? 'bg-primary text-white' : 'text-text-muted hover:text-white'}`}
+            >
+              E-mail
+            </button>
+          </div>
+
           <div className="flex flex-col gap-3">
             <label className="text-[8px] uppercase font-bold text-text-muted tracking-[0.3em] ml-4">Credencial de Acesso</label>
             <div className="relative group">
               <input 
                 type="email" 
-                required={!accessCode}
+                required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full bg-white/5 border border-white/5 focus:border-primary/50 outline-none rounded-2xl px-6 py-5 text-sm text-white transition-all placeholder:text-white/20"
-                placeholder="admin@vozpublica.gov"
+                placeholder="admin@pulsoeleitoral.ms"
               />
               <div className="absolute inset-0 rounded-2xl border border-primary/20 opacity-0 group-focus-within:opacity-100 pointer-events-none transition-opacity" />
             </div>
           </div>
 
-          <div className="flex flex-col gap-3">
-            <label className="text-[8px] uppercase font-bold text-text-muted tracking-[0.3em] ml-4">Código Master (Bypass)</label>
-            <div className="relative group">
-              <input 
-                type="password" 
-                value={accessCode}
-                onChange={(e) => setAccessCode(e.target.value)}
-                className="w-full bg-white/5 border border-white/5 focus:border-primary/50 outline-none rounded-2xl px-6 py-5 text-sm text-white transition-all placeholder:text-white/20"
-                placeholder="••••••"
-              />
-              <div className="absolute inset-0 rounded-2xl border border-primary/20 opacity-0 group-focus-within:opacity-100 pointer-events-none transition-opacity" />
+          {mode === 'password' && (
+            <div className="flex flex-col gap-3">
+              <label className="text-[8px] uppercase font-bold text-text-muted tracking-[0.3em] ml-4">Senha</label>
+              <div className="relative group">
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full bg-white/5 border border-white/5 focus:border-primary/50 outline-none rounded-2xl px-6 py-5 text-sm text-white transition-all placeholder:text-white/20"
+                  placeholder="••••••••"
+                />
+                <div className="absolute inset-0 rounded-2xl border border-primary/20 opacity-0 group-focus-within:opacity-100 pointer-events-none transition-opacity" />
+              </div>
             </div>
-          </div>
+          )}
 
           {message && (
             <motion.div 
@@ -113,12 +136,16 @@ export default function AdminLoginPage() {
             </motion.div>
           )}
 
+          <p className="text-[8px] text-text-muted uppercase tracking-[0.2em] leading-relaxed opacity-50 text-center">
+            Use um e-mail previamente cadastrado no Supabase Auth e autorizado em ADMIN_EMAILS.
+          </p>
+
           <button 
             type="submit"
             disabled={loading}
             className="w-full bg-primary text-white py-6 rounded-full font-bold text-[10px] uppercase tracking-[0.4em] shadow-2xl shadow-primary/30 hover:brightness-110 active:scale-95 transition-all disabled:opacity-50 relative overflow-hidden"
           >
-            <span className="relative z-10">{loading ? 'Solicitando...' : 'Entrar no Sistema'}</span>
+            <span className="relative z-10">{loading ? 'Solicitando...' : mode === 'password' ? 'Entrar com Senha' : 'Enviar Link de Acesso'}</span>
             {loading && <div className="absolute inset-0 bg-white/10 animate-pulse" />}
           </button>
         </form>

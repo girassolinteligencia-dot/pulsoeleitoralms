@@ -19,7 +19,7 @@ interface FragmentoProps {
 }
 
 /**
- * VOZ PÚBLICA - Fragmento de Plasma (Core Component)
+ * PULSO ELEITORAL MS - Fragmento de Plasma (Core Component)
  * Implementation of all 5 visual layers and physics.
  */
 export const Fragmento: React.FC<FragmentoProps> = ({ id, label, type, onClick, style }) => {

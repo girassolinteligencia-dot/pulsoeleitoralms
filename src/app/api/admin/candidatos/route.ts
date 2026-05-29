@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getAdminIdentity, requireAdmin } from '@/lib/adminAuth';
+import { recordAuditLog } from '@/lib/auditLog';
+import { buildPublicCandidateWhere, getPublicScopeConfig } from '@/lib/publicScope';
 
 // GET candidates for admin with pagination
 export async function GET(req: NextRequest) {
+  const authError = await requireAdmin(req);
+  if (authError) return authError;
+
   try {
     const { searchParams } = new URL(req.url);
     const page = parseInt(searchParams.get('page') || '1');
@@ -10,15 +16,17 @@ export async function GET(req: NextRequest) {
     const search = searchParams.get('search') || '';
     const skip = (page - 1) * limit;
 
-    const where = {
-      ano_eleicao: { in: [2022, 2024] },
+    const scopeConfig = await getPublicScopeConfig();
+    const where = buildPublicCandidateWhere(scopeConfig, {
       ...(search && {
-        nome: {
-          contains: search,
-          mode: 'insensitive' as const,
-        }
+        OR: [
+          { nome: { contains: search, mode: 'insensitive' as const } },
+          { cargo: { contains: search, mode: 'insensitive' as const } },
+          { partido: { contains: search, mode: 'insensitive' as const } },
+          { cidade: { contains: search, mode: 'insensitive' as const } },
+        ],
       }),
-    };
+    });
 
     const [candidatos, total] = await Promise.all([
       prisma.candidato.findMany({
@@ -45,6 +53,9 @@ export async function GET(req: NextRequest) {
 
 // POST create a new candidate
 export async function POST(req: NextRequest) {
+  const auth = await getAdminIdentity(req);
+  if ('error' in auth) return auth.error;
+
   try {
     const body = await req.json();
     const { nome, partido, numero, cargo, cidade, bairro, foto_url, campanha_id } = body;
@@ -60,6 +71,18 @@ export async function POST(req: NextRequest) {
         campanha_id
       }
     });
+    await recordAuditLog({
+      admin: auth,
+      acao: 'CANDIDATO_CRIADO',
+      entidade: 'Candidato',
+      entidadeId: candidato.id,
+      detalhes: {
+        nome: candidato.nome,
+        cargo: candidato.cargo,
+        cidade: candidato.cidade,
+        campanha_id: candidato.campanha_id,
+      },
+    });
 
     return NextResponse.json(candidato);
   } catch (error) {
@@ -71,6 +94,9 @@ export async function POST(req: NextRequest) {
 
 // PATCH update a candidate
 export async function PATCH(req: NextRequest) {
+  const auth = await getAdminIdentity(req);
+  if ('error' in auth) return auth.error;
+
   try {
     const body = await req.json();
     const { id, nome, partido, numero, cargo, cidade, foto_url } = body;
@@ -85,6 +111,17 @@ export async function PATCH(req: NextRequest) {
         cidade,
         foto_url
       }
+    });
+    await recordAuditLog({
+      admin: auth,
+      acao: 'CANDIDATO_ATUALIZADO',
+      entidade: 'Candidato',
+      entidadeId: candidato.id,
+      detalhes: {
+        nome: candidato.nome,
+        cargo: candidato.cargo,
+        cidade: candidato.cidade,
+      },
     });
 
     return NextResponse.json(candidato);

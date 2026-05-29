@@ -1,0 +1,11 @@
+public/candidatos/**
+prisma/data/**
+scratch/**
+.env
+.env.local
+.env.production
+.env.development
+.env.test
+.env*.local
+*.log
+*.tsbuildinfo

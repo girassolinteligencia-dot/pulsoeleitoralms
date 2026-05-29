@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getAdminIdentity, requireAdmin } from '@/lib/adminAuth';
+import { recordAuditLog } from '@/lib/auditLog';
+import { buildPublicCandidateWhere, getPublicScopeConfig } from '@/lib/publicScope';
 
 // GET campanhas for admin with pagination
 export async function GET(req: NextRequest) {
+  const authError = await requireAdmin(req);
+  if (authError) return authError;
+
   try {
     const { searchParams } = new URL(req.url);
     const page = parseInt(searchParams.get('page') || '1');
@@ -19,6 +25,7 @@ export async function GET(req: NextRequest) {
         }
       : {};
 
+    const scopeConfig = await getPublicScopeConfig();
     const [campanhas, total] = await Promise.all([
       prisma.campanha.findMany({
         where,
@@ -33,9 +40,29 @@ export async function GET(req: NextRequest) {
       }),
       prisma.campanha.count({ where }),
     ]);
+    const campanhasComEscopo = await Promise.all(
+      campanhas.map(async (campanha) => {
+        const candidatosPublicos = await prisma.candidato.count({
+          where: buildPublicCandidateWhere(scopeConfig, { campanha_id: campanha.id }),
+        });
+        const selecionadaNoEscopo = scopeConfig.mode === 'all_active'
+          || scopeConfig.campanhasAtivas.includes(campanha.id);
+
+        return {
+          ...campanha,
+          public_scope: {
+            visivel: campanha.status === 'ativo' && selecionadaNoEscopo && candidatosPublicos > 0,
+            candidatos_visiveis: candidatosPublicos,
+            modo: scopeConfig.mode,
+            anos_ativos: scopeConfig.anosAtivos,
+            selecionada: selecionadaNoEscopo,
+          },
+        };
+      })
+    );
 
     return NextResponse.json({
-      data: campanhas,
+      data: campanhasComEscopo,
       total,
       page,
       totalPages: Math.ceil(total / limit),
@@ -51,6 +78,9 @@ export async function GET(req: NextRequest) {
 
 // POST create a new campanha
 export async function POST(req: NextRequest) {
+  const auth = await getAdminIdentity(req);
+  if ('error' in auth) return auth.error;
+
   try {
     const body = await req.json();
     const { nome, slug, status, data_fim, meta_config } = body;
@@ -71,6 +101,17 @@ export async function POST(req: NextRequest) {
         meta_config: meta_config || null,
       },
     });
+    await recordAuditLog({
+      admin: auth,
+      acao: 'CAMPANHA_CRIADA',
+      entidade: 'Campanha',
+      entidadeId: campanha.id,
+      detalhes: {
+        nome: campanha.nome,
+        slug: campanha.slug,
+        status: campanha.status,
+      },
+    });
 
     return NextResponse.json(campanha);
   } catch (error) {
@@ -84,6 +125,9 @@ export async function POST(req: NextRequest) {
 
 // PATCH update a campanha
 export async function PATCH(req: NextRequest) {
+  const auth = await getAdminIdentity(req);
+  if ('error' in auth) return auth.error;
+
   try {
     const body = await req.json();
     const { id, ...updateData } = body;
@@ -99,6 +143,18 @@ export async function PATCH(req: NextRequest) {
     const campanha = await prisma.campanha.update({
       where: { id },
       data: updateData,
+    });
+    await recordAuditLog({
+      admin: auth,
+      acao: 'CAMPANHA_ATUALIZADA',
+      entidade: 'Campanha',
+      entidadeId: campanha.id,
+      detalhes: {
+        nome: campanha.nome,
+        slug: campanha.slug,
+        status: campanha.status,
+        campos: Object.keys(updateData),
+      },
     });
 
     return NextResponse.json(campanha);

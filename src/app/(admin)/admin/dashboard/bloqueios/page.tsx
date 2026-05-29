@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { adminFetch } from '@/lib/adminClient';
 
 interface Bloqueio {
   id: string;
@@ -14,7 +15,7 @@ export default function ManageBloqueios() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/admin/bloqueios')
+    adminFetch('/api/admin/bloqueios')
       .then(res => res.json())
       .then(data => {
         setBloqueios(data);
@@ -23,7 +24,7 @@ export default function ManageBloqueios() {
   }, []);
 
   const handleUnblock = async (id: string) => {
-    const res = await fetch('/api/admin/bloqueios', {
+    const res = await adminFetch('/api/admin/bloqueios', {
       method: 'DELETE',
       body: JSON.stringify({ id })
     });

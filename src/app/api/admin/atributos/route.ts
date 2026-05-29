@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getAdminIdentity, requireAdmin } from '@/lib/adminAuth';
+import { recordAuditLog } from '@/lib/auditLog';
 
 /**
  * GET /api/admin/atributos
  * Retorna todos os atributos cadastrados (incluindo os ocultos, para o admin).
  */
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const authError = await requireAdmin(req);
+  if (authError) return authError;
+
   try {
     const atributos = await prisma.atributo.findMany({
       orderBy: { nome: 'asc' }
@@ -21,6 +26,9 @@ export async function GET() {
  * Cria um novo atributo.
  */
 export async function POST(req: NextRequest) {
+  const auth = await getAdminIdentity(req);
+  if ('error' in auth) return auth.error;
+
   try {
     const { nome, descricao, polaridade, icone, visivel } = await req.json();
     const atributo = await prisma.atributo.create({
@@ -31,6 +39,17 @@ export async function POST(req: NextRequest) {
         icone,
         visivel: visivel !== undefined ? visivel : true
       }
+    });
+    await recordAuditLog({
+      admin: auth,
+      acao: 'ATRIBUTO_CRIADO',
+      entidade: 'Atributo',
+      entidadeId: atributo.id,
+      detalhes: {
+        nome: atributo.nome,
+        polaridade: atributo.polaridade,
+        visivel: atributo.visivel,
+      },
     });
     return NextResponse.json(atributo);
   } catch {
@@ -43,6 +62,9 @@ export async function POST(req: NextRequest) {
  * Atualiza um atributo existente (nome, descricao, polaridade, visibilidade).
  */
 export async function PUT(req: NextRequest) {
+  const auth = await getAdminIdentity(req);
+  if ('error' in auth) return auth.error;
+
   try {
     const { id, nome, descricao, polaridade, icone, visivel } = await req.json();
     const data: Record<string, unknown> = {};
@@ -56,6 +78,18 @@ export async function PUT(req: NextRequest) {
     const atributo = await prisma.atributo.update({
       where: { id },
       data
+    });
+    await recordAuditLog({
+      admin: auth,
+      acao: 'ATRIBUTO_ATUALIZADO',
+      entidade: 'Atributo',
+      entidadeId: atributo.id,
+      detalhes: {
+        nome: atributo.nome,
+        polaridade: atributo.polaridade,
+        visivel: atributo.visivel,
+        campos: Object.keys(data),
+      },
     });
     return NextResponse.json(atributo);
   } catch {

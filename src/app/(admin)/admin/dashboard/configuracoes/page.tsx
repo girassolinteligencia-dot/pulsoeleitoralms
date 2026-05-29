@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { adminFetch } from '@/lib/adminClient';
 
 interface Parametro {
   id?: string;
@@ -10,14 +11,27 @@ interface Parametro {
   descricao: string | null;
 }
 
+interface CampanhaOption {
+  id: string;
+  nome: string;
+  status: string;
+  public_scope?: {
+    candidatos_visiveis: number;
+  };
+  _count?: {
+    candidatos: number;
+  };
+}
+
 export default function ConfigAdmin() {
   const [parametros, setParametros] = useState<Parametro[]>([]);
+  const [campanhas, setCampanhas] = useState<CampanhaOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingParam, setEditingParam] = useState<Partial<Parametro> | null>(null);
 
   const fetchParametros = useCallback(async () => {
     try {
-      const res = await fetch('/api/admin/configuracoes');
+      const res = await adminFetch('/api/admin/configuracoes');
       const data = await res.json();
       setParametros(data);
     } catch (error) {
@@ -27,22 +41,40 @@ export default function ConfigAdmin() {
     }
   }, []);
 
+  const fetchCampanhas = useCallback(async () => {
+    try {
+      const res = await adminFetch('/api/admin/campanhas?limit=100');
+      const data = await res.json();
+      setCampanhas(data.data || []);
+    } catch (error) {
+      console.error(error);
+    }
+  }, []);
+
   useEffect(() => {
     const init = async () => {
-      await fetchParametros();
+      await Promise.all([fetchParametros(), fetchCampanhas()]);
     };
     init();
-  }, [fetchParametros]);
+  }, [fetchParametros, fetchCampanhas]);
 
-  const updateParametro = async (chave: string, valor: string | number | boolean | object) => {
+  const updateParametro = async (
+    chave: string,
+    valor: string | number | boolean | object,
+    grupo = 'geral',
+    descricao: string | null = null
+  ) => {
     try {
-      const res = await fetch('/api/admin/configuracoes', {
+      const res = await adminFetch('/api/admin/configuracoes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chave, valor })
+        body: JSON.stringify({ chave, valor, grupo, descricao })
       });
       if (res.ok) {
-        fetchParametros();
+        await fetchParametros();
+        if (chave.startsWith('public_')) {
+          await fetchCampanhas();
+        }
       }
     } catch (error) {
       console.error(error);
@@ -58,11 +90,11 @@ export default function ConfigAdmin() {
         if (typeof editingParam.valor === 'string' && (editingParam.valor.startsWith('{') || editingParam.valor.startsWith('['))) {
           formattedValor = JSON.parse(editingParam.valor);
         }
-      } catch (_) {
+      } catch {
         // Keep as string if parse fails
       }
 
-      const res = await fetch('/api/admin/configuracoes', {
+      const res = await adminFetch('/api/admin/configuracoes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...editingParam, valor: formattedValor })
@@ -77,6 +109,39 @@ export default function ConfigAdmin() {
   };
 
   const getParam = (chave: string) => parametros.find(p => p.chave === chave)?.valor;
+  const getNumberArrayParam = (chave: string) => {
+    const value = getParam(chave);
+    return Array.isArray(value)
+      ? value.map(Number).filter(item => Number.isInteger(item))
+      : [];
+  };
+  const getStringArrayParam = (chave: string) => {
+    const value = getParam(chave);
+    return Array.isArray(value)
+      ? value.filter((item): item is string => typeof item === 'string')
+      : [];
+  };
+  const publicYears = getNumberArrayParam('public_anos_ativos');
+  const publicCampaigns = getStringArrayParam('public_campanhas_ativas');
+  const publicScopeMode = String(getParam('public_scope_mode') || 'all_active');
+
+  const updatePublicParam = (chave: string, valor: string | number | boolean | object, descricao: string) => (
+    updateParametro(chave, valor, 'publico', descricao)
+  );
+
+  const togglePublicYear = (ano: number) => {
+    const next = publicYears.includes(ano)
+      ? publicYears.filter(item => item !== ano)
+      : [...publicYears, ano].sort((a, b) => a - b);
+    updatePublicParam('public_anos_ativos', next, 'Anos eleitorais disponiveis na busca publica; vazio libera todos.');
+  };
+
+  const togglePublicCampaign = (campanhaId: string) => {
+    const next = publicCampaigns.includes(campanhaId)
+      ? publicCampaigns.filter(item => item !== campanhaId)
+      : [...publicCampaigns, campanhaId];
+    updatePublicParam('public_campanhas_ativas', next, 'Campanhas habilitadas quando o modo publico for selecionado.');
+  };
 
   if (loading) return (
     <div className="p-20 text-center text-text-muted animate-pulse font-display uppercase tracking-widest text-[10px]">
@@ -114,22 +179,53 @@ export default function ConfigAdmin() {
           </div>
         </section>
 
-        {/* Seção: Filtro de Ano */}
+        {/* Seção: Escopo Público */}
         <section className="bg-surface-1 border border-border rounded-[2.5rem] p-8 md:p-10 flex flex-col gap-8">
           <div className="flex items-center gap-4">
             <span className="text-xl">📅</span>
-            <h3 className="text-xs font-bold uppercase tracking-widest">Filtro de Busca</h3>
+            <h3 className="text-xs font-bold uppercase tracking-widest">Escopo Público</h3>
           </div>
+
+          <div className="flex flex-col gap-3">
+            <label className="text-[9px] uppercase font-bold text-primary tracking-widest ml-1 block">Modo de Campanhas</label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => updatePublicParam('public_scope_mode', 'all_active', 'Usar todas as campanhas ativas como escopo publico.')}
+                className={`px-4 py-3 rounded-xl border text-[9px] font-bold uppercase tracking-widest transition-all ${
+                  publicScopeMode === 'all_active'
+                    ? 'bg-primary border-primary text-white'
+                    : 'bg-dark border-border text-text-muted hover:text-white'
+                }`}
+              >
+                Todas ativas
+              </button>
+              <button
+                type="button"
+                onClick={() => updatePublicParam('public_scope_mode', 'selected_campaigns', 'Usar apenas campanhas selecionadas como escopo publico.')}
+                className={`px-4 py-3 rounded-xl border text-[9px] font-bold uppercase tracking-widest transition-all ${
+                  publicScopeMode === 'selected_campaigns'
+                    ? 'bg-primary border-primary text-white'
+                    : 'bg-dark border-border text-text-muted hover:text-white'
+                }`}
+              >
+                Selecionadas
+              </button>
+            </div>
+          </div>
+
           <div>
-            <label className="text-[9px] uppercase font-bold text-primary tracking-widest ml-1 mb-3 block">Ano Eleitoral Ativo</label>
+            <label className="text-[9px] uppercase font-bold text-primary tracking-widest ml-1 mb-3 block">
+              Anos públicos {publicYears.length === 0 ? '(todos)' : ''}
+            </label>
             <div className="flex flex-wrap gap-2">
-              {[2020, 2022, 2024, 2026].map(ano => {
-                const activeYear = getParam('geral_ano_pleito') || 2024;
-                const isSelected = Number(activeYear) === ano;
+              {[2018, 2020, 2022, 2024, 2026].map(ano => {
+                const isSelected = publicYears.includes(ano);
                 return (
                   <button 
                     key={ano}
-                    onClick={() => updateParametro('geral_ano_pleito', ano)}
+                    type="button"
+                    onClick={() => togglePublicYear(ano)}
                     className={`px-6 py-3 rounded-xl border text-[10px] font-bold transition-all ${isSelected ? 'bg-primary border-primary text-white' : 'bg-dark border-border text-text-muted hover:text-white'}`}
                   >
                     {ano}
@@ -137,6 +233,40 @@ export default function ConfigAdmin() {
                 );
               })}
             </div>
+            <p className="text-[8px] text-text-muted uppercase tracking-widest mt-3 opacity-60">
+              Nenhum ano selecionado libera todos os anos de campanhas ativas.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <label className="text-[9px] uppercase font-bold text-primary tracking-widest ml-1 block">
+              Campanhas selecionadas
+            </label>
+            <div className="max-h-48 overflow-y-auto flex flex-col gap-2 pr-1">
+              {campanhas.map((campanha) => {
+                const isSelected = publicCampaigns.includes(campanha.id);
+                return (
+                  <button
+                    key={campanha.id}
+                    type="button"
+                    onClick={() => togglePublicCampaign(campanha.id)}
+                    className={`w-full text-left p-3 rounded-xl border transition-all ${
+                      isSelected
+                        ? 'bg-primary/10 border-primary text-white'
+                        : 'bg-dark border-border text-text-muted hover:text-white'
+                    }`}
+                  >
+                    <span className="block text-[10px] font-bold uppercase tracking-widest">{campanha.nome}</span>
+                    <span className="block text-[8px] uppercase tracking-widest opacity-60 mt-1">
+                      {campanha.status} · {campanha.public_scope?.candidatos_visiveis || 0} candidatos publicos
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-[8px] text-text-muted uppercase tracking-widest opacity-60">
+              Esta lista so restringe o publico quando o modo estiver em selecionadas.
+            </p>
           </div>
         </section>
 

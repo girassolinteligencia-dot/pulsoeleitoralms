@@ -24,6 +24,7 @@ model Campanha {
   
   candidatos         Candidato[]
   atributos          CampanhaAtributo[]
+  rodadas            RodadaMetodologica[]
 
   @@map("campanhas")
 }
@@ -151,6 +152,9 @@ model AuditLog {
   usuario_id  String?  // ID do Admin (se houver)
   criado_em   DateTime @default(now())
 
+  @@index([criado_em])
+  @@index([acao, criado_em])
+  @@index([entidade, criado_em])
   @@map("audit_logs")
 }
 
@@ -163,4 +167,57 @@ model ParametroPlataforma {
   updatedAt   DateTime @updatedAt
 
   @@map("parametros_plataforma")
+}
+
+model CepMs {
+  cep                String    @id
+  uf                 String    @default("MS")
+  cidade             String
+  bairro             String?
+  logradouro         String?
+  origem             String    @default("brasilapi") // brasilapi, ibge_enderecos, dne, manual
+  ibge_municipio_id  String?
+  localidades        Json?
+  bairro_confianca   Float?
+  total_registros    Int       @default(0)
+  localidades_count  Int       @default(0)
+  logradouros_count  Int       @default(0)
+  latitude           Float?
+  longitude          Float?
+  importado_em       DateTime?
+  criado_em          DateTime  @default(now())
+  atualizado_em      DateTime  @updatedAt
+
+  @@index([cidade])
+  @@index([bairro])
+  @@index([origem])
+  @@map("ceps_ms")
+}
+
+model RodadaMetodologica {
+  id               String    @id @default(cuid())
+  titulo           String
+  tipo             String    @default("percepcao_espontanea") // percepcao_espontanea, pesquisa_registravel
+  status           String    @default("rascunho") // rascunho, ativa, encerrada, arquivada
+  campanha_id      String?
+  objetivo         String?
+  publico_alvo     String?
+  abrangencia      String?
+  tamanho_amostra  Int?
+  margem_erro      Float?
+  nivel_confianca  Float?
+  periodo_inicio   DateTime?
+  periodo_fim      DateTime?
+  plano_amostral   Json?
+  ponderacao       Json?
+  questionario     Json?
+  observacoes      String?
+  criado_em        DateTime  @default(now())
+  atualizado_em    DateTime  @updatedAt
+
+  campanha         Campanha? @relation(fields: [campanha_id], references: [id])
+
+  @@index([campanha_id])
+  @@index([tipo, status])
+  @@map("rodadas_metodologicas")
 }

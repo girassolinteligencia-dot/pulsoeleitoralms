@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { adminFetch } from '@/lib/adminClient';
 
 interface Avaliacao {
   id: string;
@@ -22,7 +23,7 @@ export default function ModeracaoAdmin() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const res = await fetch('/api/admin/moderacao');
+        const res = await adminFetch('/api/admin/moderacao');
         const data = await res.json();
         setAvaliacoes(data.avaliacoes);
         setStats(data.stats);
@@ -34,7 +35,7 @@ export default function ModeracaoAdmin() {
   }, []);
 
   const fetchAvaliacoes = async () => {
-    const res = await fetch('/api/admin/moderacao');
+    const res = await adminFetch('/api/admin/moderacao');
     const data = await res.json();
     setAvaliacoes(data.avaliacoes);
     setStats(data.stats);
@@ -42,7 +43,7 @@ export default function ModeracaoAdmin() {
 
   const toggleValidity = async (id: string, currentStatus: boolean) => {
     try {
-      const res = await fetch('/api/admin/moderacao', {
+      const res = await adminFetch('/api/admin/moderacao', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, is_valid: !currentStatus })
@@ -65,7 +66,7 @@ export default function ModeracaoAdmin() {
         {/* Painel de Estatísticas de Segurança */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
           {[
-            { label: 'Total de Vozes', value: stats.total, color: '#f5f0e8' },
+            { label: 'Total de Pulsos', value: stats.total, color: '#f5f0e8' },
             { label: 'Votos Válidos', value: stats.total - stats.suspicious, color: '#10b981' },
             { label: 'Atividade Suspeita', value: stats.suspicious, color: '#f59e0b' },
             { label: 'Bots Detectados', value: stats.bots, color: '#ef4444' }

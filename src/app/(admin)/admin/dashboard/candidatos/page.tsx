@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
+import { adminFetch } from '@/lib/adminClient';
 
 interface Candidato {
   id: string;
@@ -41,7 +42,7 @@ export default function ManageCandidatos() {
         limit: String(LIMIT),
         ...(searchTerm && { search: searchTerm }),
       });
-      const res = await fetch(`/api/admin/candidatos?${params}`);
+      const res = await adminFetch(`/api/admin/candidatos?${params}`);
       const result: PaginatedResponse = await res.json();
       setCandidatos(result.data || []);
       setTotalPages(result.totalPages || 1);
@@ -72,7 +73,7 @@ export default function ManageCandidatos() {
     if (!editingCandidato?.id) return;
     setUpdating(true);
     try {
-      const res = await fetch('/api/admin/candidatos', {
+      const res = await adminFetch('/api/admin/candidatos', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editingCandidato),
@@ -94,7 +95,7 @@ export default function ManageCandidatos() {
         <div>
           <h2 className="text-2xl md:text-3xl font-bold font-display uppercase tracking-widest text-text">Gestão de Candidatos</h2>
           <p className="text-[10px] text-text-muted uppercase mt-3 tracking-widest leading-relaxed">
-            {total > 0 ? `${total.toLocaleString('pt-BR')} candidatos (2022 + 2024) — Página ${page}/${totalPages}` : 'Carregando...'}
+            {total > 0 ? `${total.toLocaleString('pt-BR')} candidatos no escopo público — Página ${page}/${totalPages}` : 'Carregando...'}
           </p>
         </div>
 
@@ -105,7 +106,7 @@ export default function ManageCandidatos() {
             value={searchInput}
             onChange={e => setSearchInput(e.target.value)}
             className="flex-1 md:w-64 bg-white/5 border border-white/10 focus:border-primary/50 outline-none rounded-2xl px-5 py-3 text-xs text-white transition-all placeholder:text-white/20"
-            placeholder="Buscar candidato..."
+            placeholder="Nome, cargo, partido ou cidade..."
           />
           <button 
             type="submit"

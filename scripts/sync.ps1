@@ -1,4 +1,4 @@
-# Script de Sincronização Automática - VOZ PÚBLICA
+# Script de Sincronização Automática - PULSO ELEITORAL MS
 $message = $args[0]
 if (-not $message) {
     $message = "update: " + (Get-Date -Format "yyyy-MM-dd HH:mm:ss")

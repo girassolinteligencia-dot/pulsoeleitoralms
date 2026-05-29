@@ -8,6 +8,21 @@
     "postinstall": "prisma generate",
     "start": "next start",
     "lint": "eslint",
+    "smoke": "node scripts/smoke-http.mjs",
+    "smoke:public": "node scripts/public-flow-smoke.mjs",
+    "smoke:ops": "node scripts/ops-smoke.mjs",
+    "smoke:security": "node scripts/security-smoke.mjs",
+    "smoke:admin": "node scripts/security-smoke.mjs --require-admin",
+    "db:preflight": "node scripts/db-preflight.mjs",
+    "db:status": "prisma migrate status",
+    "db:deploy": "prisma migrate deploy",
+    "db:rls:apply": "prisma db execute --schema prisma/schema.prisma --file prisma/hardening_rls.sql",
+    "ceps:import:ibge": "python scripts/import-ceps-ms-ibge.py",
+    "audit:retention": "node scripts/audit-retention.mjs",
+    "audit:retention:apply": "node scripts/audit-retention.mjs --apply",
+    "profile:retention": "node scripts/profile-retention.mjs",
+    "profile:retention:apply": "node scripts/profile-retention.mjs --apply",
+    "assets:audit": "node scripts/assets-audit.mjs",
     "import-data": "ts-node scripts/import_candidatos.ts",
     "vincular-atributos": "ts-node scripts/vincular_atributos.ts",
     "upload-assets": "ts-node scripts/upload_assets.ts",
@@ -25,7 +40,7 @@
     "framer-motion": "^12.38.0",
     "gsap": "^3.15.0",
     "lucide-react": "^1.11.0",
-    "next": "16.2.4",
+    "next": "^16.2.6",
     "postcss": "^8.5.12",
     "prisma": "^6.19.3",
     "react": "19.2.4",
@@ -39,8 +54,11 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "^16.2.4",
+    "eslint-config-next": "^16.2.6",
     "ts-node": "^10.9.2",
     "typescript": "^5"
+  },
+  "overrides": {
+    "postcss": "^8.5.12"
   }
 }

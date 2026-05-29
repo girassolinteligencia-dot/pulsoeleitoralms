@@ -18,33 +18,16 @@ export default function AdminLayout({
   const [loading, setLoading] = useState(!isLoginPage);
 
   const handleLogout = () => {
-    localStorage.removeItem('admin_bypass');
     supabase.auth.signOut().then(() => router.push('/admin/login'));
   };
 
   useEffect(() => {
     if (isLoginPage) return;
 
-    // Definimos os e-mails permitidos
-    const ALLOWED_EMAILS = [
-      'paulo@vozpublica.com.br',
-      'contato@vozpublica.com.br',
-      'girassolinteligencia@gmail.com'
-    ];
-
     const checkSession = async () => {
-      // Bypass de Emergência
-      if (localStorage.getItem('admin_bypass') === 'true') {
-        setLoading(false);
-        return;
-      }
-
       const { data: { session: currentSession } } = await supabase.auth.getSession();
-      
-      const userEmail = currentSession?.user?.email?.toLowerCase().trim() || '';
 
-      if (!currentSession || !ALLOWED_EMAILS.includes(userEmail)) {
-        if (currentSession) await supabase.auth.signOut();
+      if (!currentSession) {
         router.push('/admin/login');
       } else {
         setSession(currentSession);
@@ -54,20 +37,17 @@ export default function AdminLayout({
 
     // Escuta mudanças de estado
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
-      const hasBypass = typeof window !== 'undefined' && localStorage.getItem('admin_bypass') === 'true';
-      
       if (event === 'SIGNED_IN') {
-        const userEmail = currentSession?.user?.email?.toLowerCase().trim() || '';
-        if (ALLOWED_EMAILS.includes(userEmail)) {
+        if (currentSession) {
           setSession(currentSession);
           setLoading(false);
         } else {
           supabase.auth.signOut().then(() => {
-            if (!hasBypass) router.push('/admin/login');
+            router.push('/admin/login');
           });
         }
       } else if (event === 'SIGNED_OUT') {
-        if (!hasBypass) router.push('/admin/login');
+        router.push('/admin/login');
       }
     });
 
@@ -92,7 +72,10 @@ export default function AdminLayout({
     { id: 'candidatos', label: 'Candidatos', icon: '👥', path: '/admin/dashboard/candidatos' },
     { id: 'atributos', label: 'Atributos', icon: '🏷️', path: '/admin/atributos' },
     { id: 'moderacao', label: 'Moderação', icon: '⚖️', path: '/admin/moderacao' },
+    { id: 'metodologia', label: 'Metodologia', icon: '🧭', path: '/admin/metodologia' },
+    { id: 'territorio', label: 'Território', icon: '🗺️', path: '/admin/territorio' },
     { id: 'relatorios', label: 'Relatórios', icon: '📊', path: '/admin/relatorios' },
+    { id: 'auditoria', label: 'Auditoria', icon: '🧾', path: '/admin/auditoria' },
     { id: 'configuracoes', label: 'Configurações', icon: '⚙️', path: '/admin/dashboard/configuracoes' },
     { id: 'bloqueios', label: 'Segurança', icon: '🛡️', path: '/admin/dashboard/bloqueios' },
   ];
@@ -124,9 +107,9 @@ export default function AdminLayout({
       <aside className="hidden md:flex w-72 border-r border-border bg-surface-1 p-10 flex-col gap-12 shrink-0">
         <div className="flex flex-col gap-2">
            <h1 className="text-2xl font-bold font-display uppercase tracking-widest text-[#f5f0e8]">
-             VOZ<span className="text-[#d97757]">PÚBLICA</span> <span className="opacity-30 ml-2 text-xs">ADMIN</span>
+             PULSO<span className="text-[#d97757]">ELEITORAL</span> <span className="opacity-30 ml-2 text-xs">MS ADMIN</span>
            </h1>
-           <p className="text-[9px] text-text-muted uppercase font-bold tracking-widest opacity-50">Voz Pública v1.0</p>
+           <p className="text-[9px] text-text-muted uppercase font-bold tracking-widest opacity-50">Pulso Eleitoral MS v1.0</p>
         </div>
         
         <nav className="flex flex-col gap-6">

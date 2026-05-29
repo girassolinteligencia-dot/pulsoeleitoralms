@@ -1,52 +1,144 @@
-# VOZ PÚBLICA MS-2026
+# PULSO ELEITORAL MS
 
-Plataforma oficial de inteligência e percepção pública para o ciclo eleitoral de 2026 em Mato Grosso do Sul.
-Desenvolvido por **Girassol Inteligência** (Paulo Fernando Garcia Cardoso).
+Plataforma de inteligência eleitoral e percepção pública para Mato Grosso do Sul.
 
-## 🚀 Stack Tecnológica
+## Stack
 
-- **Frontend**: Next.js 14+ (App Router) / React 18+
-- **Linguagem**: TypeScript (Strict Mode)
-- **Visual**: Tailwind CSS v4 / Framer Motion / GSAP (Plasma Fragments)
-- **Tipografia**: Poppins (Display) & Lora (Body)
-- **Backend**: Next.js API Routes / Prisma ORM
-- **Infraestrutura**: Supabase (PostgreSQL + RLS) / Vercel
-- **Auditoria**: Sistema Anti-robô (Fingerprint, Honeypot, Timing Analysis)
+- Next.js 16 / React 19 / App Router
+- TypeScript
+- Tailwind CSS 3
+- Prisma 6
+- Supabase Postgres, Auth e RLS
+- Vercel
 
-## 📦 Estrutura de Pastas
+## Setup Local
 
-- `src/app/(public)`: Fluxo de avaliação para o cidadão.
-- `src/app/(admin)`: Painel de inteligência e moderação (Restrito).
-- `src/components/fragmento`: Sistema de física de plasma (5 camadas).
-- `src/components/etapas`: Workflow modular da experiência de usuário.
-- `prisma/`: Definições de schema e migrações de auditoria.
+1. Instale dependências:
 
-## 🛠️ Setup de Desenvolvimento
+```bash
+npm install
+```
 
-1. **Configuração do Ambiente**:
-   Certifique-se de ter o arquivo `.env` configurado com a `DATABASE_URL` utilizando o Pooler (porta 6543) para migrações Prisma estáveis.
+2. Configure `.env.local` com base em `.env.example`.
 
-2. **Migrações e Client**:
-   ```bash
-   npx prisma generate
-   npx prisma db push
-   ```
+Variáveis mínimas:
 
-3. **Início Rápido**:
-   ```bash
-   npm install
-   npm run dev
-   ```
+```env
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+DATABASE_URL=
+DIRECT_URL=
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+ADMIN_EMAILS=
+EVALUATION_SESSION_SECRET=
+ENCRYPTION_KEY=
+```
 
-## 🛡️ Auditoria e Segurança
+3. Gere o Prisma Client:
 
-A plataforma utiliza um sistema de física orgânica (Fragmentos) e monitoramento de comportamento para mitigar ataques de bots e manipulação de massa. Cada pulso é validado através de:
-- **Hash de Identidade**: Fingerprint único por dispositivo.
-- **Análise Temporal**: Bloqueio de submissões com tempo de interação suspeito.
-- **RLS**: Row Level Security em nível de banco de dados para todas as tabelas.
+```bash
+npx prisma generate
+```
+
+4. Rode em desenvolvimento:
+
+```bash
+npm run dev
+```
+
+## Banco e RLS
+
+O projeto usa migrações Prisma versionadas. Não use `prisma db push` no banco real.
+
+Comandos operacionais:
+
+```bash
+npm run db:status
+npm run db:deploy
+npm run db:rls:apply
+npm run db:preflight
+```
+
+Runbook: [docs/banco-real-rls-runbook.md](docs/banco-real-rls-runbook.md)
+
+## Admin
+
+O painel admin fica em:
+
+```text
+/admin/login
+```
+
+O login principal usa Supabase Auth com e-mail e senha. Magic link permanece disponível como alternativa.
+
+Guia: [docs/acesso-admin.md](docs/acesso-admin.md)
+
+## Metodologia
+
+A plataforma separa:
+
+- percepção pública espontânea;
+- pesquisa registrável.
+
+Guia metodológico: [docs/metodologia-pulso-eleitoral-ms.md](docs/metodologia-pulso-eleitoral-ms.md)
+
+## Auditoria
+
+Eventos administrativos são registrados em `audit_logs` e podem ser consultados em:
+
+```text
+/admin/auditoria
+```
+
+Retenção em modo dry-run:
+
+```bash
+npm run audit:retention
+```
+
+Aplicar retenção:
+
+```bash
+npm run audit:retention:apply
+```
+
+## Observabilidade
+
+Healthcheck público e seguro:
+
+```text
+/api/health
+```
+
+Ele valida conexão com banco, campanhas ativas e candidatos disponíveis no escopo público sem expor credenciais ou dados sensíveis.
+
+## Validação
+
+Execute antes de deploy:
+
+```bash
+npx prisma validate
+npm run lint
+npm run build
+npm audit --omit=dev
+npm run smoke
+npm run smoke:public
+npm run smoke:security
+```
+
+Smoke autenticado real:
+
+```bash
+ADMIN_SMOKE_TOKEN=ey... npm run smoke:admin
+```
+
+Checklist final: [docs/checklist-producao.md](docs/checklist-producao.md)
+
+## Relatórios Técnicos
+
+- [AUDITORIA_TECNICA.md](AUDITORIA_TECNICA.md)
+- [docs/checklist-producao.md](docs/checklist-producao.md)
 
 ---
 
-© 2026 **Girassol Inteligência** • *Tecnologia a serviço da transparência eleitoral.*
-Responsável Técnico: Paulo Fernando Garcia Cardoso
-
+© 2026 PULSO ELEITORAL MS. Responsável técnico: Paulo Fernando Garcia Cardoso.

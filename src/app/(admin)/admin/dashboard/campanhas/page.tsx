@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
+import { adminFetch } from '@/lib/adminClient';
 
 interface Campanha {
   id: string;
@@ -14,6 +15,13 @@ interface Campanha {
   _count: {
     candidatos: number;
     atributos: number;
+  };
+  public_scope?: {
+    visivel: boolean;
+    candidatos_visiveis: number;
+    modo: 'all_active' | 'selected_campaigns';
+    anos_ativos: number[];
+    selecionada: boolean;
   };
 }
 
@@ -52,7 +60,7 @@ export default function ManageCampanhas() {
         limit: String(LIMIT),
         ...(searchTerm && { search: searchTerm }),
       });
-      const res = await fetch(`/api/admin/campanhas?${params}`);
+      const res = await adminFetch(`/api/admin/campanhas?${params}`);
       const result: PaginatedResponse = await res.json();
       setCampanhas(result.data || []);
       setTotalPages(result.totalPages || 1);
@@ -80,7 +88,7 @@ export default function ManageCampanhas() {
     if (!newCampanha.nome || !newCampanha.slug) return;
     setCreating(true);
     try {
-      const res = await fetch('/api/admin/campanhas', {
+      const res = await adminFetch('/api/admin/campanhas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newCampanha),
@@ -102,7 +110,7 @@ export default function ManageCampanhas() {
     const nextStatus = campanha.status === 'ativo' ? 'pausado' : 'ativo';
     setToggling(campanha.id);
     try {
-      const res = await fetch('/api/admin/campanhas', {
+      const res = await adminFetch('/api/admin/campanhas', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: campanha.id, status: nextStatus }),
@@ -276,7 +284,12 @@ export default function ManageCampanhas() {
                     </span>
                   </td>
                   <td className="px-8 py-5 text-[11px] font-mono text-text-muted text-center">
-                    {camp._count.candidatos}
+                    <div className="flex flex-col items-center gap-1">
+                      <span>{camp._count.candidatos}</span>
+                      <span className={camp.public_scope?.visivel ? 'text-positive text-[8px]' : 'text-text-muted/50 text-[8px]'}>
+                        {camp.public_scope?.candidatos_visiveis || 0} publicos
+                      </span>
+                    </div>
                   </td>
                   <td className="px-8 py-5 text-[11px] font-mono text-text-muted text-center">
                     {camp._count.atributos}
@@ -288,21 +301,30 @@ export default function ManageCampanhas() {
                     {new Date(camp.data_inicio).toLocaleDateString('pt-BR')}
                   </td>
                   <td className="px-8 py-5">
-                    <button
-                      onClick={() => toggleStatus(camp)}
-                      disabled={toggling === camp.id}
-                      className={`text-[9px] font-bold uppercase tracking-widest px-4 py-2 rounded-full border transition-all hover:brightness-110 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed ${
-                        camp.status === 'ativo'
-                          ? 'text-[#c8933a] border-[#c8933a]/20 bg-[#c8933a]/5 hover:bg-[#c8933a]/10'
-                          : 'text-positive border-positive/20 bg-positive/5 hover:bg-positive/10'
-                      }`}
-                    >
-                      {toggling === camp.id
-                        ? '...'
-                        : camp.status === 'ativo'
-                        ? 'Pausar'
-                        : 'Ativar'}
-                    </button>
+                    <div className="flex flex-col gap-2 items-start">
+                      <span className={`text-[8px] font-bold uppercase tracking-widest px-3 py-1 rounded-full ${
+                        camp.public_scope?.visivel
+                          ? 'text-positive bg-positive/10'
+                          : 'text-text-muted bg-white/5'
+                      }`}>
+                        {camp.public_scope?.visivel ? 'Publica' : 'Fora do publico'}
+                      </span>
+                      <button
+                        onClick={() => toggleStatus(camp)}
+                        disabled={toggling === camp.id}
+                        className={`text-[9px] font-bold uppercase tracking-widest px-4 py-2 rounded-full border transition-all hover:brightness-110 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed ${
+                          camp.status === 'ativo'
+                            ? 'text-[#c8933a] border-[#c8933a]/20 bg-[#c8933a]/5 hover:bg-[#c8933a]/10'
+                            : 'text-positive border-positive/20 bg-positive/5 hover:bg-positive/10'
+                        }`}
+                      >
+                        {toggling === camp.id
+                          ? '...'
+                          : camp.status === 'ativo'
+                          ? 'Pausar'
+                          : 'Ativar'}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               );
@@ -367,6 +389,9 @@ export default function ManageCampanhas() {
                   <p className="text-sm font-bold font-mono text-text mt-1">
                     {camp._count.candidatos}
                   </p>
+                  <p className="text-[7px] uppercase tracking-widest text-text-muted mt-1">
+                    {camp.public_scope?.candidatos_visiveis || 0} publicos
+                  </p>
                 </div>
                 <div className="bg-white/[0.02] rounded-2xl p-3 text-center">
                   <p className="text-[8px] text-text-muted uppercase tracking-widest opacity-50">
@@ -389,7 +414,7 @@ export default function ManageCampanhas() {
               {/* Actions */}
               <div className="flex justify-between items-center pt-4 border-t border-border/50">
                 <span className="text-[8px] font-mono text-text-muted opacity-50">
-                  Início: {new Date(camp.data_inicio).toLocaleDateString('pt-BR')}
+                  {camp.public_scope?.visivel ? 'Publica ao usuario' : 'Fora do escopo publico'}
                 </span>
                 <button
                   onClick={() => toggleStatus(camp)}

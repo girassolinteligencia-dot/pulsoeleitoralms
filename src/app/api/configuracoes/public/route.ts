@@ -3,16 +3,24 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET() {
   try {
-    const parametros = await prisma.parametroPlataforma.findMany();
+    const parametros = await prisma.parametroPlataforma.findMany({
+      where: {
+        OR: [
+          { chave: { startsWith: 'geral_' } },
+          { chave: { startsWith: 'onboarding_' } },
+          { chave: { startsWith: 'public_' } },
+        ],
+      },
+    });
     
     // Transformar array em objeto chave-valor para facilitar o uso no frontend
     const config = parametros.reduce((acc, curr) => {
       acc[curr.chave] = curr.valor;
       return acc;
-    }, {} as Record<string, any>);
+    }, {} as Record<string, unknown>);
 
     return NextResponse.json(config);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Erro ao buscar configurações' }, { status: 500 });
   }
 }

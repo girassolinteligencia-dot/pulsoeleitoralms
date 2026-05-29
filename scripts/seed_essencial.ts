@@ -90,7 +90,7 @@ async function seedEssentials() {
   // ─── 3. CRIAR PARÂMETROS ESSENCIAIS ────────────────────────────
   const parametrosData = [
     { chave: 'geral_ano_pleito',         valor: 2024,            grupo: 'geral',      descricao: 'Ano de pleito ativo' },
-    { chave: 'geral_nome_plataforma',    valor: 'Voz Pública MS', grupo: 'geral',      descricao: 'Nome exibido na plataforma' },
+    { chave: 'geral_nome_plataforma',    valor: 'PULSO ELEITORAL MS', grupo: 'geral',      descricao: 'Nome exibido na plataforma' },
     { chave: 'geral_ativo',             valor: true,            grupo: 'geral',      descricao: 'Plataforma em operação' },
     { chave: 'avaliacao_max_por_ip',     valor: 5,              grupo: 'seguranca',  descricao: 'Máximo de avaliações por IP/hora' },
     { chave: 'avaliacao_tempo_minimo',   valor: 8000,           grupo: 'seguranca',  descricao: 'Tempo mínimo em ms para avaliação válida' },

@@ -33,7 +33,7 @@ export const Splash: React.FC<SplashProps> = ({ onComplete }) => {
           <div className="relative w-64 h-64 mb-8">
             <Image
               src="/gi/logo-256.png"
-              alt="VOZ PÚBLICA"
+              alt="PULSO ELEITORAL MS"
               width={256}
               height={256}
               className="animate-logoPulse"
@@ -44,15 +44,15 @@ export const Splash: React.FC<SplashProps> = ({ onComplete }) => {
           {/* Títulos */}
           <div className="text-center space-y-4">
             <h1 className="text-5xl font-bold font-display tracking-tighter">
-              <span className="text-[#f5f0e8]">VOZ</span>
-              <span className="text-[#d97757]">PÚBLICA</span>
+              <span className="text-[#f5f0e8]">PULSO</span>
+              <span className="text-[#d97757]">ELEITORAL</span>
             </h1>
             
             {/* Divisor Gradiente */}
             <div className="w-10 h-1 bg-gradient-to-r from-transparent via-[#d97757] to-transparent mx-auto" />
 
             <p className="font-body italic text-[#b0aea5] text-lg">
-              A voz do cidadão no Mato Grosso do Sul
+              O pulso cidadão do Mato Grosso do Sul
             </p>
           </div>
 
@@ -60,7 +60,7 @@ export const Splash: React.FC<SplashProps> = ({ onComplete }) => {
           <div className="mt-12 flex items-center gap-2 px-4 py-2 bg-[#c8933a]/10 rounded-full border border-[#c8933a]/20">
             <Image src="/gi/girassol-logo.png" alt="GI" width={24} height={24} className="rounded-full" />
             <span className="text-[#c8933a] text-[10px] font-bold uppercase tracking-widest">
-              Girassol Inteligência
+              PULSO ELEITORAL MS
             </span>
           </div>
 

@@ -939,10 +939,10 @@ Essas alteracoes parecem adicionar novos graficos e dados de relatorio. Elas dev
 Status em 2026-05-19:
 
 - Deploy de producao concluido na Vercel.
-- URL publica: `https://www.vozpublicams.com.br`
-- URL Vercel: `https://vozpublica-ms-qwv985br0-girassolinteligencia-8661s-projects.vercel.app`
-- Projeto/time: `girassolinteligencia-8661s-projects/vozpublica-ms-br`
-- Deployment ID validado: `dpl_EtmBxNuzwocbo1EQRVE7aCZh9G5S`
+- URL publica: `https://SEU-DOMINIO-PULSOMS`
+- URL Vercel: `https://SEU-PROJETO-PULSOMS.vercel.app`
+- Projeto/time: `SEU-TIME-VERCEL/SEU-PROJETO-PULSOMS`
+- Deployment ID validado: `dpl_...`
 - Smoke publico de producao aprovado com `npm run smoke`.
 - Smoke de seguranca anonimo aprovado com `npm run smoke:security`.
 - Rotas administrativas sem token retornaram `401`.
@@ -951,7 +951,7 @@ Status em 2026-05-19:
 Pendencias finais recomendadas:
 
 1. Rodar `npm run smoke:admin` em producao com um `access_token` administrativo temporario.
-2. Confirmar no Supabase Auth as URLs permitidas para `https://www.vozpublicams.com.br`.
+2. Confirmar no Supabase Auth as URLs permitidas para `https://SEU-DOMINIO-PULSOMS`.
 3. Rotacionar credenciais sensiveis que tenham sido expostas em chat, terminal ou arquivo local.
 4. Fazer commit de fechamento do sprint de deploy.
 
@@ -985,7 +985,7 @@ Deploy:
 
 - Hotfix publicado em producao na Vercel.
 - Deployment ID final: `dpl_75LujQ9cPqw6X3YEB49N11K4F11M`
-- Alias atualizado: `https://www.vozpublicams.com.br`
+- Alias atualizado: `https://SEU-DOMINIO-PULSOMS`
 - Validacao direta em producao:
   - `/api/candidatos?cidade=Campo%20Grande&bairro=Centro` retornou 50 candidatos.
   - `search=VEREADOR` e `search=CAMPO GRANDE` retornaram candidatos por cargo/cidade.
@@ -1044,7 +1044,7 @@ Deploy:
 
 - Publicado em producao na Vercel.
 - Deployment ID: `dpl_EHfLRcVHwVAQyvKFhL4du9Qkx86T`
-- Alias atualizado: `https://www.vozpublicams.com.br`
+- Alias atualizado: `https://SEU-DOMINIO-PULSOMS`
 - `/privacidade` em producao: 200.
 - `/termos` em producao: 200.
 - `npm run smoke:ops` em producao: passou.
@@ -1106,7 +1106,7 @@ Deploy:
 
 - Publicado em producao na Vercel.
 - Deployment ID: `dpl_8pdA6aNxvtxb77KgCfaYNxNS78Gz`
-- Alias atualizado: `https://www.vozpublicams.com.br`
+- Alias atualizado: `https://SEU-DOMINIO-PULSOMS`
 - `npm run smoke:ops` em producao: passou.
 - `npm run smoke` em producao: passou.
 - `npm run smoke:public` em producao: passou.
@@ -1161,7 +1161,7 @@ Deploy:
 
 - Publicado em producao na Vercel.
 - Deployment ID: `dpl_CpEj687pm16PTPAz6iWetYD9iBc5`
-- Alias atualizado: `https://www.vozpublicams.com.br`
+- Alias atualizado: `https://SEU-DOMINIO-PULSOMS`
 - `npm run smoke` em producao: passou.
 - `npm run smoke:public` em producao: passou.
 - `npm run smoke:security` em producao: passou; checks admin autenticados foram pulados por ausencia de `ADMIN_SMOKE_TOKEN`.
@@ -1211,7 +1211,7 @@ Deploy:
 
 - Publicado em producao na Vercel.
 - Deployment ID inicial: `dpl_GXVcZBFoT2AhR88Q8yxe2awoz1cs`
-- Alias atualizado: `https://www.vozpublicams.com.br`
+- Alias atualizado: `https://SEU-DOMINIO-PULSOMS`
 - O primeiro `smoke:ops` em producao identificou degradacao real em `/api/health`.
 - Hotfix aplicado: metricas auxiliares do healthcheck passaram a ser resilientes; banco e escopo publico continuam criticos.
 - Deployment ID do hotfix: `dpl_6FkKZdJA8RKWoKZ3jAkw1628ojzh`
@@ -1280,7 +1280,7 @@ Deploy:
 
 - Publicado em producao na Vercel.
 - Deployment ID: `dpl_2R7JKNPHzteVbMXkDBMRygkZ9LcU`
-- Alias atualizado: `https://www.vozpublicams.com.br`
+- Alias atualizado: `https://SEU-DOMINIO-PULSOMS`
 - Primeira tentativa de deploy falhou por `ECONNRESET` na API da Vercel; a segunda tentativa passou.
 - `npm run smoke` em producao: passou.
 - `npm run smoke:public` em producao: passou.
@@ -1329,7 +1329,7 @@ Deploy:
 
 - Publicado em producao na Vercel.
 - Deployment ID: `dpl_4AG1vKWnytA9hAGhj4W9KYGMjxZs`
-- Alias atualizado: `https://www.vozpublicams.com.br`
+- Alias atualizado: `https://SEU-DOMINIO-PULSOMS`
 - `npm run smoke` em producao: passou.
 - `npm run smoke:public` em producao: passou.
 - `npm run smoke:security` em producao: passou; checks admin autenticados foram pulados por ausencia de `ADMIN_SMOKE_TOKEN`.
@@ -1388,7 +1388,7 @@ Deploy:
 
 - Publicado em producao na Vercel.
 - Deployment ID: `dpl_DeEyQikQ7SWZHtSG9NKJ3oFJFdq7`
-- Alias atualizado: `https://www.vozpublicams.com.br`
+- Alias atualizado: `https://SEU-DOMINIO-PULSOMS`
 - Validacao direta em producao:
   - `/api/cep/79002000` retornou Campo Grande, Centro, MS, origem `brasilapi` e `cache = hit`.
 - `npm run smoke` em producao: passou.
@@ -1425,7 +1425,7 @@ Deploy:
 
 - Publicado em producao na Vercel.
 - Deployment ID: `dpl_GmcYM1SBjbpeUhZ4yEzhgcgJHC1b`
-- Alias atualizado: `https://www.vozpublicams.com.br`
+- Alias atualizado: `https://SEU-DOMINIO-PULSOMS`
 - `npm run smoke` em producao: passou.
 - `npm run smoke:public` em producao: passou.
 - `npm run smoke:security` em producao: passou; checks admin autenticados foram pulados por ausencia de `ADMIN_SMOKE_TOKEN`.
@@ -1473,7 +1473,7 @@ Deploy:
 
 - Publicado em producao na Vercel.
 - Deployment ID: `dpl_27ytMBrTybYXzhJsudAnW8g6egVB`
-- Alias atualizado: `https://www.vozpublicams.com.br`
+- Alias atualizado: `https://SEU-DOMINIO-PULSOMS`
 - `/api/cep/79002000` em producao retornou Campo Grande, Centro, MS.
 - `npm run smoke` em producao: passou.
 - `npm run smoke:public` em producao: passou, incluindo consulta CEP.
@@ -1483,7 +1483,7 @@ Deploy:
 
 - Publicado em producao na Vercel.
 - Deployment ID: `dpl_5fjtkLFmnMYHah2E2XA8kfpUxMUF`
-- Alias atualizado: `https://www.vozpublicams.com.br`
+- Alias atualizado: `https://SEU-DOMINIO-PULSOMS`
 - `/api/health` em producao retornou `status: ok`, 4 campanhas ativas e 13.527 candidatos publicos.
 - `npm run smoke` em producao: passou.
 - `npm run smoke:public` em producao: passou.
@@ -1558,7 +1558,7 @@ Deploy:
 
 - Publicado em producao na Vercel.
 - Deployment ID: `dpl_3RzTmSZ8r6RU4NUVzcQmomaxeoib`
-- Alias atualizado: `https://www.vozpublicams.com.br`
+- Alias atualizado: `https://SEU-DOMINIO-PULSOMS`
 - `/api/health` em producao retornou:
   - `status: ok`;
   - banco `ok`;
@@ -1639,7 +1639,7 @@ Deploy:
 
 - Publicado em producao na Vercel.
 - Deployment ID: `dpl_8giNxoGGHE9rR19bs65S9VqXUudq`
-- Alias atualizado: `https://www.vozpublicams.com.br`
+- Alias atualizado: `https://SEU-DOMINIO-PULSOMS`
 - `/api/candidatos` em producao passou a retornar `foto_url` resolvida para Supabase Storage.
 - `npm run smoke` em producao: passou.
 - `npm run smoke:public` em producao: passou.
@@ -1684,7 +1684,7 @@ Deploy:
 
 - Publicado em producao na Vercel.
 - Deployment ID: `dpl_HMv5dEfKCH6CbpE5zzDaWiN1AAae`
-- Alias atualizado: `https://www.vozpublicams.com.br`
+- Alias atualizado: `https://SEU-DOMINIO-PULSOMS`
 - `/api/admin/rodadas/smoke/dossie?format=html` sem token retornou `401` em producao.
 - `npm run smoke` em producao: passou.
 - `npm run smoke:public` em producao: passou.
@@ -1731,7 +1731,7 @@ Deploy:
 
 - Publicado em producao na Vercel.
 - Deployment ID: `dpl_4Y3CzswKesEoTuf9CQ3vdVERZiwC`
-- Alias atualizado: `https://www.vozpublicams.com.br`
+- Alias atualizado: `https://SEU-DOMINIO-PULSOMS`
 - `/api/health` em producao retornou:
   - `status: ok`;
   - banco `ok`;
@@ -1747,7 +1747,7 @@ Deploy:
 
 - Publicado em producao na Vercel.
 - Deployment ID: `dpl_6RRhXogdq53T9Vo6qkBpaNuFrFxj`
-- Alias atualizado: `https://www.vozpublicams.com.br`
+- Alias atualizado: `https://SEU-DOMINIO-PULSOMS`
 - `npm run smoke` em producao: passou.
 - `npm run smoke:public` em producao: passou.
 - `npm run smoke:security` em producao: passou; checks admin autenticados foram pulados por ausencia de `ADMIN_SMOKE_TOKEN`.
@@ -1830,7 +1830,7 @@ Deploy:
 
 - Publicado em producao na Vercel.
 - Deployment ID: `dpl_HX6a5agFt8nvViwy3dJ9R4b53GLC`
-- Alias atualizado: `https://www.vozpublicams.com.br`
+- Alias atualizado: `https://SEU-DOMINIO-PULSOMS`
 - Validacao direta em producao:
   - `/api/resultados/cand-120002320073/percepcao` retornou painel preenchido com vozes validas, aprovacao/desaprovacao, expectativa, forcas, alertas e origem territorial.
 - `npm run smoke` em producao: passou.
@@ -1877,7 +1877,7 @@ Deploy:
 
 - Publicado em producao na Vercel.
 - Deployment ID: `dpl_D9oyfEw5gJg86XZokifQPocFTG7b`
-- Alias atualizado: `https://www.vozpublicams.com.br`
+- Alias atualizado: `https://SEU-DOMINIO-PULSOMS`
 - `npm run smoke` em producao: passou.
 - `npm run smoke:security` em producao: passou; checks admin autenticados foram pulados por ausencia de `ADMIN_SMOKE_TOKEN`.
 
@@ -1954,7 +1954,7 @@ Deploy:
 
 - Publicado em producao na Vercel.
 - Deployment ID: `dpl_HisLKQyPJuNxkN78be4LZ4Wj1K4K`
-- Alias atualizado: `https://www.vozpublicams.com.br`
+- Alias atualizado: `https://SEU-DOMINIO-PULSOMS`
 - Validacao direta em producao:
   - `/api/cep/79002000` retornou origem `ibge_enderecos`, `cache = hit`, `precisaConfirmarBairro = true` e bairros possiveis.
 - `npm run smoke` em producao: passou.

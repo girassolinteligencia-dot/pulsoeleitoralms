@@ -37,7 +37,7 @@ npm run db:preflight
 Critérios:
 
 - Todas as migrações aplicadas.
-- RLS habilitado nas 10 tabelas esperadas.
+- RLS habilitado nas 11 tabelas esperadas.
 - Tabelas sensíveis restritas:
   - `manifestacoes`
   - `avaliacoes`
@@ -81,7 +81,7 @@ $env:SMOKE_DELAY_MS="2500"
 - Confirmar healthcheck de produção:
 
 ```bash
-curl https://www.vozpublicams.com.br/api/health
+curl https://SEU-DOMINIO-PULSOMS/api/health
 ```
 
 Critérios:

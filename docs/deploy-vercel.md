@@ -2,22 +2,22 @@
 
 ## Estado Atual
 
-Deploy de producao realizado com sucesso em:
+O repositorio local foi limpo de vinculos antigos de Vercel. Antes do deploy final, vincule este checkout ao projeto Vercel correto do PulsoMS e configure o dominio definitivo.
 
-- Producao: `https://www.vozpublicams.com.br`
-- URL Vercel: `https://vozpublica-ms-qwv985br0-girassolinteligencia-8661s-projects.vercel.app`
-- Projeto/time: `girassolinteligencia-8661s-projects/vozpublica-ms-br`
-- Deployment ID validado: `dpl_EtmBxNuzwocbo1EQRVE7aCZh9G5S`
+Depois do link, registre aqui:
 
-O smoke publico de producao passou contra `https://www.vozpublicams.com.br`.
+- Producao: `https://SEU-DOMINIO-PULSOMS`
+- URL Vercel: `https://SEU-PROJETO-PULSOMS.vercel.app`
+- Projeto/time: `SEU-TIME-VERCEL/SEU-PROJETO-PULSOMS`
+- Deployment ID validado: `dpl_...`
 
-A CLI local esta autenticada, mas o arquivo `.vercel/project.json` pode nao existir. Isso e aceitavel para deploy manual, desde que a CLI resolva o projeto correto. Para deixar o repositorio explicitamente linkado, rode:
+Para deixar o repositorio explicitamente linkado, rode:
 
 ```powershell
 npx vercel link
 ```
 
-Selecione o time `girassolinteligencia-8661s-projects` e o projeto `vozpublica-ms-br`.
+Selecione o time Vercel correto do projeto PulsoMS e o projeto `SEU-PROJETO-PULSOMS`.
 
 Se aparecer:
 
@@ -99,7 +99,7 @@ AUDIT_LOG_RETENTION_DAYS=365
 
 Não configure `ADMIN_SMOKE_TOKEN` como variável permanente de produção.
 
-O projeto ja possui estas variaveis configuradas na Vercel:
+Confirme que o projeto possui estas variaveis configuradas na Vercel:
 
 - `DATABASE_URL`
 - `DIRECT_URL`
@@ -135,7 +135,7 @@ npm run smoke:security
 Smoke publico:
 
 ```powershell
-$env:SMOKE_BASE_URL="https://www.vozpublicams.com.br"
+$env:SMOKE_BASE_URL="https://SEU-DOMINIO-PULSOMS"
 npm run smoke
 npm run smoke:security
 Remove-Item Env:SMOKE_BASE_URL

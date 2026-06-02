@@ -43,6 +43,8 @@ const novoVazio = () => ({
   ano_eleicao: '2026',
 });
 
+const MAX_FOTO_KB = 100;
+
 export default function ManageCandidatos() {
   const [candidatos, setCandidatos] = useState<Candidato[]>([]);
   const [loading, setLoading] = useState(true);
@@ -66,6 +68,11 @@ export default function ManageCandidatos() {
   const [duplicados, setDuplicados] = useState<Candidato[]>([]);
   const [novoErro, setNovoErro] = useState('');
   const [novoSucesso, setNovoSucesso] = useState('');
+
+  // Upload de foto
+  const [fotoFile, setFotoFile] = useState<File | null>(null);
+  const [fotoPreview, setFotoPreview] = useState<string | null>(null);
+  const [fotoErro, setFotoErro] = useState('');
 
   const fetchCandidatos = useCallback(async (pageNum: number, searchTerm: string) => {
     setLoading(true);
@@ -126,7 +133,28 @@ export default function ManageCandidatos() {
     setDuplicados([]);
     setNovoErro('');
     setNovoSucesso('');
+    setFotoFile(null);
+    setFotoPreview(null);
+    setFotoErro('');
     setShowNovo(true);
+  };
+
+  const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFotoErro('');
+    const file = e.target.files?.[0] ?? null;
+    if (!file) { setFotoFile(null); setFotoPreview(null); return; }
+    if (file.type !== 'image/webp') {
+      setFotoErro('Formato inválido. Envie um arquivo .webp.');
+      e.target.value = '';
+      return;
+    }
+    if (file.size > MAX_FOTO_KB * 1024) {
+      setFotoErro(`Arquivo muito grande (${(file.size / 1024).toFixed(0)} KB). Máximo: ${MAX_FOTO_KB} KB.`);
+      e.target.value = '';
+      return;
+    }
+    setFotoFile(file);
+    setFotoPreview(URL.createObjectURL(file));
   };
 
   const handleCriar = async (e: React.FormEvent, forcar = false) => {
@@ -165,8 +193,28 @@ export default function ManageCandidatos() {
         return;
       }
 
+      const criado = await res.json();
+
+      // Upload da foto se selecionada
+      if (fotoFile && criado?.id) {
+        const fd = new FormData();
+        fd.append('foto', fotoFile);
+        fd.append('candidatoId', criado.id);
+        const resF = await adminFetch('/api/admin/candidatos/foto', { method: 'POST', body: fd });
+        if (resF.ok) {
+          const { foto_url } = await resF.json();
+          await adminFetch('/api/admin/candidatos', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: criado.id, foto_url }),
+          });
+        }
+      }
+
       setNovoSucesso('Político cadastrado com sucesso!');
       setNovoCandidato({ ...novoVazio(), campanha_id: campanhaDefault });
+      setFotoFile(null);
+      setFotoPreview(null);
       setDuplicados([]);
       fetchCandidatos(page, search);
     } finally {
@@ -361,8 +409,26 @@ export default function ManageCandidatos() {
                 </div>
 
                 <div className="flex flex-col gap-2 md:col-span-2">
-                  <label className={labelClass}>URL da Foto</label>
-                  <input type="url" value={novoCandidato.foto_url} onChange={e => setNovoCandidato({ ...novoCandidato, foto_url: e.target.value })} className={inputClass} placeholder="https://... (opcional)" />
+                  <label className={labelClass}>Foto do Candidato</label>
+                  <div className="flex items-start gap-4">
+                    {fotoPreview ? (
+                      <img src={fotoPreview} alt="Preview" className="w-16 h-16 rounded-xl object-cover border border-white/10 shrink-0" />
+                    ) : (
+                      <div className="w-16 h-16 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0 text-white/20 text-2xl">👤</div>
+                    )}
+                    <div className="flex flex-col gap-2 flex-1">
+                      <input
+                        type="file"
+                        accept=".webp,image/webp"
+                        aria-label="Selecionar foto do candidato em formato webp"
+                        title="Selecionar foto .webp (máx. 100 KB)"
+                        onChange={handleFotoChange}
+                        className="w-full text-xs text-white/60 file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:uppercase file:tracking-widest file:bg-primary/20 file:text-primary hover:file:bg-primary/30 file:transition-all cursor-pointer"
+                      />
+                      <p className="text-[9px] text-text-muted opacity-60">Formato obrigatório: <strong>.webp</strong> · Tamanho máximo: <strong>100 KB</strong></p>
+                      {fotoErro && <p className="text-[9px] text-negative font-bold">{fotoErro}</p>}
+                    </div>
+                  </div>
                 </div>
               </div>
 

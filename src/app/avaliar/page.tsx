@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useGiroscopio } from '@/hooks/useGiroscopio';
 import { Splash } from '@/components/ui/Splash';
 import { Header } from '@/components/ui/Header';
+import { Etapa0 } from '@/components/etapas/Etapa0';
 import { Etapa1 } from '@/components/etapas/Etapa1';
 import { Etapa2 } from '@/components/etapas/Etapa2';
 import { Etapa3 } from '@/components/etapas/Etapa3';
@@ -42,7 +43,7 @@ interface ResultData {
 
 export default function AvaliarPage() {
   const [showSplash, setShowSplash] = useState(false);
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [config, setConfig] = useState<any>(null);
   
@@ -318,8 +319,13 @@ export default function AvaliarPage() {
             </motion.div>
           ) : (
             <>
+              {step === 0 && (
+                <Etapa0
+                  onNext={() => setStep(1)}
+                />
+              )}
               {step === 1 && (
-                <Etapa1 
+                <Etapa1
                   userData={userData} 
                   setUserData={setUserData as any} 
                   onNext={() => setStep(2)} 

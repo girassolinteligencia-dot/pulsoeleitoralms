@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
@@ -59,18 +60,17 @@ export default function AdminLoginPage() {
         transition={{ duration: 0.5, ease: "easeOut" }}
         className="w-full max-w-[420px] bg-white/[0.03] backdrop-blur-3xl border border-white/10 rounded-[3rem] p-10 md:p-14 flex flex-col gap-10 shadow-3xl relative z-10"
       >
-        <div className="text-center">
-          <motion.h1 
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="text-3xl md:text-4xl font-bold font-display uppercase tracking-[0.3em] text-[#f5f0e8]"
-          >
-            PULSO<span className="text-primary">ELEITORAL</span>
-          </motion.h1>
-          <div className="h-px w-12 bg-primary/40 mx-auto mt-4 mb-3" />
-          <p className="text-[9px] text-text-muted uppercase font-bold tracking-[0.4em] opacity-60">MS Intelligence</p>
-        </div>
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="flex flex-col items-center gap-4"
+        >
+          <Image src="/favicon.webp" alt="Pulso MS" width={56} height={56} className="rounded-2xl" />
+          <Image src="/logo.webp" alt="PULSO ELEITORAL MS" width={180} height={60} className="h-8 w-auto object-contain" />
+          <div className="h-px w-12 bg-primary/40 mx-auto" />
+          <p className="text-[9px] text-text-muted uppercase font-bold tracking-[0.4em] opacity-60">Painel Administrativo</p>
+        </motion.div>
 
         <form onSubmit={handleLogin} className="flex flex-col gap-8">
           <div className="grid grid-cols-2 gap-2 bg-white/5 p-1 rounded-2xl border border-white/5">

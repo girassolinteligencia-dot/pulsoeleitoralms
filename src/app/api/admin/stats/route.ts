@@ -22,11 +22,11 @@ export async function GET(req: NextRequest) {
       topAtributosRaw,
       atividadeSemanalRaw,
     ] = await Promise.all([
-      prisma.avaliacao.count(),
+      prisma.manifestacao.count(),
       prisma.candidato.count({ where: { status: 'Ativo' } }),
       prisma.campanha.count(),
       prisma.atributo.count({ where: { visivel: true } }),
-      prisma.avaliacao.count({ where: { criado_em: { gte: inicio24h } } }),
+      prisma.manifestacao.count({ where: { criado_em: { gte: inicio24h } } }),
       prisma.bloqueio.count({
         where: { OR: [{ expira_em: null }, { expira_em: { gt: agora } }] },
       }),
@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
       prisma.$queryRaw<{ dia: string; total: number }[]>`
         SELECT DATE(criado_em AT TIME ZONE 'America/Campo_Grande') AS dia,
                COUNT(*)::int AS total
-        FROM avaliacoes
+        FROM manifestacoes
         WHERE criado_em >= ${inicio7d}
         GROUP BY dia
         ORDER BY dia ASC

@@ -10,7 +10,7 @@ import { AprovacaoChart } from '@/components/admin/charts/AprovacaoChart';
 import { DemographicRadarChart } from '@/components/admin/charts/DemographicRadarChart';
 import { BairroTreeMap } from '@/components/admin/charts/BairroTreeMap';
 import { TopAtributosChart } from '@/components/admin/charts/TopAtributosChart';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { User, MapPin, ThumbsUp, TrendingUp, AlertCircle, PieChart as PieIcon, Download } from 'lucide-react';
 import { adminFetch, downloadAdminCsv } from '@/lib/adminClient';
 
@@ -22,6 +22,21 @@ interface RodadaOption {
   campanha?: {
     nome: string;
   } | null;
+}
+
+interface AtributoCandidato {
+  nome: string;
+  count: number;
+  polaridade: number;
+}
+
+interface CandidatoAtributos {
+  candidatoId: string;
+  nome: string;
+  cargo: string;
+  totalVozes: number;
+  liquidScore: number;
+  atributos: AtributoCandidato[];
 }
 
 interface ReportData {
@@ -37,6 +52,7 @@ interface ReportData {
   polarizacao: { x: number; y: number; z: number; nome: string }[];
   demografia: { categoria: string; dados: { label: string; value: number }[] }[];
   topAtributos: { virtudes: { nome: string; count: number }[]; defeitos: { nome: string; count: number }[] };
+  atributosPorCandidato: CandidatoAtributos[];
   territorio?: {
     qualidade: {
       total: number;
@@ -90,6 +106,10 @@ export default function AdminRelatoriosPage() {
   const [exporting, setExporting] = useState(false);
   const [dias, setDias] = useState(30);
   const [rodadaId, setRodadaId] = useState('');
+  const [abertos, setAbertos] = useState<Set<string>>(new Set());
+
+  const toggleAberto = (id: string) =>
+    setAbertos(prev => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next; });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -159,6 +179,7 @@ export default function AdminRelatoriosPage() {
         </div>
         <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3 w-full md:w-auto">
           <select
+            aria-label="Rodada metodológica"
             value={rodadaId}
             onChange={(event) => setRodadaId(event.target.value)}
             className="bg-[#1c1814] border border-white/10 rounded-2xl px-4 py-3 text-[10px] text-white uppercase font-bold tracking-widest outline-none focus:border-primary min-w-64"
@@ -174,6 +195,7 @@ export default function AdminRelatoriosPage() {
           <div className="flex bg-white/5 p-1 rounded-2xl border border-white/5">
             {[7, 30, 90].map(d => (
               <button
+                type="button"
                 key={d}
                 disabled={Boolean(rodadaId)}
                 onClick={() => setDias(d)}
@@ -185,6 +207,7 @@ export default function AdminRelatoriosPage() {
           </div>
 
           <button
+            type="button"
             onClick={handleExport}
             disabled={exporting}
             className="flex items-center justify-center gap-2 bg-primary text-white px-5 py-3 rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:brightness-110 disabled:opacity-50 transition-all"
@@ -343,6 +366,112 @@ export default function AdminRelatoriosPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+        </section>
+      )}
+
+      {/* Perfil de Atributos por Político */}
+      {data.atributosPorCandidato?.length > 0 && (
+        <section className="flex flex-col gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-white/5 rounded-lg text-primary"><User size={14} /></div>
+            <div>
+              <h3 className="text-xs font-bold uppercase tracking-widest">Perfil de Atributos por Político</h3>
+              <p className="text-[9px] text-text-muted uppercase tracking-widest opacity-60 mt-1">
+                Clique em um nome para ver todos os atributos atribuídos
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            {data.atributosPorCandidato.map(cand => {
+              const aberto = abertos.has(cand.candidatoId);
+              const virtudes = cand.atributos.filter(a => a.polaridade === 1);
+              const negativos = cand.atributos.filter(a => a.polaridade === -1);
+              const maxCount = Math.max(...cand.atributos.map(a => a.count), 1);
+
+              return (
+                <div key={cand.candidatoId} className="bg-white/[0.02] border border-white/5 rounded-2xl overflow-hidden">
+                  {/* Linha do candidato */}
+                  <button
+                    type="button"
+                    onClick={() => toggleAberto(cand.candidatoId)}
+                    className="w-full flex items-center justify-between gap-4 px-6 py-4 hover:bg-white/[0.03] transition-colors group"
+                  >
+                    <div className="flex items-center gap-4 min-w-0">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-text truncate">{cand.nome}</span>
+                      <span className="text-[8px] uppercase text-text-muted tracking-widest shrink-0 hidden sm:block">{cand.cargo}</span>
+                    </div>
+                    <div className="flex items-center gap-5 shrink-0">
+                      <span className="text-[9px] text-text-muted tabular-nums">{cand.totalVozes} vozes</span>
+                      <span className={`text-[9px] font-bold tabular-nums w-14 text-right ${cand.liquidScore >= 0 ? 'text-[#A8C47A]' : 'text-[#D97757]'}`}>
+                        {cand.liquidScore >= 0 ? '+' : ''}{cand.liquidScore}
+                      </span>
+                      <span className="text-[9px] text-text-muted tabular-nums hidden sm:block">
+                        {cand.atributos.length} atrib.
+                      </span>
+                      <motion.span
+                        animate={{ rotate: aberto ? 90 : 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="text-primary text-xs font-bold"
+                      >
+                        ▶
+                      </motion.span>
+                    </div>
+                  </button>
+
+                  {/* Painel expansível */}
+                  <AnimatePresence initial={false}>
+                    {aberto && (
+                      <motion.div
+                        key="painel"
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.25 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="px-6 pb-6 pt-2 grid grid-cols-1 md:grid-cols-2 gap-8 border-t border-white/5">
+                          {/* Virtudes */}
+                          <div className="flex flex-col gap-3">
+                            <p className="text-[8px] font-bold uppercase tracking-widest text-[#A8C47A] mb-1">Virtudes ({virtudes.length})</p>
+                            {virtudes.length === 0 && <p className="text-[9px] text-text-muted">Nenhuma</p>}
+                            {virtudes.map((a, i) => (
+                              <div key={i} className="flex flex-col gap-1">
+                                <div className="flex justify-between">
+                                  <span className="text-[10px] text-white uppercase tracking-wider">{a.nome}</span>
+                                  <span className="text-[9px] text-text-muted tabular-nums">{a.count}×</span>
+                                </div>
+                                <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                                  <div className="h-full bg-[#A8C47A] rounded-full" style={{ width: `${(a.count / maxCount) * 100}%` }} />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Negativos */}
+                          <div className="flex flex-col gap-3">
+                            <p className="text-[8px] font-bold uppercase tracking-widest text-[#D97757] mb-1">Negativos ({negativos.length})</p>
+                            {negativos.length === 0 && <p className="text-[9px] text-text-muted">Nenhum</p>}
+                            {negativos.map((a, i) => (
+                              <div key={i} className="flex flex-col gap-1">
+                                <div className="flex justify-between">
+                                  <span className="text-[10px] text-white uppercase tracking-wider">{a.nome}</span>
+                                  <span className="text-[9px] text-text-muted tabular-nums">{a.count}×</span>
+                                </div>
+                                <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                                  <div className="h-full bg-[#D97757] rounded-full" style={{ width: `${(a.count / maxCount) * 100}%` }} />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              );
+            })}
           </div>
         </section>
       )}

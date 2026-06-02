@@ -342,6 +342,33 @@ export async function GET(req: NextRequest) {
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
 
+    // 9. Atributos por candidato (acordeão)
+    const avPorCandidatoAtributo = await prisma.avaliacao.groupBy({
+      by: ['candidato_id', 'atributo_id'],
+      _count: { _all: true },
+      where: scope.avaliacaoWhere,
+    });
+
+    const atributosPorCandidato = ranking.map(r => {
+      const cand = candidatos.find(c => c.nome === r.nome);
+      if (!cand) return null;
+      const atributos = avPorCandidatoAtributo
+        .filter(av => av.candidato_id === cand.id)
+        .map(av => {
+          const attr = atributosData.find(a => a.id === av.atributo_id);
+          return { nome: attr?.nome || 'N/A', count: av._count._all, polaridade: attr?.polaridade ?? 0 };
+        })
+        .sort((a, b) => b.count - a.count);
+      return {
+        candidatoId: cand.id,
+        nome: cand.nome,
+        cargo: cand.cargo,
+        totalVozes: r.total,
+        liquidScore: r.liquidScore,
+        atributos,
+      };
+    }).filter(Boolean);
+
     return NextResponse.json({
       ranking,
       cargoSentimento,
@@ -368,6 +395,7 @@ export async function GET(req: NextRequest) {
         candidatoPorCidade,
       },
       topAtributos: { virtudes, defeitos },
+      atributosPorCandidato,
       aprovacao: {
         sim: aprovacaoTotal,
         nao: desaprovacaoTotal,

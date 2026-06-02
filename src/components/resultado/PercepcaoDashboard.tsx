@@ -95,7 +95,7 @@ export const PercepcaoDashboard: React.FC<PercepcaoDashboardProps> = ({ data }) 
       </div>
 
       <div className="bg-[#141413] border border-[#3d3128]/70 rounded-xl p-4">
-        <p className="text-[9px] text-[#7a6e64] leading-relaxed uppercase tracking-[0.12em] sm:tracking-widest">
+        <p className="text-[9px] text-[#7a6e64] leading-relaxed uppercase tracking-[0.12em]">
           {data.aviso}
         </p>
       </div>

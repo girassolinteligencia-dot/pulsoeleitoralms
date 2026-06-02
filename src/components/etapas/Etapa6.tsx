@@ -31,7 +31,7 @@ export const Etapa6: React.FC<Etapa6Props> = ({
 }) => {
   return (
     <motion.div 
-      className="relative w-full h-full flex flex-col items-center pt-16 px-3 overflow-y-auto pb-safe no-scrollbar"
+      className="relative w-full h-full flex flex-col items-center pt-16 px-4 sm:px-6 overflow-y-auto pb-safe no-scrollbar"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 1 }}
@@ -48,7 +48,7 @@ export const Etapa6: React.FC<Etapa6Props> = ({
       </div>
 
       <section className="w-full max-w-md mb-5 bg-[#1c1814]/60 border border-[#3d3128] rounded-xl p-3 flex items-center gap-3 shrink-0">
-        <div className="w-[64px] h-[84px] rounded-lg overflow-hidden border border-[#d97757]/30 bg-[#141413] shrink-0 shadow-[0_0_24px_rgba(217,119,87,0.12)]">
+        <div className="w-16 h-20 sm:w-[64px] sm:h-[84px] rounded-lg overflow-hidden border border-[#d97757]/30 bg-[#141413] shrink-0 shadow-[0_0_24px_rgba(217,119,87,0.12)]">
           <CandidatePhoto src={candidatoFotoUrl} alt={candidatoNome || 'Político'} size={96} />
         </div>
         <div className="min-w-0 flex-1">

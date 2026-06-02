@@ -86,7 +86,7 @@ export const Etapa4: React.FC<Etapa4Props> = ({
           <button 
             type="submit"
             aria-label="Buscar político"
-            className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-lg text-[#d97757] hover:bg-[#d97757]/10 transition-colors flex items-center justify-center"
+            className="absolute right-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-lg text-[#d97757] hover:bg-[#d97757]/10 transition-colors flex items-center justify-center"
           >
             <Search size={18} />
           </button>

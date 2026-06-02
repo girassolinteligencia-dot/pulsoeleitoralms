@@ -62,15 +62,16 @@ export const Etapa2: React.FC<Etapa2Props> = ({ userData, setUserData, onNext, o
 
     return (
       <div className="flex flex-col gap-2 w-full">
-        <label className="text-[9px] uppercase font-bold text-[#d97757] tracking-widest ml-1 drop-shadow-[0_0_8px_rgba(217,119,87,0.3)]">
+        <label className="text-[11px] uppercase font-bold text-[#d97757] tracking-widest ml-1 drop-shadow-[0_0_8px_rgba(217,119,87,0.3)]">
           {label}
         </label>
         <div className="grid grid-cols-2 gap-2">
           {options[field].map((opt) => (
             <button
               key={opt}
+              type="button"
               onClick={() => setUserData({ ...userData, [field]: opt })}
-              className={`py-3 px-3 rounded-xl border text-[10px] font-bold uppercase tracking-tighter transition-all duration-300 ${
+              className={`py-3.5 px-3 rounded-xl border text-[11px] font-bold uppercase tracking-tighter transition-all duration-300 ${
                 current === opt 
                   ? 'bg-[#d97757] border-[#d97757] text-[#f5f0e8] shadow-[0_0_15px_rgba(217,119,87,0.3)]' 
                   : 'bg-[#1c1814]/50 border-[#3d3128] text-[#7a6e64] hover:border-[#7a6e64]'
@@ -93,7 +94,7 @@ export const Etapa2: React.FC<Etapa2Props> = ({ userData, setUserData, onNext, o
       transition={{ duration: 0.5 }}
     >
       <div className="text-center shrink-0">
-        <h1 className="text-3xl font-bold font-display uppercase tracking-tight text-[#f5f0e8] drop-shadow-[0_0_15px_rgba(245,240,232,0.3)]">
+        <h1 className="text-2xl sm:text-3xl font-bold font-display uppercase tracking-tight text-[#f5f0e8] drop-shadow-[0_0_15px_rgba(245,240,232,0.3)]">
           {config?.onboarding_etapa2_titulo || 'Perfil'}
         </h1>
         <p className="text-[10px] text-[#b0aea5] uppercase tracking-[0.4em] mt-2 font-bold">
@@ -101,7 +102,7 @@ export const Etapa2: React.FC<Etapa2Props> = ({ userData, setUserData, onNext, o
         </p>
       </div>
 
-      <div className="w-full max-w-[340px] flex flex-col gap-6 pb-10">
+      <div className="w-full max-w-sm flex flex-col gap-6 pb-10">
         {renderSelect('Sexo', 'sexo', userData.sexo)}
         {renderSelect('Cor/Raça', 'cor', userData.cor)}
         {renderSelect('Escolaridade', 'escolaridade', userData.escolaridade)}

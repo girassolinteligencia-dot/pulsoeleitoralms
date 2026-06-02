@@ -128,7 +128,7 @@ export const Etapa1: React.FC<Etapa1Props> = ({ userData, setUserData, onNext, c
       transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
     >
       <div className="text-center shrink-0">
-        <h1 className="text-3xl md:text-4xl font-bold font-display uppercase tracking-tight text-[#f5f0e8] drop-shadow-[0_0_15px_rgba(245,240,232,0.3)]">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold font-display uppercase tracking-tight text-[#f5f0e8] drop-shadow-[0_0_15px_rgba(245,240,232,0.3)]">
           {config?.onboarding_etapa1_titulo || 'Sua região'}
         </h1>
         <p className="text-[10px] text-[#b0aea5] uppercase tracking-[0.4em] mt-3 font-bold drop-shadow-sm">
@@ -136,9 +136,9 @@ export const Etapa1: React.FC<Etapa1Props> = ({ userData, setUserData, onNext, c
         </p>
       </div>
 
-      <div className="w-full max-w-[340px] flex flex-col gap-8">
+      <div className="w-full max-w-sm flex flex-col gap-8">
         <div className="flex flex-col gap-3">
-          <label className="text-[10px] uppercase font-bold text-[#d97757] tracking-widest ml-1 drop-shadow-[0_0_8px_rgba(217,119,87,0.3)]">
+          <label className="text-[11px] uppercase font-bold text-[#d97757] tracking-widest ml-1 drop-shadow-[0_0_8px_rgba(217,119,87,0.3)]">
             CEP de onde mora
           </label>
           <div className="relative">
@@ -155,7 +155,7 @@ export const Etapa1: React.FC<Etapa1Props> = ({ userData, setUserData, onNext, c
               onClick={lookupCep}
               disabled={cepStatus === 'loading'}
               aria-label="Buscar região pelo CEP"
-              className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-xl bg-[#d97757]/10 text-[#d97757] flex items-center justify-center hover:bg-[#d97757]/20 disabled:opacity-40 transition-colors"
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-xl bg-[#d97757]/10 text-[#d97757] flex items-center justify-center hover:bg-[#d97757]/20 disabled:opacity-40 transition-colors"
             >
               <Search size={18} />
             </button>
@@ -197,7 +197,7 @@ export const Etapa1: React.FC<Etapa1Props> = ({ userData, setUserData, onNext, c
         </div>
 
         <div className="flex flex-col gap-6">
-          <label className="text-[10px] uppercase font-bold text-[#d97757] tracking-widest text-center drop-shadow-[0_0_8px_rgba(217,119,87,0.3)]">
+          <label className="text-[11px] uppercase font-bold text-[#d97757] tracking-widest text-center drop-shadow-[0_0_8px_rgba(217,119,87,0.3)]">
             Sua Linha Ideológica
           </label>
           

@@ -4,7 +4,7 @@ const contactEmail = process.env.NEXT_PUBLIC_PRIVACY_CONTACT_EMAIL || 'privacida
 
 export default function PrivacidadePage() {
   return (
-    <main className="min-h-screen bg-[#141413] text-[#f5f0e8] px-6 py-12 md:py-16">
+    <main className="min-h-screen bg-[#141413] text-[#f5f0e8] px-4 sm:px-6 py-12 md:py-16">
       <div className="mx-auto max-w-3xl flex flex-col gap-8">
         <Link href="/" className="text-[10px] uppercase tracking-[0.3em] text-[#d97757] font-bold">
           Voltar
@@ -14,7 +14,7 @@ export default function PrivacidadePage() {
           <p className="text-[10px] uppercase tracking-[0.35em] text-[#c8933a] font-bold">
             PULSO ELEITORAL MS
           </p>
-          <h1 className="text-3xl md:text-5xl font-bold uppercase tracking-tight">
+          <h1 className="text-2xl sm:text-3xl md:text-5xl font-bold uppercase tracking-tight">
             Política de Privacidade
           </h1>
           <p className="text-sm text-[#b0aea5] leading-relaxed">
@@ -56,7 +56,7 @@ export default function PrivacidadePage() {
           <h2 className="text-sm font-bold uppercase tracking-[0.22em] text-[#d97757]">Direitos e Contato</h2>
           <p>
             Solicitações relacionadas a privacidade, acesso, revisão ou eliminação devem ser
-            encaminhadas para <a className="text-[#d97757] underline" href={`mailto:${contactEmail}`}>{contactEmail}</a>.
+            encaminhadas para <a className="text-[#d97757] underline break-all" href={`mailto:${contactEmail}`}>{contactEmail}</a>.
             Como a plataforma não pede nome, CPF ou e-mail no fluxo público, algumas solicitações
             podem depender de informações técnicas suficientes para localização segura do registro.
           </p>

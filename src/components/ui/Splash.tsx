@@ -12,7 +12,7 @@ export const Splash: React.FC<SplashProps> = ({ onComplete }) => {
   useEffect(() => {
     const timer = setTimeout(() => {
       onComplete();
-    }, 3200);
+    }, 5500);
     return () => clearTimeout(timer);
   }, [onComplete]);
 
@@ -93,7 +93,7 @@ export const Splash: React.FC<SplashProps> = ({ onComplete }) => {
           className="absolute inset-0 z-20 bg-[#141413] pointer-events-none"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 1.0, ease: 'easeIn', delay: 2.2 }}
+          transition={{ duration: 1.4, ease: 'easeIn', delay: 4.1 }}
         />
       </motion.div>
     </AnimatePresence>

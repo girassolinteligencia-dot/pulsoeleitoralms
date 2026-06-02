@@ -102,7 +102,7 @@ export default function LandingPage() {
               alt="PULSO ELEITORAL MS"
               width={480}
               height={160}
-              className="w-[200px] sm:w-[320px] md:w-[420px] h-auto object-contain drop-shadow-[0_0_40px_rgba(217,119,87,0.25)] mix-blend-screen"
+              className="w-[300px] sm:w-[480px] md:w-[630px] h-auto object-contain drop-shadow-[0_0_40px_rgba(217,119,87,0.25)] mix-blend-screen"
               priority
             />
           </motion.div>

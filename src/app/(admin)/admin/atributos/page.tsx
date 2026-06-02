@@ -16,6 +16,7 @@ export default function AtributosAdmin() {
   const [atributos, setAtributos] = useState<Atributo[]>([]);
   const [editingAtributo, setEditingAtributo] = useState<Partial<Atributo> | null>(null);
   const [filterPolaridade, setFilterPolaridade] = useState<number | null>(null);
+  const [filterVisivel, setFilterVisivel] = useState<boolean | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -87,9 +88,11 @@ export default function AtributosAdmin() {
   const negativos = atributos.filter(a => a.polaridade === -1);
   const visiveis = atributos.filter(a => a.visivel).length;
 
-  const filteredAtributos = filterPolaridade !== null 
-    ? atributos.filter(a => a.polaridade === filterPolaridade)
-    : atributos;
+  const filteredAtributos = atributos.filter(a => {
+    if (filterPolaridade !== null && a.polaridade !== filterPolaridade) return false;
+    if (filterVisivel !== null && a.visivel !== filterVisivel) return false;
+    return true;
+  });
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -123,10 +126,14 @@ export default function AtributosAdmin() {
             <p className="text-2xl font-bold font-display text-red-500">{negativos.length}</p>
             <p className="text-[8px] uppercase tracking-widest font-bold text-[#7a6e64] mt-1">Negativos</p>
           </div>
-          <div className="bg-[#1c1814] border border-[#3d3128] rounded-2xl p-4 text-center">
+          <button
+            type="button"
+            onClick={() => { setFilterVisivel(v => v === true ? null : true); setFilterPolaridade(null); }}
+            className={`rounded-2xl p-4 text-center transition-all border ${filterVisivel === true ? 'bg-[#c8933a]/20 border-[#c8933a]/60 shadow-[0_0_12px_rgba(200,147,58,0.2)]' : 'bg-[#1c1814] border-[#3d3128] hover:border-[#c8933a]/40'}`}
+          >
             <p className="text-2xl font-bold font-display text-[#c8933a]">{visiveis}</p>
-            <p className="text-[8px] uppercase tracking-widest font-bold text-[#7a6e64] mt-1">Visíveis</p>
-          </div>
+            <p className="text-[8px] uppercase tracking-widest font-bold text-[#7a6e64] mt-1">Visíveis {filterVisivel === true ? '↑' : ''}</p>
+          </button>
         </div>
 
         {/* Filter Tabs */}
@@ -160,6 +167,17 @@ export default function AtributosAdmin() {
             }`}
           >
             Negativos ({negativos.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => { setFilterVisivel(v => v === true ? null : true); setFilterPolaridade(null); }}
+            className={`px-5 py-2.5 rounded-full text-[9px] font-bold uppercase tracking-widest transition-all ${
+              filterVisivel === true
+                ? 'bg-[#c8933a] text-white shadow-lg shadow-[#c8933a]/20'
+                : 'bg-[#1c1814] text-[#7a6e64] border border-[#3d3128] hover:border-[#c8933a]'
+            }`}
+          >
+            Visíveis ({visiveis})
           </button>
         </div>
 

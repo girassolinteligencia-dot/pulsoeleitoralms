@@ -18,6 +18,15 @@ const roboto = Roboto({
 export const metadata: Metadata = {
   title: "PULSO ELEITORAL MS | Mato Grosso do Sul 2026",
   description: "Plataforma de inteligência e percepção pública eleitoral de Mato Grosso do Sul.",
+  icons: {
+    icon: [
+      { url: "/favicon.webp", type: "image/webp" },
+    ],
+    apple: "/favicon.webp",
+  },
+  openGraph: {
+    images: [{ url: "/logo.webp" }],
+  },
 };
 
 export default function RootLayout({

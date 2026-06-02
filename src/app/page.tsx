@@ -64,12 +64,12 @@ export default function LandingPage() {
               className="w-full h-full rounded-2xl bg-gradient-to-br from-[#d97757] to-[#c8933a] p-[1px]"
             >
               <div className="w-full h-full rounded-2xl bg-[#1c1814] flex items-center justify-center overflow-hidden relative">
-                <Image 
-                  src="/gi/logo-256.png" 
-                  alt="Pulso Eleitoral MS Logo" 
+                <Image
+                  src="/favicon.webp"
+                  alt="Pulso Eleitoral MS Logo"
                   width={64}
                   height={64}
-                  className="w-12 h-12 sm:w-16 sm:h-16 object-contain"
+                  className="w-12 h-12 sm:w-16 sm:h-16 object-contain rounded-xl"
                 />
               </div>
             </motion.div>

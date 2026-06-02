@@ -276,21 +276,36 @@ export default function ConfigAdmin() {
             <span className="text-xl">👤</span>
             <h3 className="text-xs font-bold uppercase tracking-widest">Campos de Perfil Ativos</h3>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
             {['sexo', 'cor', 'escolaridade', 'estadoCivil', 'faixaSalarial', 'religiao', 'ocupacao', 'filhos', 'orientacaoSexual', 'deficiencia', 'tempoResidencia'].map((campo) => {
               const config = (getParam('onboarding_campos') as Record<string, boolean>) || {};
               const isActive = config[campo] !== false;
               return (
-                <button 
+                <button
+                  type="button"
                   key={campo}
                   onClick={() => updateParametro('onboarding_campos', { ...config, [campo]: !isActive })}
-                  className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${isActive ? 'bg-primary/10 border-primary text-text' : 'bg-dark border-border text-text-muted'}`}
+                  className={`flex flex-col gap-3 p-4 rounded-2xl border text-left transition-all ${
+                    isActive
+                      ? 'bg-primary/10 border-primary/60'
+                      : 'bg-dark border-border opacity-50 hover:opacity-70'
+                  }`}
                 >
-                  <span className="text-[9px] font-bold uppercase tracking-widest truncate mr-2">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-text leading-snug">
                     {campo.replace(/([A-Z])/g, ' $1')}
                   </span>
-                  <div className={`w-6 h-3 rounded-full relative transition-colors ${isActive ? 'bg-primary' : 'bg-surface-2'}`}>
-                    <div className={`absolute top-0.5 w-2 h-2 bg-white rounded-full transition-all ${isActive ? 'right-0.5' : 'left-0.5'}`} />
+                  <div className="flex items-center justify-between gap-2">
+                    <span className={`text-[8px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full ${
+                      isActive
+                        ? 'bg-[#a8c47a]/20 text-[#a8c47a]'
+                        : 'bg-white/5 text-text-muted'
+                    }`}>
+                      {isActive ? 'Ativo' : 'Inativo'}
+                    </span>
+                    {/* Toggle switch */}
+                    <div className={`w-8 h-4 rounded-full relative transition-colors shrink-0 ${isActive ? 'bg-primary' : 'bg-surface-2'}`}>
+                      <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full shadow transition-all duration-200 ${isActive ? 'right-0.5' : 'left-0.5'}`} />
+                    </div>
                   </div>
                 </button>
               );

@@ -40,7 +40,7 @@ interface ResultData {
 }
 
 export default function AvaliarPage() {
-  const [showSplash, setShowSplash] = useState(true);
+  const [showSplash, setShowSplash] = useState(false);
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [config, setConfig] = useState<any>(null);

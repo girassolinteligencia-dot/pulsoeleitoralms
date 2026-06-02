@@ -78,7 +78,7 @@ export default function LandingPage() {
   }, []);
 
   return (
-    <main className="relative h-[100svh] w-full bg-[#141413] flex flex-col items-center justify-center overflow-hidden selection:bg-[#d97757]/30 px-safe">
+    <main className="relative min-h-[100svh] w-full bg-[#141413] flex flex-col items-center selection:bg-[#d97757]/30 overflow-x-hidden">
       <div className="absolute inset-0 pointer-events-none opacity-[0.03] mix-blend-overlay bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]" />
 
       {/* Floating Ambient Glows */}
@@ -86,37 +86,37 @@ export default function LandingPage() {
       <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-[#c8933a] rounded-full blur-[120px] opacity-[0.03]" />
 
       {/* Main Content */}
-      <div className="relative z-10 w-full max-w-4xl px-6 text-center">
+      <div className="relative z-10 w-full max-w-4xl px-6 text-center flex flex-col items-center justify-center flex-1 py-12 sm:py-16">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-          className="flex flex-col items-center gap-6 sm:gap-8"
+          className="flex flex-col items-center gap-5 sm:gap-7 w-full"
         >
           {/* Logo Principal */}
           <motion.div
             initial={{ scale: 0.85, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-            className="relative mb-2"
+            className="relative"
           >
             <Image
               src="/logo.webp"
               alt="PULSO ELEITORAL MS"
               width={480}
               height={160}
-              className="w-[280px] sm:w-[380px] md:w-[480px] h-auto object-contain drop-shadow-[0_0_40px_rgba(217,119,87,0.25)] mix-blend-screen"
+              className="w-[200px] sm:w-[320px] md:w-[420px] h-auto object-contain drop-shadow-[0_0_40px_rgba(217,119,87,0.25)] mix-blend-screen"
               priority
             />
           </motion.div>
 
           {/* Heading */}
-          <div className="space-y-4">
+          <div className="space-y-3">
             <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="text-4xl sm:text-6xl md:text-7xl font-bold tracking-tight text-[#f5f0e8] leading-[1.1]"
+              className="text-3xl sm:text-5xl md:text-7xl font-bold tracking-tight text-[#f5f0e8] leading-[1.1]"
               style={{ fontFamily: TOKENS.FONTS.DISPLAY }}
             >
               {textos.landing_titulo_linha1} <br />
@@ -129,7 +129,7 @@ export default function LandingPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 1, delay: 0.5 }}
-              className="text-sm sm:text-lg md:text-xl text-[#b0aea5] max-w-lg mx-auto leading-relaxed px-4"
+              className="text-xs sm:text-base md:text-lg text-[#b0aea5] max-w-lg mx-auto leading-relaxed px-2"
               style={{ fontFamily: TOKENS.FONTS.BODY }}
             >
               {textos.landing_subtitulo}
@@ -183,7 +183,7 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.9 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-6 w-full"
+            className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 w-full"
           >
             <Link href="/avaliar">
               <button type="button" className="px-8 py-4 rounded-full bg-[#d97757] text-[#f5f0e8] font-bold text-xs sm:text-sm uppercase tracking-[0.2em] transition-all hover:bg-[#c4633d] hover:scale-105 active:scale-95 shadow-xl whitespace-nowrap">
@@ -203,7 +203,7 @@ export default function LandingPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 1, delay: 1.2 }}
-            className="mt-12 flex flex-wrap items-center justify-center gap-5 sm:gap-8 text-[#7a6e64] text-[8px] sm:text-[10px] uppercase tracking-widest font-bold"
+            className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-[#7a6e64] text-[8px] sm:text-[10px] uppercase tracking-widest font-bold"
           >
             <span className="flex items-center gap-1.5">
               <div className="w-1 h-1 rounded-full bg-[#d97757]" />

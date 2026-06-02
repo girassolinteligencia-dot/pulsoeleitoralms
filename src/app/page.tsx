@@ -15,11 +15,42 @@ interface Fragment {
   duration: number;
 }
 
+interface LandingTextos {
+  landing_titulo_linha1: string;
+  landing_titulo_linha2: string;
+  landing_subtitulo: string;
+  landing_cta_principal: string;
+  landing_cta_secundario: string;
+}
+
+const DEFAULTS: LandingTextos = {
+  landing_titulo_linha1: 'Não é uma pesquisa.',
+  landing_titulo_linha2: 'É o futuro de MS.',
+  landing_subtitulo: 'PULSO ELEITORAL MS é a plataforma de inteligência e percepção pública do Mato Grosso do Sul. Um espaço seguro, projetado para que sua visão modele as Eleições de 2026.',
+  landing_cta_principal: 'Expressar Minha Visão',
+  landing_cta_secundario: 'Acesso Restrito',
+};
+
 export default function LandingPage() {
   const [fragments, setFragments] = useState<Fragment[]>([]);
+  const [textos, setTextos] = useState<LandingTextos>(DEFAULTS);
 
   useEffect(() => {
-    // Generate fragments with a slight delay to ensure client-side only and smooth entrance
+    fetch('/api/configuracoes/public')
+      .then(r => r.json())
+      .then((data: Record<string, string>) => {
+        setTextos({
+          landing_titulo_linha1: data.landing_titulo_linha1 || DEFAULTS.landing_titulo_linha1,
+          landing_titulo_linha2: data.landing_titulo_linha2 || DEFAULTS.landing_titulo_linha2,
+          landing_subtitulo: data.landing_subtitulo || DEFAULTS.landing_subtitulo,
+          landing_cta_principal: data.landing_cta_principal || DEFAULTS.landing_cta_principal,
+          landing_cta_secundario: data.landing_cta_secundario || DEFAULTS.landing_cta_secundario,
+        });
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
     const timer = setTimeout(() => {
       const newFragments = [...Array(6)].map((_, i) => ({
         id: i,
@@ -69,17 +100,19 @@ export default function LandingPage() {
 
           {/* Heading */}
           <div className="space-y-4">
-            <motion.h1 
+            <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
               className="text-4xl sm:text-6xl md:text-7xl font-bold tracking-tight text-[#f5f0e8] leading-[1.1]"
               style={{ fontFamily: TOKENS.FONTS.DISPLAY }}
             >
-              Não é uma pesquisa. <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#d97757] via-[#c8933a] to-[#d97757]">É o futuro de MS.</span>
+              {textos.landing_titulo_linha1} <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#d97757] via-[#c8933a] to-[#d97757]">
+                {textos.landing_titulo_linha2}
+              </span>
             </motion.h1>
-            
+
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -87,8 +120,7 @@ export default function LandingPage() {
               className="text-sm sm:text-lg md:text-xl text-[#b0aea5] max-w-lg mx-auto leading-relaxed px-4"
               style={{ fontFamily: TOKENS.FONTS.BODY }}
             >
-              PULSO ELEITORAL MS é a plataforma de inteligência e percepção pública do Mato Grosso do Sul. <br className="hidden sm:block" />
-              Um espaço seguro, projetado para que sua visão modele as Eleições de 2026.
+              {textos.landing_subtitulo}
             </motion.p>
           </div>
 
@@ -97,17 +129,17 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.8 }}
-            className="flex flex-col sm:flex-row gap-4 mt-6 w-full max-w-[280px] sm:max-w-none"
+            className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-6 w-full"
           >
-            <Link href="/avaliar" className="w-full sm:w-auto">
-              <button className="w-full px-8 py-4 rounded-full bg-[#d97757] text-[#f5f0e8] font-bold text-xs sm:text-sm uppercase tracking-[0.2em] transition-all hover:bg-[#c4633d] hover:scale-105 active:scale-95 shadow-xl">
-                Expressar Minha Visão
+            <Link href="/avaliar">
+              <button type="button" className="px-8 py-4 rounded-full bg-[#d97757] text-[#f5f0e8] font-bold text-xs sm:text-sm uppercase tracking-[0.2em] transition-all hover:bg-[#c4633d] hover:scale-105 active:scale-95 shadow-xl whitespace-nowrap">
+                {textos.landing_cta_principal}
               </button>
             </Link>
-            
-            <Link href="/admin/dashboard" className="w-full sm:w-auto">
-              <button className="w-full px-8 py-4 rounded-full bg-[#1c1814]/50 backdrop-blur-md border border-[#3d3128] text-[#f5f0e8] font-bold text-xs sm:text-sm uppercase tracking-[0.2em] transition-all hover:bg-[#3d3128]">
-                Acesso Restrito
+
+            <Link href="/admin/dashboard">
+              <button type="button" className="px-8 py-4 rounded-full bg-[#1c1814]/50 backdrop-blur-md border border-[#3d3128] text-[#f5f0e8] font-bold text-xs sm:text-sm uppercase tracking-[0.2em] transition-all hover:bg-[#3d3128] whitespace-nowrap">
+                {textos.landing_cta_secundario}
               </button>
             </Link>
           </motion.div>
@@ -131,12 +163,8 @@ export default function LandingPage() {
               <div className="w-1 h-1 rounded-full bg-[#a8c47a]" />
               MS-2026
             </span>
-            <Link href="/privacidade" className="hover:text-[#d97757] transition-colors">
-              Privacidade
-            </Link>
-            <Link href="/termos" className="hover:text-[#d97757] transition-colors">
-              Termos
-            </Link>
+            <Link href="/privacidade" className="hover:text-[#d97757] transition-colors">Privacidade</Link>
+            <Link href="/termos" className="hover:text-[#d97757] transition-colors">Termos</Link>
           </motion.div>
         </motion.div>
       </div>
@@ -147,20 +175,9 @@ export default function LandingPage() {
           <motion.div
             key={frag.id}
             className="absolute w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-[#d97757]/10"
-            animate={{
-              x: frag.x,
-              y: frag.y,
-              opacity: [0.1, 0.3, 0.1],
-            }}
-            transition={{
-              duration: frag.duration,
-              repeat: Infinity,
-              ease: "linear"
-            }}
-            style={{
-              left: frag.left,
-              top: frag.top,
-            }}
+            animate={{ x: frag.x, y: frag.y, opacity: [0.1, 0.3, 0.1] }}
+            transition={{ duration: frag.duration, repeat: Infinity, ease: 'linear' }}
+            style={{ left: frag.left, top: frag.top }}
           />
         ))}
       </div>

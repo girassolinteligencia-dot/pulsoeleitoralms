@@ -77,6 +77,7 @@ export default function AdminLayout({
     { id: 'territorio', label: 'Território', icon: '🗺️', path: '/admin/territorio' },
     { id: 'relatorios', label: 'Relatórios', icon: '📊', path: '/admin/relatorios' },
     { id: 'auditoria', label: 'Auditoria', icon: '🧾', path: '/admin/auditoria' },
+    { id: 'landing', label: 'Landing Page', icon: '🖥️', path: '/admin/landing' },
     { id: 'configuracoes', label: 'Configurações', icon: '⚙️', path: '/admin/dashboard/configuracoes' },
     { id: 'bloqueios', label: 'Segurança', icon: '🛡️', path: '/admin/dashboard/bloqueios' },
   ];

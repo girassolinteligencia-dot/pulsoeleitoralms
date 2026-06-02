@@ -9,6 +9,7 @@ export async function GET() {
           { chave: { startsWith: 'geral_' } },
           { chave: { startsWith: 'onboarding_' } },
           { chave: { startsWith: 'public_' } },
+          { chave: { startsWith: 'landing_' } },
         ],
       },
     });

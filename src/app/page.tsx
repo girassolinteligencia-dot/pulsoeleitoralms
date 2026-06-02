@@ -142,23 +142,22 @@ export default function LandingPage() {
                 </button>
               </Link>
 
-              {/* Rodapé discreto — Trust Indicators + Acesso Restrito */}
-              <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-[#7a6e64] text-[8px] sm:text-[10px] uppercase tracking-widest font-bold">
-                <span className="flex items-center gap-1.5">
-                  <div className="w-1 h-1 rounded-full bg-[#d97757]" />
-                  Anônimo
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <div className="w-1 h-1 rounded-full bg-[#c8933a]" />
-                  Criptografado
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <div className="w-1 h-1 rounded-full bg-[#a8c47a]" />
-                  MS-2026
-                </span>
-                <Link href="/privacidade" className="hover:text-[#d97757] transition-colors">Privacidade</Link>
-                <Link href="/termos" className="hover:text-[#d97757] transition-colors">Termos</Link>
-                <Link href="/admin/dashboard" className="hover:text-[#d97757] transition-colors">{textos.landing_cta_secundario}</Link>
+              {/* Rodapé discreto */}
+              <div className="flex items-center justify-center gap-5 text-[#7a6e64] text-[8px] sm:text-[10px] uppercase tracking-widest font-bold">
+                {[
+                  { href: '/privacidade', label: 'Privacidade' },
+                  { href: '/termos', label: 'Termos' },
+                  { href: '/admin/dashboard', label: textos.landing_cta_secundario },
+                ].map((item) => (
+                  <Link key={item.href} href={item.href} className="flex items-center gap-1.5 hover:text-[#d97757] transition-colors">
+                    <motion.div
+                      className="w-1 h-1 rounded-full bg-[#d97757] shrink-0"
+                      animate={{ opacity: [1, 0.15, 1] }}
+                      transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                    />
+                    {item.label}
+                  </Link>
+                ))}
               </div>
             </motion.div>
           )}

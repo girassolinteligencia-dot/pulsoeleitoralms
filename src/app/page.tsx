@@ -135,43 +135,6 @@ export default function LandingPage() {
                 </p>
               </div>
 
-              {/* Como funciona */}
-              <div className="w-full max-w-xl flex flex-col items-center gap-4">
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-0 w-full">
-                  {[
-                    { icone: '📍', texto: textos.landing_passo_1 },
-                    { icone: '👤', texto: textos.landing_passo_2 },
-                    { icone: '✅', texto: textos.landing_passo_3 },
-                  ].map((passo, i) => (
-                    <React.Fragment key={i}>
-                      <div className="flex flex-col items-center gap-2 flex-1">
-                        <div className="w-10 h-10 rounded-full bg-[#d97757]/10 border border-[#d97757]/30 flex items-center justify-center text-lg [filter:sepia(1)_saturate(3)_hue-rotate(340deg)_brightness(0.85)]">
-                          {passo.icone}
-                        </div>
-                        <span
-                          className="text-[10px] sm:text-[11px] text-[#b0aea5] uppercase tracking-[0.18em] font-bold text-center leading-relaxed"
-                          style={{ fontFamily: TOKENS.FONTS.DISPLAY }}
-                        >
-                          {passo.texto}
-                        </span>
-                      </div>
-                      {i < 2 && (
-                        <div className="hidden sm:block w-8 shrink-0 text-center text-[#3d3128] text-lg font-bold">→</div>
-                      )}
-                      {i < 2 && (
-                        <div className="sm:hidden w-px h-4 bg-[#3d3128]" />
-                      )}
-                    </React.Fragment>
-                  ))}
-                </div>
-                <p
-                  className="text-[10px] sm:text-[11px] text-[#7a6e64] tracking-[0.15em] text-center"
-                  style={{ fontFamily: TOKENS.FONTS.BODY }}
-                >
-                  {textos.landing_reforco}
-                </p>
-              </div>
-
               {/* CTA Buttons */}
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 w-full">
                 <Link href="/avaliar">

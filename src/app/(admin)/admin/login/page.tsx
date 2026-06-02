@@ -66,8 +66,7 @@ export default function AdminLoginPage() {
           transition={{ delay: 0.2 }}
           className="flex flex-col items-center gap-4"
         >
-          <Image src="/favicon.webp" alt="Pulso MS" width={56} height={56} className="rounded-2xl" />
-          <Image src="/logo.webp" alt="PULSO ELEITORAL MS" width={180} height={60} className="h-8 w-auto object-contain" />
+          <Image src="/logo.webp" alt="PULSO ELEITORAL MS" width={200} height={66} className="h-10 w-auto object-contain mix-blend-screen" />
           <div className="h-px w-12 bg-primary/40 mx-auto" />
           <p className="text-[9px] text-text-muted uppercase font-bold tracking-[0.4em] opacity-60">Painel Administrativo</p>
         </motion.div>

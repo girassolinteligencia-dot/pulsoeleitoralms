@@ -939,9 +939,9 @@ Essas alteracoes parecem adicionar novos graficos e dados de relatorio. Elas dev
 Status em 2026-05-19:
 
 - Deploy de producao concluido na Vercel.
-- URL publica: `https://SEU-DOMINIO-PULSOMS`
-- URL Vercel: `https://SEU-PROJETO-PULSOMS.vercel.app`
-- Projeto/time: `SEU-TIME-VERCEL/SEU-PROJETO-PULSOMS`
+- URL publica: `https://pulsoms.ia.br`
+- URL Vercel: `https://pulsomsia.vercel.app`
+- Projeto/time: `paulocardoso-labs-projects/pulsoms-ia`
 - Deployment ID validado: `dpl_...`
 - Smoke publico de producao aprovado com `npm run smoke`.
 - Smoke de seguranca anonimo aprovado com `npm run smoke:security`.
@@ -951,7 +951,7 @@ Status em 2026-05-19:
 Pendencias finais recomendadas:
 
 1. Rodar `npm run smoke:admin` em producao com um `access_token` administrativo temporario.
-2. Confirmar no Supabase Auth as URLs permitidas para `https://SEU-DOMINIO-PULSOMS`.
+2. Confirmar no Supabase Auth as URLs permitidas para `https://pulsoms.ia.br`.
 3. Rotacionar credenciais sensiveis que tenham sido expostas em chat, terminal ou arquivo local.
 4. Fazer commit de fechamento do sprint de deploy.
 
@@ -985,7 +985,7 @@ Deploy:
 
 - Hotfix publicado em producao na Vercel.
 - Deployment ID final: `dpl_75LujQ9cPqw6X3YEB49N11K4F11M`
-- Alias atualizado: `https://SEU-DOMINIO-PULSOMS`
+- Alias atualizado: `https://pulsoms.ia.br`
 - Validacao direta em producao:
   - `/api/candidatos?cidade=Campo%20Grande&bairro=Centro` retornou 50 candidatos.
   - `search=VEREADOR` e `search=CAMPO GRANDE` retornaram candidatos por cargo/cidade.
@@ -1044,7 +1044,7 @@ Deploy:
 
 - Publicado em producao na Vercel.
 - Deployment ID: `dpl_EHfLRcVHwVAQyvKFhL4du9Qkx86T`
-- Alias atualizado: `https://SEU-DOMINIO-PULSOMS`
+- Alias atualizado: `https://pulsoms.ia.br`
 - `/privacidade` em producao: 200.
 - `/termos` em producao: 200.
 - `npm run smoke:ops` em producao: passou.
@@ -1106,7 +1106,7 @@ Deploy:
 
 - Publicado em producao na Vercel.
 - Deployment ID: `dpl_8pdA6aNxvtxb77KgCfaYNxNS78Gz`
-- Alias atualizado: `https://SEU-DOMINIO-PULSOMS`
+- Alias atualizado: `https://pulsoms.ia.br`
 - `npm run smoke:ops` em producao: passou.
 - `npm run smoke` em producao: passou.
 - `npm run smoke:public` em producao: passou.
@@ -1161,7 +1161,7 @@ Deploy:
 
 - Publicado em producao na Vercel.
 - Deployment ID: `dpl_CpEj687pm16PTPAz6iWetYD9iBc5`
-- Alias atualizado: `https://SEU-DOMINIO-PULSOMS`
+- Alias atualizado: `https://pulsoms.ia.br`
 - `npm run smoke` em producao: passou.
 - `npm run smoke:public` em producao: passou.
 - `npm run smoke:security` em producao: passou; checks admin autenticados foram pulados por ausencia de `ADMIN_SMOKE_TOKEN`.
@@ -1211,7 +1211,7 @@ Deploy:
 
 - Publicado em producao na Vercel.
 - Deployment ID inicial: `dpl_GXVcZBFoT2AhR88Q8yxe2awoz1cs`
-- Alias atualizado: `https://SEU-DOMINIO-PULSOMS`
+- Alias atualizado: `https://pulsoms.ia.br`
 - O primeiro `smoke:ops` em producao identificou degradacao real em `/api/health`.
 - Hotfix aplicado: metricas auxiliares do healthcheck passaram a ser resilientes; banco e escopo publico continuam criticos.
 - Deployment ID do hotfix: `dpl_6FkKZdJA8RKWoKZ3jAkw1628ojzh`
@@ -1280,7 +1280,7 @@ Deploy:
 
 - Publicado em producao na Vercel.
 - Deployment ID: `dpl_2R7JKNPHzteVbMXkDBMRygkZ9LcU`
-- Alias atualizado: `https://SEU-DOMINIO-PULSOMS`
+- Alias atualizado: `https://pulsoms.ia.br`
 - Primeira tentativa de deploy falhou por `ECONNRESET` na API da Vercel; a segunda tentativa passou.
 - `npm run smoke` em producao: passou.
 - `npm run smoke:public` em producao: passou.
@@ -1329,7 +1329,7 @@ Deploy:
 
 - Publicado em producao na Vercel.
 - Deployment ID: `dpl_4AG1vKWnytA9hAGhj4W9KYGMjxZs`
-- Alias atualizado: `https://SEU-DOMINIO-PULSOMS`
+- Alias atualizado: `https://pulsoms.ia.br`
 - `npm run smoke` em producao: passou.
 - `npm run smoke:public` em producao: passou.
 - `npm run smoke:security` em producao: passou; checks admin autenticados foram pulados por ausencia de `ADMIN_SMOKE_TOKEN`.
@@ -1388,7 +1388,7 @@ Deploy:
 
 - Publicado em producao na Vercel.
 - Deployment ID: `dpl_DeEyQikQ7SWZHtSG9NKJ3oFJFdq7`
-- Alias atualizado: `https://SEU-DOMINIO-PULSOMS`
+- Alias atualizado: `https://pulsoms.ia.br`
 - Validacao direta em producao:
   - `/api/cep/79002000` retornou Campo Grande, Centro, MS, origem `brasilapi` e `cache = hit`.
 - `npm run smoke` em producao: passou.
@@ -1425,7 +1425,7 @@ Deploy:
 
 - Publicado em producao na Vercel.
 - Deployment ID: `dpl_GmcYM1SBjbpeUhZ4yEzhgcgJHC1b`
-- Alias atualizado: `https://SEU-DOMINIO-PULSOMS`
+- Alias atualizado: `https://pulsoms.ia.br`
 - `npm run smoke` em producao: passou.
 - `npm run smoke:public` em producao: passou.
 - `npm run smoke:security` em producao: passou; checks admin autenticados foram pulados por ausencia de `ADMIN_SMOKE_TOKEN`.
@@ -1473,7 +1473,7 @@ Deploy:
 
 - Publicado em producao na Vercel.
 - Deployment ID: `dpl_27ytMBrTybYXzhJsudAnW8g6egVB`
-- Alias atualizado: `https://SEU-DOMINIO-PULSOMS`
+- Alias atualizado: `https://pulsoms.ia.br`
 - `/api/cep/79002000` em producao retornou Campo Grande, Centro, MS.
 - `npm run smoke` em producao: passou.
 - `npm run smoke:public` em producao: passou, incluindo consulta CEP.
@@ -1483,7 +1483,7 @@ Deploy:
 
 - Publicado em producao na Vercel.
 - Deployment ID: `dpl_5fjtkLFmnMYHah2E2XA8kfpUxMUF`
-- Alias atualizado: `https://SEU-DOMINIO-PULSOMS`
+- Alias atualizado: `https://pulsoms.ia.br`
 - `/api/health` em producao retornou `status: ok`, 4 campanhas ativas e 13.527 candidatos publicos.
 - `npm run smoke` em producao: passou.
 - `npm run smoke:public` em producao: passou.
@@ -1558,7 +1558,7 @@ Deploy:
 
 - Publicado em producao na Vercel.
 - Deployment ID: `dpl_3RzTmSZ8r6RU4NUVzcQmomaxeoib`
-- Alias atualizado: `https://SEU-DOMINIO-PULSOMS`
+- Alias atualizado: `https://pulsoms.ia.br`
 - `/api/health` em producao retornou:
   - `status: ok`;
   - banco `ok`;
@@ -1639,7 +1639,7 @@ Deploy:
 
 - Publicado em producao na Vercel.
 - Deployment ID: `dpl_8giNxoGGHE9rR19bs65S9VqXUudq`
-- Alias atualizado: `https://SEU-DOMINIO-PULSOMS`
+- Alias atualizado: `https://pulsoms.ia.br`
 - `/api/candidatos` em producao passou a retornar `foto_url` resolvida para Supabase Storage.
 - `npm run smoke` em producao: passou.
 - `npm run smoke:public` em producao: passou.
@@ -1684,7 +1684,7 @@ Deploy:
 
 - Publicado em producao na Vercel.
 - Deployment ID: `dpl_HMv5dEfKCH6CbpE5zzDaWiN1AAae`
-- Alias atualizado: `https://SEU-DOMINIO-PULSOMS`
+- Alias atualizado: `https://pulsoms.ia.br`
 - `/api/admin/rodadas/smoke/dossie?format=html` sem token retornou `401` em producao.
 - `npm run smoke` em producao: passou.
 - `npm run smoke:public` em producao: passou.
@@ -1731,7 +1731,7 @@ Deploy:
 
 - Publicado em producao na Vercel.
 - Deployment ID: `dpl_4Y3CzswKesEoTuf9CQ3vdVERZiwC`
-- Alias atualizado: `https://SEU-DOMINIO-PULSOMS`
+- Alias atualizado: `https://pulsoms.ia.br`
 - `/api/health` em producao retornou:
   - `status: ok`;
   - banco `ok`;
@@ -1747,7 +1747,7 @@ Deploy:
 
 - Publicado em producao na Vercel.
 - Deployment ID: `dpl_6RRhXogdq53T9Vo6qkBpaNuFrFxj`
-- Alias atualizado: `https://SEU-DOMINIO-PULSOMS`
+- Alias atualizado: `https://pulsoms.ia.br`
 - `npm run smoke` em producao: passou.
 - `npm run smoke:public` em producao: passou.
 - `npm run smoke:security` em producao: passou; checks admin autenticados foram pulados por ausencia de `ADMIN_SMOKE_TOKEN`.
@@ -1830,7 +1830,7 @@ Deploy:
 
 - Publicado em producao na Vercel.
 - Deployment ID: `dpl_HX6a5agFt8nvViwy3dJ9R4b53GLC`
-- Alias atualizado: `https://SEU-DOMINIO-PULSOMS`
+- Alias atualizado: `https://pulsoms.ia.br`
 - Validacao direta em producao:
   - `/api/resultados/cand-120002320073/percepcao` retornou painel preenchido com vozes validas, aprovacao/desaprovacao, expectativa, forcas, alertas e origem territorial.
 - `npm run smoke` em producao: passou.
@@ -1877,7 +1877,7 @@ Deploy:
 
 - Publicado em producao na Vercel.
 - Deployment ID: `dpl_D9oyfEw5gJg86XZokifQPocFTG7b`
-- Alias atualizado: `https://SEU-DOMINIO-PULSOMS`
+- Alias atualizado: `https://pulsoms.ia.br`
 - `npm run smoke` em producao: passou.
 - `npm run smoke:security` em producao: passou; checks admin autenticados foram pulados por ausencia de `ADMIN_SMOKE_TOKEN`.
 
@@ -1954,9 +1954,114 @@ Deploy:
 
 - Publicado em producao na Vercel.
 - Deployment ID: `dpl_HisLKQyPJuNxkN78be4LZ4Wj1K4K`
-- Alias atualizado: `https://SEU-DOMINIO-PULSOMS`
+- Alias atualizado: `https://pulsoms.ia.br`
 - Validacao direta em producao:
   - `/api/cep/79002000` retornou origem `ibge_enderecos`, `cache = hit`, `precisaConfirmarBairro = true` e bairros possiveis.
 - `npm run smoke` em producao: passou.
 - `npm run smoke:public` em producao: passou.
 - `npm run smoke:security` em producao: passou; checks admin autenticados foram pulados por ausencia de `ADMIN_SMOKE_TOKEN`.
+
+## STATUS SAUDAVEL DO PROJETO - 2026-06-01 (atualizado)
+
+Snapshot de referencia em estado operacional confirmado. Use como baseline para recuperacao.
+
+### Infraestrutura
+
+| Servico  | Conta / Org                             | ID / Referencia                                              |
+|----------|-----------------------------------------|--------------------------------------------------------------|
+| GitHub   | girassolinteligencia-dot                | https://github.com/girassolinteligencia-dot/pulsoeleitoralms |
+| Vercel   | girassolinteligencia-8661s-projects     | projectId: `prj_n6bEXp4XsrJKy8IkQOrdB7iQcMDq`              |
+| Supabase | girassolinteligencia@gmail.com          | projeto: `bbqgskzvguqqejmotbpz`                              |
+| Dominio  | —                                       | https://pulsoms.ia.br                                        |
+
+### Ultimo deploy bem-sucedido
+
+- Deployment ID: `dpl_aqpk4a20m` — Production, Ready, 2026-06-01
+- URL Vercel: `https://pulsoms-aqpk4a20m-girassolinteligencia-8661s-projects.vercel.app`
+- Alias producao: `https://pulsomsia-girassolinteligencia-8661s-projects.vercel.app`
+- Dominio customizado validado: `https://pulsoms.ia.br/admin/dashboard` — 200 OK
+
+### Stack
+
+| Pacote    | Versao  |
+|-----------|---------|
+| Next.js   | ^16.2.6 |
+| React     | 19.2.4  |
+| Prisma    | ^6.19.3 |
+| Tailwind  | 3.4.19  |
+
+### Banco de dados (Supabase real `bbqgskzvguqqejmotbpz`)
+
+Migracoes aplicadas:
+
+1. `20260519000000_initial_baseline`
+2. `20260519010000_add_rodadas_metodologicas`
+3. `20260519120000_add_audit_log_indexes`
+4. `20260520150000_add_ceps_ms`
+5. `20260520170000_enrich_ceps_ms_ibge`
+
+RLS habilitado nas 11 tabelas: `campanhas`, `atributos`, `campanha_atributos`, `candidatos`, `manifestacoes`, `avaliacoes`, `bloqueios`, `audit_logs`, `parametros_plataforma`, `rodadas_metodologicas`, `ceps_ms`.
+
+CEPs MS importados: 11.941 (origem `ibge_enderecos`). Municipios cobertos: 79.
+
+Dados de producao validados: 4 campanhas ativas, 13.527 candidatos publicos.
+
+### Variaveis de ambiente configuradas na Vercel (Production) — 15 variaveis
+
+| Variavel                            | Status      |
+|-------------------------------------|-------------|
+| `NEXT_PUBLIC_SUPABASE_URL`          | Encrypted   |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY`     | Encrypted   |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Encrypted |
+| `SUPABASE_PROJECT_ID`               | Encrypted   |
+| `SUPABASE_REST_URL`                 | Encrypted   |
+| `DATABASE_URL`                      | Encrypted (pooler porta 6543) |
+| `DIRECT_URL`                        | Encrypted (direto porta 5432, apenas migracoes locais) |
+| `NEXT_PUBLIC_APP_URL`               | Encrypted   |
+| `ADMIN_EMAILS`                      | Encrypted   |
+| `NEXT_PUBLIC_PRIVACY_CONTACT_EMAIL` | Encrypted   |
+| `EVALUATION_SESSION_SECRET`         | Encrypted   |
+| `ENCRYPTION_KEY`                    | Encrypted   |
+| `JWT_SECRET`                        | Encrypted   |
+| `AUDIT_LOG_RETENTION_DAYS`          | Encrypted   |
+| `PROFILE_RETENTION_DAYS`            | Encrypted   |
+
+Pendente: `SUPABASE_SERVICE_ROLE_KEY` — necessaria para upload de assets e scripts com service role.
+
+### Configuracao critica de banco — connection pooler
+
+O `DATABASE_URL` em producao (Vercel) deve usar obrigatoriamente o **connection pooler** do Supabase:
+
+```
+postgresql://postgres.bbqgskzvguqqejmotbpz:<SENHA>@aws-1-sa-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true
+```
+
+O `DIRECT_URL` (porta 5432) e usado apenas para `prisma migrate` rodado localmente. A Vercel bloqueia conexoes diretas na porta 5432.
+
+### Git
+
+- Branch principal: `main`
+- Ultimo commit: `2a7a7368 chore: prepare pulsoms production config`
+- Remote: `https://github.com/girassolinteligencia-dot/pulsoeleitoralms.git`
+- `.vercel/project.json`: `projectId: prj_n6bEXp4XsrJKy8IkQOrdB7iQcMDq`, org: `girassolinteligencia-8661s-projects`
+
+### Para recuperar a partir deste estado
+
+```powershell
+git clone https://github.com/girassolinteligencia-dot/pulsoeleitoralms.git
+npm install
+# configurar .env e .env.local com credenciais do Supabase
+npm run build
+npm run smoke
+npx vercel login        # conta girassolinteligencia@gmail.com
+npx vercel link         # selecionar girassolinteligencia-8661s-projects / pulsoms_ia
+# adicionar as 15 variaveis de ambiente (ver secao acima)
+# DATABASE_URL deve usar pooler porta 6543, nao porta 5432
+npx vercel deploy --prod
+```
+
+### Observacoes criticas
+
+- **DATABASE_URL na Vercel deve ser sempre o pooler (porta 6543).** Porta 5432 direta e bloqueada e causa erro `Can't reach database server`.
+- Fotos de candidatos (473 MB) nao estao na Vercel (ignoradas por `.vercelignore`); servidas via Supabase Storage bucket `candidatos`. Upload pendente: `npm run upload-assets` (requer `SUPABASE_SERVICE_ROLE_KEY`).
+- Smokes admin (`npm run smoke:admin`) requerem `ADMIN_SMOKE_TOKEN` com access token Supabase de usuario listado em `ADMIN_EMAILS`.

@@ -81,7 +81,7 @@ $env:SMOKE_DELAY_MS="2500"
 - Confirmar healthcheck de produção:
 
 ```bash
-curl https://SEU-DOMINIO-PULSOMS/api/health
+curl https://pulsoms.ia.br/api/health
 ```
 
 Critérios:

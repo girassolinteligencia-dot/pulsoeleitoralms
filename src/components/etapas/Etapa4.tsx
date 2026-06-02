@@ -51,7 +51,7 @@ export const Etapa4: React.FC<Etapa4Props> = ({
           Busca
         </h1>
         <p className="text-[9px] sm:text-[10px] text-[#b0aea5] uppercase tracking-[0.28em] sm:tracking-[0.4em] mt-2 font-bold leading-relaxed">
-          CANDIDATOS DISPONÍVEIS
+          POLÍTICOS DISPONÍVEIS
         </p>
       </div>
 
@@ -81,11 +81,11 @@ export const Etapa4: React.FC<Etapa4Props> = ({
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full bg-[#1c1814]/80 border border-[#3d3128] rounded-xl px-5 py-4 sm:py-5 text-sm focus:outline-none focus:border-[#d97757] transition-all placeholder:text-[#7a6e64]/50 text-[#f5f0e8] pr-12"
-            placeholder="Nome, cargo, partido ou cidade..."
+            placeholder="Nome do político..."
           />
           <button 
             type="submit"
-            aria-label="Buscar candidato"
+            aria-label="Buscar político"
             className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-lg text-[#d97757] hover:bg-[#d97757]/10 transition-colors flex items-center justify-center"
           >
             <Search size={18} />
@@ -108,9 +108,6 @@ export const Etapa4: React.FC<Etapa4Props> = ({
               <div className="flex flex-col items-start min-w-0 flex-1 gap-1">
                 <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-[#f5f0e8] group-hover:text-[#d97757] transition-colors leading-snug break-words">
                   {c.nome}
-                </span>
-                <span className="text-[8px] sm:text-[9px] uppercase font-bold text-[#7a6e64] tracking-wider leading-relaxed break-words">
-                  {[c.cargo, c.partido, c.cidade].filter(Boolean).join(' • ')}
                 </span>
               </div>
               <ArrowRight size={18} className="ml-auto text-[#d97757] opacity-70 sm:opacity-0 group-hover:opacity-100 transition-all shrink-0" />

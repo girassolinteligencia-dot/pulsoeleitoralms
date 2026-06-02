@@ -22,6 +22,8 @@
     "audit:retention:apply": "node scripts/audit-retention.mjs --apply",
     "profile:retention": "node scripts/profile-retention.mjs",
     "profile:retention:apply": "node scripts/profile-retention.mjs --apply",
+    "dedup:candidatos": "node scripts/dedup-candidatos.mjs",
+    "dedup:candidatos:apply": "node scripts/dedup-candidatos.mjs --apply",
     "assets:audit": "node scripts/assets-audit.mjs",
     "import-data": "ts-node scripts/import_candidatos.ts",
     "vincular-atributos": "ts-node scripts/vincular_atributos.ts",

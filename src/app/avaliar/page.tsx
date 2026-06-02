@@ -385,9 +385,6 @@ export default function AvaliarPage() {
                   results={results}
                   advancedResults={advancedResults}
                   candidatoNome={candidato?.nome || ''}
-                  candidatoCargo={candidato?.cargo}
-                  candidatoCidade={candidato?.cidade}
-                  candidatoPartido={candidato?.partido}
                   candidatoFotoUrl={candidato?.foto_url}
                   onReset={() => window.location.reload()}
                 />

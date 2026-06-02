@@ -26,7 +26,7 @@ export default function PrivacidadePage() {
         <section className="rounded-3xl border border-[#3d3128] bg-[#1c1814]/70 p-6 md:p-8 flex flex-col gap-5 text-sm text-[#d9d0c5] leading-relaxed">
           <h2 className="text-sm font-bold uppercase tracking-[0.22em] text-[#d97757]">Finalidade</h2>
           <p>
-            A plataforma coleta manifestações espontâneas de percepção pública sobre candidatos,
+            A plataforma coleta manifestações espontâneas de percepção pública sobre políticos,
             com finalidade estatística, metodológica e de inteligência territorial agregada. A
             participação não constitui pesquisa eleitoral registrada nem medição representativa
             de intenção de voto.

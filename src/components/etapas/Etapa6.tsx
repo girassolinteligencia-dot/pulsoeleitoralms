@@ -18,9 +18,6 @@ interface Etapa6Props {
   results: ResultData[];
   advancedResults: any;
   candidatoNome: string;
-  candidatoCargo?: string;
-  candidatoCidade?: string;
-  candidatoPartido?: string;
   candidatoFotoUrl?: string | null;
   onReset: () => void;
 }
@@ -29,9 +26,6 @@ export const Etapa6: React.FC<Etapa6Props> = ({
   results,
   advancedResults,
   candidatoNome,
-  candidatoCargo,
-  candidatoCidade,
-  candidatoPartido,
   candidatoFotoUrl,
   onReset,
 }) => {
@@ -55,7 +49,7 @@ export const Etapa6: React.FC<Etapa6Props> = ({
 
       <section className="w-full max-w-md mb-5 bg-[#1c1814]/60 border border-[#3d3128] rounded-xl p-3 flex items-center gap-3 shrink-0">
         <div className="w-[64px] h-[84px] rounded-lg overflow-hidden border border-[#d97757]/30 bg-[#141413] shrink-0 shadow-[0_0_24px_rgba(217,119,87,0.12)]">
-          <CandidatePhoto src={candidatoFotoUrl} alt={candidatoNome || 'Candidato'} size={96} />
+          <CandidatePhoto src={candidatoFotoUrl} alt={candidatoNome || 'Político'} size={96} />
         </div>
         <div className="min-w-0 flex-1">
           <span className="text-[8px] text-[#d97757] uppercase tracking-[0.2em] font-bold">
@@ -64,9 +58,6 @@ export const Etapa6: React.FC<Etapa6Props> = ({
           <h3 className="mt-2 text-[13px] font-bold font-display uppercase tracking-[0.06em] text-[#f5f0e8] leading-snug break-words">
             {candidatoNome}
           </h3>
-          <p className="mt-2 text-[8px] text-[#7a6e64] uppercase tracking-[0.12em] font-bold leading-relaxed break-words">
-            {[candidatoCargo, candidatoPartido, candidatoCidade].filter(Boolean).join(' • ')}
-          </p>
         </div>
       </section>
 

@@ -4,6 +4,7 @@ import React from 'react';
 interface IndicadorItem {
   nome: string;
   total: number;
+  pct?: number;
 }
 
 interface PercepcaoData {
@@ -47,7 +48,7 @@ function RankedList({ title, items, empty, color }: { title: string; items: Indi
           {items.map((item, index) => (
             <div key={`${item.nome}-${index}`} className="flex items-start justify-between gap-4">
               <span className="text-[10px] text-[#b0aea5] uppercase tracking-[0.1em] leading-relaxed break-words">{item.nome}</span>
-              <span className={`text-[10px] font-bold tabular-nums ${color}`}>{item.total}</span>
+              <span className={`text-[10px] font-bold tabular-nums ${color}`}>{item.pct ?? item.total}%</span>
             </div>
           ))}
         </div>

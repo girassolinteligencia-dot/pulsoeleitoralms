@@ -23,8 +23,9 @@ function countPerfil(manifestacoes: { perfil: unknown }[], key: string) {
     counts.set(value, (counts.get(value) || 0) + 1);
   });
 
+  const total = manifestacoes.length;
   return Array.from(counts.entries())
-    .map(([nome, total]) => ({ nome, total }))
+    .map(([nome, count]) => ({ nome, total: count, pct: percent(count, total) }))
     .sort((a, b) => b.total - a.total)
     .slice(0, 5);
 }
@@ -114,7 +115,9 @@ export async function GET(
       });
     });
 
-    const atributos = Array.from(atributoCounts.values()).sort((a, b) => b.total - a.total);
+    const atributos = Array.from(atributoCounts.values())
+      .sort((a, b) => b.total - a.total)
+      .map((a) => ({ ...a, pct: percent(a.total, vozesValidas) }));
     const forcas = atributos.filter((atributo) => atributo.valor > 0).slice(0, 3);
     const alertas = atributos.filter((atributo) => atributo.valor < 0).slice(0, 3);
 
@@ -139,7 +142,7 @@ export async function GET(
         cidades: countPerfil(manifestacoes, 'cidade'),
         bairros: countPerfil(manifestacoes, 'bairro'),
       },
-      aviso: 'Dados de manifestacoes espontaneas na plataforma. Nao representam pesquisa eleitoral registrada, amostra probabilistica ou margem de erro.',
+      aviso: 'Dados de manifestacoes espontaneas na plataforma. Nao representam pesquisa eleitoral registrada, amostra probabilistica ou margem de erro. Os percentuais refletem o volume relativo de manifestacoes dentro da propria base.',
     });
   } catch (error) {
     console.error('Error fetching perception results:', error);
@@ -164,7 +167,7 @@ export async function GET(
         cidades: [],
         bairros: [],
       },
-      aviso: 'Dados de manifestacoes espontaneas na plataforma. Nao representam pesquisa eleitoral registrada, amostra probabilistica ou margem de erro.',
+      aviso: 'Dados de manifestacoes espontaneas na plataforma. Nao representam pesquisa eleitoral registrada, amostra probabilistica ou margem de erro. Os percentuais refletem o volume relativo de manifestacoes dentro da propria base.',
     });
   }
 }

@@ -6,9 +6,9 @@ O repositorio local foi limpo de vinculos antigos de Vercel. Antes do deploy fin
 
 Depois do link, registre aqui:
 
-- Producao: `https://SEU-DOMINIO-PULSOMS`
-- URL Vercel: `https://SEU-PROJETO-PULSOMS.vercel.app`
-- Projeto/time: `SEU-TIME-VERCEL/SEU-PROJETO-PULSOMS`
+- Producao: `https://pulsoms.ia.br`
+- URL Vercel: `https://pulsomsia.vercel.app`
+- Projeto/time: `paulocardoso-labs-projects/pulsoms-ia`
 - Deployment ID validado: `dpl_...`
 
 Para deixar o repositorio explicitamente linkado, rode:
@@ -17,7 +17,7 @@ Para deixar o repositorio explicitamente linkado, rode:
 npx vercel link
 ```
 
-Selecione o time Vercel correto do projeto PulsoMS e o projeto `SEU-PROJETO-PULSOMS`.
+Selecione o time Vercel correto do projeto PulsoMS e o projeto `pulsoms-ia`.
 
 Se aparecer:
 
@@ -90,7 +90,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 DATABASE_URL=
 DIRECT_URL=
 SUPABASE_SERVICE_ROLE_KEY=
-NEXT_PUBLIC_APP_URL=https://SEU-DOMINIO
+NEXT_PUBLIC_APP_URL=https://pulsoms.ia.br
 ADMIN_EMAILS=paulofernandogarciacardoso@gmail.com
 EVALUATION_SESSION_SECRET=
 ENCRYPTION_KEY=
@@ -135,7 +135,7 @@ npm run smoke:security
 Smoke publico:
 
 ```powershell
-$env:SMOKE_BASE_URL="https://SEU-DOMINIO-PULSOMS"
+$env:SMOKE_BASE_URL="https://pulsoms.ia.br"
 npm run smoke
 npm run smoke:security
 Remove-Item Env:SMOKE_BASE_URL
@@ -149,7 +149,7 @@ Smoke administrativo autenticado:
 4. Rode:
 
 ```powershell
-$env:SMOKE_BASE_URL="https://SEU-DOMINIO"
+$env:SMOKE_BASE_URL="https://pulsoms.ia.br"
 $env:ADMIN_SMOKE_TOKEN="ACCESS_TOKEN_TEMPORARIO"
 npm run smoke:admin
 Remove-Item Env:ADMIN_SMOKE_TOKEN

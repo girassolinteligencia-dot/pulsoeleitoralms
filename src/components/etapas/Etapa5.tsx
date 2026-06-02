@@ -100,9 +100,6 @@ export const Etapa5: React.FC<Etapa5Props> = ({
             <h2 className="text-sm font-bold font-display uppercase tracking-[0.1em] text-[#f5f0e8] truncate">
               {candidato.nome}
             </h2>
-            <p className="text-[9px] text-[#b0aea5] font-body uppercase tracking-[0.16em] sm:tracking-[0.2em] mt-0.5 font-bold truncate">
-              {candidato.cargo} · {candidato.cidade}
-            </p>
           </div>
         </motion.div>
 
@@ -130,7 +127,7 @@ export const Etapa5: React.FC<Etapa5Props> = ({
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
         >
-          Selecione <span className="text-[#f5f0e8] font-bold">{minimoSelecao}</span> ou mais características que você associa a este candidato.
+          Selecione <span className="text-[#f5f0e8] font-bold">{minimoSelecao}</span> ou mais características que você associa a este político.
         </motion.p>
 
         {/* Unified Attributes — No polarity division */}

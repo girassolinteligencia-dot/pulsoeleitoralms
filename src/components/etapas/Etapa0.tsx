@@ -17,8 +17,8 @@ const passos = [
   {
     numero: '02',
     icone: '👤',
-    titulo: 'Escolha um político',
-    descricao: 'Busque por nome e selecione o candidato ou mandatário que deseja avaliar. Você pode avaliar mais de um.',
+    titulo: 'Escolha um(a) político(a)',
+    descricao: 'Busque por nome e selecione o(a) candidato(a) ou mandatário(a) que deseja avaliar. Você pode avaliar mais de um(a).',
   },
   {
     numero: '03',

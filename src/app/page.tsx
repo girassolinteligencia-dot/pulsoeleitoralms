@@ -151,7 +151,7 @@ export default function LandingPage() {
               ].map((passo, i) => (
                 <React.Fragment key={i}>
                   <div className="flex flex-col items-center gap-2 flex-1">
-                    <div className="w-10 h-10 rounded-full bg-[#d97757]/10 border border-[#d97757]/20 flex items-center justify-center text-lg">
+                    <div className="w-10 h-10 rounded-full bg-[#d97757]/10 border border-[#d97757]/30 flex items-center justify-center text-lg [filter:sepia(1)_saturate(3)_hue-rotate(340deg)_brightness(0.85)]">
                       {passo.icone}
                     </div>
                     <span

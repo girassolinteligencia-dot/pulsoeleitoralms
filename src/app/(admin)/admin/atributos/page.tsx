@@ -18,6 +18,8 @@ export default function AtributosAdmin() {
   const [filterPolaridade, setFilterPolaridade] = useState<number | null>(null);
   const [filterVisivel, setFilterVisivel] = useState<boolean | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteErro, setDeleteErro] = useState<{ id: string; msg: string } | null>(null);
 
   useEffect(() => {
     const loadAtributos = async () => {
@@ -55,6 +57,29 @@ export default function AtributosAdmin() {
       }
     } catch (error) {
       console.error(error);
+    }
+  };
+
+  const handleDelete = async (atributo: Atributo) => {
+    if (!confirm(`Excluir "${atributo.nome}"? Esta ação não pode ser desfeita.`)) return;
+    setDeletingId(atributo.id);
+    setDeleteErro(null);
+    try {
+      const res = await adminFetch('/api/admin/atributos', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: atributo.id }),
+      });
+      if (res.ok) {
+        fetchAtributos();
+      } else {
+        const data = await res.json();
+        setDeleteErro({ id: atributo.id, msg: data.error || 'Erro ao excluir.' });
+      }
+    } catch {
+      setDeleteErro({ id: atributo.id, msg: 'Erro ao excluir.' });
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -249,14 +274,27 @@ export default function AtributosAdmin() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex justify-center">
-                  <button 
-                    onClick={() => setEditingAtributo(at)} 
+                <div className="flex justify-center items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setEditingAtributo(at)}
                     className="text-[9px] uppercase font-bold tracking-widest text-[#7a6e64] hover:text-[#d97757] transition-colors opacity-0 group-hover:opacity-100"
                   >
                     Editar
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(at)}
+                    disabled={deletingId === at.id}
+                    className="text-[9px] uppercase font-bold tracking-widest text-[#7a6e64] hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-30"
+                    title="Excluir atributo"
+                  >
+                    {deletingId === at.id ? '...' : '✕'}
+                  </button>
                 </div>
+                {deleteErro?.id === at.id && (
+                  <p className="text-[8px] text-red-400 mt-1 text-center leading-snug px-1">{deleteErro.msg}</p>
+                )}
               </motion.div>
             ))}
           </AnimatePresence>

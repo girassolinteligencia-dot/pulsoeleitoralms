@@ -58,6 +58,40 @@ export async function POST(req: NextRequest) {
 }
 
 /**
+ * DELETE /api/admin/atributos
+ * Exclui um atributo. Bloqueado se houver avaliacoes vinculadas.
+ */
+export async function DELETE(req: NextRequest) {
+  const auth = await getAdminIdentity(req);
+  if ('error' in auth) return auth.error;
+
+  try {
+    const { id } = await req.json();
+    if (!id) return NextResponse.json({ error: 'ID obrigatório' }, { status: 400 });
+
+    const emUso = await prisma.avaliacao.count({ where: { atributo_id: id } });
+    if (emUso > 0) {
+      return NextResponse.json(
+        { error: `Atributo possui ${emUso} avaliação(ões) vinculada(s) e não pode ser excluído.` },
+        { status: 409 }
+      );
+    }
+
+    const atributo = await prisma.atributo.delete({ where: { id } });
+    await recordAuditLog({
+      admin: auth,
+      acao: 'ATRIBUTO_EXCLUIDO',
+      entidade: 'Atributo',
+      entidadeId: atributo.id,
+      detalhes: { nome: atributo.nome, polaridade: atributo.polaridade },
+    });
+    return NextResponse.json({ ok: true });
+  } catch {
+    return NextResponse.json({ error: 'Erro ao excluir atributo' }, { status: 500 });
+  }
+}
+
+/**
  * PUT /api/admin/atributos
  * Atualiza um atributo existente (nome, descricao, polaridade, visibilidade).
  */

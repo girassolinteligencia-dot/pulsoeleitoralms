@@ -106,7 +106,7 @@ export default function AdminLayout({
       </nav>
 
       {/* Sidebar - Hidden on Mobile */}
-      <aside className="hidden md:flex w-72 border-r border-border bg-surface-1 p-10 flex-col gap-12 shrink-0">
+      <aside className="hidden md:flex w-72 border-r border-border bg-surface-1 p-10 flex-col gap-12 shrink-0 overflow-y-auto">
         <div className="flex flex-col gap-3">
           <Image src="/logo.webp" alt="PULSO ELEITORAL MS" width={200} height={60} className="w-full h-auto object-contain" />
           <p className="text-[8px] text-text-muted uppercase font-bold tracking-widest opacity-40">Painel Administrativo</p>

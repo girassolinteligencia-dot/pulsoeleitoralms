@@ -304,6 +304,8 @@ export default function ManageCandidatos() {
                   <label htmlFor="novo-cargo" className={labelClass}>Cargo *</label>
                   <select id="novo-cargo" aria-label="Cargo" value={novoCandidato.cargo} onChange={e => setNovoCandidato({ ...novoCandidato, cargo: e.target.value })} className={inputClass} required>
                     <option value="">Selecione...</option>
+                    <option value="PRESIDENTE">Presidente</option>
+                    <option value="VICE-PRESIDENTE">Vice-Presidente</option>
                     <option value="GOVERNADOR">Governador</option>
                     <option value="VICE-GOVERNADOR">Vice-Governador</option>
                     <option value="SENADOR">Senador</option>

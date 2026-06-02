@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter, usePathname } from 'next/navigation';
 import { Session } from '@supabase/supabase-js';
+import Image from 'next/image';
 
 export default function AdminLayout({
   children,
@@ -128,12 +129,16 @@ export default function AdminLayout({
 
         <div className="mt-auto flex flex-col gap-4">
            <p className="text-[8px] text-text-muted uppercase tracking-widest px-4 truncate opacity-40">User: {session?.user?.email}</p>
-           <button 
+           <button
             onClick={handleLogout}
             className="flex items-center gap-4 text-left text-[10px] uppercase font-bold text-negative tracking-[0.3em] hover:opacity-70 transition-opacity"
           >
             <span>🚪</span> Sair do Sistema
           </button>
+          <div className="flex items-center gap-2 pt-2 border-t border-white/5">
+            <Image src="/gi-logo.png" alt="Girassol Inteligência" width={16} height={16} className="rounded-full opacity-50" />
+            <span className="text-[7px] text-text-muted uppercase tracking-[0.18em] opacity-40">Girassol Inteligência 2026</span>
+          </div>
         </div>
       </aside>
 

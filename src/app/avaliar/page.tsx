@@ -24,6 +24,7 @@ interface Atributo {
 interface Candidato {
   id: string;
   nome: string;
+  nomeExibido: string;
   partido?: string;
   cargo: string;
   cidade: string;
@@ -381,10 +382,10 @@ export default function AvaliarPage() {
                 />
               )}
               {step === 8 && (
-                <Etapa6 
+                <Etapa6
                   results={results}
                   advancedResults={advancedResults}
-                  candidatoNome={candidato?.nome || ''}
+                  candidatoNome={candidato?.nomeExibido || candidato?.nome || ''}
                   candidatoFotoUrl={candidato?.foto_url}
                   onReset={() => window.location.reload()}
                 />

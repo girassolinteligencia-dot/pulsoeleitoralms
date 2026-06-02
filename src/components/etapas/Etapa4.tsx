@@ -8,6 +8,7 @@ import { CandidatePhoto } from '@/components/ui/CandidatePhoto';
 interface Candidato {
   id: string;
   nome: string;
+  nomeExibido: string;
   partido?: string;
   cargo: string;
   cidade: string;
@@ -96,7 +97,8 @@ export const Etapa4: React.FC<Etapa4Props> = ({
       <div className="w-full max-w-xl flex flex-col gap-3 pb-10">
         {candidatos.length > 0 ? (
           candidatos.map((c) => (
-            <motion.button 
+            <motion.button
+              type="button"
               key={c.id}
               onClick={() => onSelect(c)}
               whileHover={{ x: 5, backgroundColor: '#1c1814' }}
@@ -107,7 +109,7 @@ export const Etapa4: React.FC<Etapa4Props> = ({
               </div>
               <div className="flex flex-col items-start min-w-0 flex-1 gap-1">
                 <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-[#f5f0e8] group-hover:text-[#d97757] transition-colors leading-snug break-words">
-                  {c.nome}
+                  {c.nomeExibido || c.nome}
                 </span>
               </div>
               <ArrowRight size={18} className="ml-auto text-[#d97757] opacity-70 sm:opacity-0 group-hover:opacity-100 transition-all shrink-0" />

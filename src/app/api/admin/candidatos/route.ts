@@ -132,8 +132,8 @@ export async function PATCH(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { id, nome, partido, numero, cargo, cidade, foto_url } = body;
-    
+    const { id, nome, partido, numero, cargo, cidade, foto_url, status_verificacao } = body;
+
     const candidato = await prisma.candidato.update({
       where: { id },
       data: {
@@ -142,8 +142,9 @@ export async function PATCH(req: NextRequest) {
         numero,
         cargo,
         cidade,
-        foto_url
-      }
+        foto_url,
+        ...(status_verificacao !== undefined && { status_verificacao }),
+      },
     });
     await recordAuditLog({
       admin: auth,

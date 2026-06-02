@@ -51,6 +51,7 @@ export async function GET(req: NextRequest) {
         cargo: true,
         cidade: true,
         foto_url: true,
+        status_verificacao: true,
         campanha: {
           select: {
             atributos: {
@@ -75,10 +76,16 @@ export async function GET(req: NextRequest) {
     });
 
     return NextResponse.json(
-      candidatos.map((candidato) => ({
-        ...candidato,
-        foto_url: getFotoUrl(candidato.foto_url),
-      }))
+      candidatos.map((candidato) => {
+        const nomeCompleto = candidato.nome;
+        const idx = nomeCompleto.indexOf('(');
+        const nomeUrna = idx > 0 ? nomeCompleto.slice(0, idx).trim() : nomeCompleto;
+        return {
+          ...candidato,
+          foto_url: getFotoUrl(candidato.foto_url),
+          nomeExibido: candidato.status_verificacao ? nomeCompleto : nomeUrna,
+        };
+      })
     );
   } catch (error) {
     console.error('Erro ao buscar candidatos:', error);

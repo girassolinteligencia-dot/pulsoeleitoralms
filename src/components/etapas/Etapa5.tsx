@@ -13,6 +13,7 @@ interface Atributo {
 interface Candidato {
   id: string;
   nome: string;
+  nomeExibido: string;
   cargo: string;
   cidade: string;
   foto_url?: string;
@@ -98,7 +99,7 @@ export const Etapa5: React.FC<Etapa5Props> = ({
           {/* Candidate Info */}
           <div className="flex flex-col min-w-0 flex-1">
             <h2 className="text-sm font-bold font-display uppercase tracking-[0.1em] text-[#f5f0e8] truncate">
-              {candidato.nome}
+              {candidato.nomeExibido || candidato.nome}
             </h2>
           </div>
         </motion.div>
@@ -178,7 +179,8 @@ export const Etapa5: React.FC<Etapa5Props> = ({
 
       {/* Fixed Bottom Action Bar */}
       <div className="fixed bottom-0 left-0 w-full z-50 bg-gradient-to-t from-[#141413] via-[#141413]/95 to-transparent pt-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] px-4 sm:px-6 flex flex-col items-center gap-2">
-        <button 
+        <button
+          type="button"
           onClick={onNext}
           disabled={!canSubmit || isSubmitting}
           className={`w-full max-w-md py-3.5 rounded-xl font-bold text-xs uppercase tracking-[0.18em] transition-all duration-500 font-display ${

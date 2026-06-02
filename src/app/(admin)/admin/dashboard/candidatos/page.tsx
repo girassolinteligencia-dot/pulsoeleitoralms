@@ -13,6 +13,7 @@ interface Candidato {
   bairro: string | null;
   ano_eleicao: number;
   status: string;
+  status_verificacao: boolean;
   campanha?: { id: string; nome: string };
 }
 
@@ -267,6 +268,7 @@ export default function ManageCandidatos() {
               <th className="px-8 py-6 text-[10px] uppercase font-bold text-text-muted tracking-widest">Ano</th>
               <th className="px-8 py-6 text-[10px] uppercase font-bold text-text-muted tracking-widest">Cidade</th>
               <th className="px-8 py-6 text-[10px] uppercase font-bold text-text-muted tracking-widest">Status</th>
+              <th className="px-8 py-6 text-[10px] uppercase font-bold text-text-muted tracking-widest">Nome Completo</th>
               <th className="px-8 py-6 text-[10px] uppercase font-bold text-text-muted tracking-widest text-right">Ações</th>
             </tr>
           </thead>
@@ -284,8 +286,13 @@ export default function ManageCandidatos() {
                     {cand.status}
                   </span>
                 </td>
+                <td className="px-8 py-5">
+                  <span className={`text-[8px] uppercase font-bold tracking-widest px-2 py-1 rounded-full ${cand.status_verificacao ? 'bg-primary/10 text-primary' : 'bg-white/5 text-text-muted'}`}>
+                    {cand.status_verificacao ? 'Visível' : 'Oculto'}
+                  </span>
+                </td>
                 <td className="px-8 py-5 text-right">
-                  <button onClick={() => setEditingCandidato(cand)} className="text-[10px] font-bold text-primary hover:text-white uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all">
+                  <button type="button" onClick={() => setEditingCandidato(cand)} className="text-[10px] font-bold text-primary hover:text-white uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all">
                     Editar
                   </button>
                 </td>
@@ -494,6 +501,26 @@ export default function ManageCandidatos() {
                   <input type="text" value={editingCandidato.cidade || ''} onChange={e => setEditingCandidato({ ...editingCandidato, cidade: e.target.value })} className={inputClass} placeholder="Ex: Campo Grande..." />
                 </div>
               </div>
+
+              {/* Toggle nome completo */}
+              <div className="flex items-center justify-between gap-4 bg-white/[0.03] border border-white/5 rounded-2xl px-5 py-4">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-text">Exibir Nome Completo</p>
+                  <p className="text-[9px] text-text-muted mt-1 opacity-60">
+                    Por padrão exibe apenas o nome de urna. Ative para mostrar o nome completo na plataforma.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEditingCandidato({ ...editingCandidato, status_verificacao: !editingCandidato.status_verificacao })}
+                  aria-label={editingCandidato.status_verificacao ? 'Desativar exibição do nome completo' : 'Ativar exibição do nome completo'}
+                  title={editingCandidato.status_verificacao ? 'Desativar exibição do nome completo' : 'Ativar exibição do nome completo'}
+                  className={`relative shrink-0 w-12 h-6 rounded-full transition-all duration-300 ${editingCandidato.status_verificacao ? 'bg-primary' : 'bg-white/10'}`}
+                >
+                  <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all duration-300 ${editingCandidato.status_verificacao ? 'left-7' : 'left-1'}`} />
+                </button>
+              </div>
+
               <div className="flex gap-4 mt-4">
                 <button type="submit" disabled={updating} className="flex-1 bg-primary text-white py-4 rounded-full text-[10px] font-bold uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all disabled:opacity-50">
                   {updating ? 'Salvando...' : 'Salvar Alterações'}

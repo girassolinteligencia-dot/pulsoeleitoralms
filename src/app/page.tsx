@@ -50,31 +50,22 @@ export default function LandingPage() {
           transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
           className="flex flex-col items-center gap-6 sm:gap-8"
         >
-          {/* Logo Container */}
-          <div className="relative w-20 h-20 sm:w-24 sm:h-24 mb-2">
-            <motion.div
-              initial={{ scale: 0.8, rotate: -10 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ 
-                duration: 1.5, 
-                ease: "easeOut",
-                type: "spring",
-                stiffness: 80 
-              }}
-              className="w-full h-full rounded-2xl bg-gradient-to-br from-[#d97757] to-[#c8933a] p-[1px]"
-            >
-              <div className="w-full h-full rounded-2xl bg-[#1c1814] flex items-center justify-center overflow-hidden relative">
-                <Image
-                  src="/favicon.webp"
-                  alt="Pulso Eleitoral MS Logo"
-                  width={64}
-                  height={64}
-                  className="w-12 h-12 sm:w-16 sm:h-16 object-contain rounded-xl"
-                />
-              </div>
-            </motion.div>
-            <div className="absolute inset-0 bg-[#d97757] blur-2xl opacity-10 -z-10" />
-          </div>
+          {/* Logo Principal */}
+          <motion.div
+            initial={{ scale: 0.85, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+            className="relative mb-2"
+          >
+            <Image
+              src="/logo.webp"
+              alt="PULSO ELEITORAL MS"
+              width={480}
+              height={160}
+              className="w-[280px] sm:w-[380px] md:w-[480px] h-auto object-contain drop-shadow-[0_0_40px_rgba(217,119,87,0.25)] mix-blend-screen"
+              priority
+            />
+          </motion.div>
 
           {/* Heading */}
           <div className="space-y-4">

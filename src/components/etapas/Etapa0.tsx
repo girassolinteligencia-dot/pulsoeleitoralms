@@ -75,9 +75,6 @@ export const Etapa0: React.FC<Etapa0Props> = ({ onNext }) => {
             {/* Texto */}
             <div className="flex flex-col gap-1 min-w-0">
               <div className="flex items-center gap-2">
-                <span className="text-[9px] font-bold text-[#d97757] uppercase tracking-[0.25em]">
-                  {passo.numero}
-                </span>
                 <span className="text-[11px] font-bold font-display uppercase tracking-[0.1em] text-[#f5f0e8]">
                   {passo.titulo}
                 </span>

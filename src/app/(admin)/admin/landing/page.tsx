@@ -47,6 +47,34 @@ const CAMPOS: Campo[] = [
     tipo: 'text',
     padrao: 'Acesso Restrito',
   },
+  {
+    chave: 'landing_passo_1',
+    label: 'Como Funciona — Passo 1',
+    descricao: 'Primeiro passo exibido com ícone 📍 (ex: Informe sua região)',
+    tipo: 'text',
+    padrao: 'Informe sua região',
+  },
+  {
+    chave: 'landing_passo_2',
+    label: 'Como Funciona — Passo 2',
+    descricao: 'Segundo passo exibido com ícone 👤 (ex: Escolha um político)',
+    tipo: 'text',
+    padrao: 'Escolha um político',
+  },
+  {
+    chave: 'landing_passo_3',
+    label: 'Como Funciona — Passo 3',
+    descricao: 'Terceiro passo exibido com ícone ✅ (ex: Dê sua opinião)',
+    tipo: 'text',
+    padrao: 'Dê sua opinião',
+  },
+  {
+    chave: 'landing_reforco',
+    label: 'Frase de Reforço',
+    descricao: 'Texto pequeno abaixo dos 3 passos (ex: Leva menos de 2 minutos...)',
+    tipo: 'text',
+    padrao: 'Leva menos de 2 minutos. Sem cadastro, sem identificação.',
+  },
 ];
 
 export default function LandingConfigPage() {
@@ -132,7 +160,27 @@ export default function LandingConfigPage() {
         <p className="text-[11px] text-[#b0aea5] mt-2 leading-relaxed">
           {valores.landing_subtitulo || CAMPOS[2].padrao}
         </p>
-        <div className="flex gap-3 mt-4 flex-wrap">
+        <div className="flex items-center gap-2 mt-4">
+          {[
+            { icone: '📍', chave: 'landing_passo_1', idx: 5 },
+            { icone: '👤', chave: 'landing_passo_2', idx: 6 },
+            { icone: '✅', chave: 'landing_passo_3', idx: 7 },
+          ].map((p, i) => (
+            <React.Fragment key={p.chave}>
+              <div className="flex flex-col items-center gap-1 flex-1">
+                <span className="text-base">{p.icone}</span>
+                <span className="text-[8px] text-[#b0aea5] uppercase tracking-wider font-bold text-center leading-tight">
+                  {valores[p.chave] || CAMPOS[p.idx].padrao}
+                </span>
+              </div>
+              {i < 2 && <span className="text-[#3d3128] text-sm shrink-0">→</span>}
+            </React.Fragment>
+          ))}
+        </div>
+        <p className="text-[9px] text-[#7a6e64] mt-2">
+          {valores.landing_reforco || CAMPOS[8].padrao}
+        </p>
+        <div className="flex gap-3 mt-3 flex-wrap">
           <span className="px-5 py-2 rounded-full bg-[#d97757] text-[#f5f0e8] text-[10px] font-bold uppercase tracking-widest">
             {valores.landing_cta_principal || CAMPOS[3].padrao}
           </span>

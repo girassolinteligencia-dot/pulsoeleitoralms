@@ -21,6 +21,10 @@ interface LandingTextos {
   landing_subtitulo: string;
   landing_cta_principal: string;
   landing_cta_secundario: string;
+  landing_passo_1: string;
+  landing_passo_2: string;
+  landing_passo_3: string;
+  landing_reforco: string;
 }
 
 const DEFAULTS: LandingTextos = {
@@ -29,6 +33,10 @@ const DEFAULTS: LandingTextos = {
   landing_subtitulo: 'PULSO ELEITORAL MS é a plataforma de inteligência e percepção pública do Mato Grosso do Sul. Um espaço seguro, projetado para que sua visão modele as Eleições de 2026.',
   landing_cta_principal: 'Expressar Minha Visão',
   landing_cta_secundario: 'Acesso Restrito',
+  landing_passo_1: 'Informe sua região',
+  landing_passo_2: 'Escolha um político',
+  landing_passo_3: 'Dê sua opinião',
+  landing_reforco: 'Leva menos de 2 minutos. Sem cadastro, sem identificação.',
 };
 
 export default function LandingPage() {
@@ -45,6 +53,10 @@ export default function LandingPage() {
           landing_subtitulo: data.landing_subtitulo || DEFAULTS.landing_subtitulo,
           landing_cta_principal: data.landing_cta_principal || DEFAULTS.landing_cta_principal,
           landing_cta_secundario: data.landing_cta_secundario || DEFAULTS.landing_cta_secundario,
+          landing_passo_1: data.landing_passo_1 || DEFAULTS.landing_passo_1,
+          landing_passo_2: data.landing_passo_2 || DEFAULTS.landing_passo_2,
+          landing_passo_3: data.landing_passo_3 || DEFAULTS.landing_passo_3,
+          landing_reforco: data.landing_reforco || DEFAULTS.landing_reforco,
         });
       })
       .catch(() => {});
@@ -124,11 +136,53 @@ export default function LandingPage() {
             </motion.p>
           </div>
 
+          {/* Como funciona */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.65 }}
+            className="w-full max-w-xl flex flex-col items-center gap-4"
+          >
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-0 w-full">
+              {[
+                { icone: '📍', texto: textos.landing_passo_1 },
+                { icone: '👤', texto: textos.landing_passo_2 },
+                { icone: '✅', texto: textos.landing_passo_3 },
+              ].map((passo, i) => (
+                <React.Fragment key={i}>
+                  <div className="flex flex-col items-center gap-2 flex-1">
+                    <div className="w-10 h-10 rounded-full bg-[#d97757]/10 border border-[#d97757]/20 flex items-center justify-center text-lg">
+                      {passo.icone}
+                    </div>
+                    <span
+                      className="text-[10px] sm:text-[11px] text-[#b0aea5] uppercase tracking-[0.18em] font-bold text-center leading-relaxed"
+                      style={{ fontFamily: TOKENS.FONTS.DISPLAY }}
+                    >
+                      {passo.texto}
+                    </span>
+                  </div>
+                  {i < 2 && (
+                    <div className="hidden sm:block w-8 shrink-0 text-center text-[#3d3128] text-lg font-bold">→</div>
+                  )}
+                  {i < 2 && (
+                    <div className="sm:hidden w-px h-4 bg-[#3d3128]" />
+                  )}
+                </React.Fragment>
+              ))}
+            </div>
+            <p
+              className="text-[10px] sm:text-[11px] text-[#7a6e64] tracking-[0.15em] text-center"
+              style={{ fontFamily: TOKENS.FONTS.BODY }}
+            >
+              {textos.landing_reforco}
+            </p>
+          </motion.div>
+
           {/* CTA Buttons */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.8 }}
+            transition={{ duration: 0.8, delay: 0.9 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-6 w-full"
           >
             <Link href="/avaliar">

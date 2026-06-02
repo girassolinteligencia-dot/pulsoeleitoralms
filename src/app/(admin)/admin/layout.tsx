@@ -110,9 +110,10 @@ export default function AdminLayout({
       {/* Sidebar - Desktop only */}
       <aside className="hidden md:flex w-60 flex-col shrink-0 border-r border-border bg-surface-1 overflow-hidden">
         {/* Logo area */}
-        <div className="flex flex-col gap-2 px-6 pt-6 pb-4 shrink-0">
+        <div className="flex flex-col items-center gap-1 px-6 pt-6 pb-4 shrink-0">
           <Image src="/logo.webp" alt="PULSO ELEITORAL MS" width={180} height={54} className="w-full h-auto object-contain" />
-          <p className="text-[7px] text-text-muted uppercase font-bold tracking-widest opacity-40">Painel Administrativo</p>
+          <p className="text-[7px] text-[#d97757] uppercase font-bold tracking-widest text-center">Painel Administrativo</p>
+          <p className="text-[7px] text-text-muted uppercase font-bold tracking-widest text-center truncate w-full opacity-60">{session?.user?.email}</p>
         </div>
 
         {/* Nav scrollable */}
@@ -132,7 +133,6 @@ export default function AdminLayout({
 
         {/* Footer */}
         <div className="shrink-0 px-6 py-4 border-t border-white/5 flex flex-col gap-3">
-          <p className="text-[7px] text-text-muted uppercase tracking-widest truncate opacity-40">{session?.user?.email}</p>
           <button
             type="button"
             onClick={handleLogout}
@@ -140,10 +140,6 @@ export default function AdminLayout({
           >
             <span>🚪</span> Sair
           </button>
-          <div className="flex items-center gap-2 pt-1">
-            <Image src="/gi-logo.png" alt="Girassol Inteligência" width={14} height={14} className="rounded-full opacity-50" />
-            <span className="text-[6px] text-text-muted uppercase tracking-[0.15em] opacity-40">Girassol Inteligência 2026</span>
-          </div>
         </div>
       </aside>
 

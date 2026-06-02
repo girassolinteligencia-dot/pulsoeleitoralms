@@ -135,22 +135,14 @@ export default function LandingPage() {
                 </p>
               </div>
 
-              {/* CTA Buttons */}
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 w-full">
-                <Link href="/avaliar">
-                  <button type="button" className="px-8 py-4 rounded-full bg-[#d97757] text-[#f5f0e8] font-bold text-xs sm:text-sm uppercase tracking-[0.2em] transition-all hover:bg-[#c4633d] hover:scale-105 active:scale-95 shadow-xl whitespace-nowrap">
-                    {textos.landing_cta_principal}
-                  </button>
-                </Link>
+              {/* CTA Principal — centralizado e sozinho */}
+              <Link href="/avaliar">
+                <button type="button" className="px-10 py-4 rounded-full bg-[#d97757] text-[#f5f0e8] font-bold text-xs sm:text-sm uppercase tracking-[0.2em] transition-all hover:bg-[#c4633d] hover:scale-105 active:scale-95 shadow-xl whitespace-nowrap">
+                  {textos.landing_cta_principal}
+                </button>
+              </Link>
 
-                <Link href="/admin/dashboard">
-                  <button type="button" className="px-8 py-4 rounded-full bg-[#1c1814]/50 backdrop-blur-md border border-[#3d3128] text-[#f5f0e8] font-bold text-xs sm:text-sm uppercase tracking-[0.2em] transition-all hover:bg-[#3d3128] whitespace-nowrap">
-                    {textos.landing_cta_secundario}
-                  </button>
-                </Link>
-              </div>
-
-              {/* Trust Indicators */}
+              {/* Rodapé discreto — Trust Indicators + Acesso Restrito */}
               <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-[#7a6e64] text-[8px] sm:text-[10px] uppercase tracking-widest font-bold">
                 <span className="flex items-center gap-1.5">
                   <div className="w-1 h-1 rounded-full bg-[#d97757]" />
@@ -166,6 +158,7 @@ export default function LandingPage() {
                 </span>
                 <Link href="/privacidade" className="hover:text-[#d97757] transition-colors">Privacidade</Link>
                 <Link href="/termos" className="hover:text-[#d97757] transition-colors">Termos</Link>
+                <Link href="/admin/dashboard" className="hover:text-[#d97757] transition-colors">{textos.landing_cta_secundario}</Link>
               </div>
             </motion.div>
           )}

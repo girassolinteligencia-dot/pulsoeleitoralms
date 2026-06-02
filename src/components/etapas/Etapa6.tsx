@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
+import Link from 'next/link';
 import { RadarChart } from '@/components/resultado/RadarChart';
 import { PercepcaoDashboard } from '@/components/resultado/PercepcaoDashboard';
 import Image from 'next/image';
@@ -82,15 +83,23 @@ export const Etapa6: React.FC<Etapa6Props> = ({
         <PercepcaoDashboard data={advancedResults} />
       </div>
 
-      <div className="mt-auto pt-4 pb-10 w-full flex flex-col items-center gap-6">
-        <motion.button 
-          onClick={onReset} 
-          className="w-full max-w-[240px] py-4 rounded-full bg-[#1c1814] text-[#f5f0e8] border border-[#3d3128] font-bold text-[9px] uppercase tracking-[0.32em] transition-all shadow-xl hover:border-[#d97757]"
+      <div className="mt-auto pt-4 pb-10 w-full flex flex-col items-center gap-4">
+        <motion.button
+          onClick={onReset}
+          className="w-full max-w-[240px] py-4 rounded-full bg-[#d97757] text-[#f5f0e8] font-bold text-[9px] uppercase tracking-[0.32em] transition-all shadow-xl hover:brightness-110 active:scale-95"
         >
           Nova Manifestação
         </motion.button>
 
-        <div className="opacity-40">
+        <Link href="/" className="w-full max-w-[240px]">
+          <motion.div
+            className="w-full py-4 rounded-full bg-[#1c1814] text-[#f5f0e8] border border-[#3d3128] font-bold text-[9px] uppercase tracking-[0.32em] transition-all shadow-xl hover:border-[#d97757] text-center"
+          >
+            Voltar ao Início
+          </motion.div>
+        </Link>
+
+        <div className="opacity-40 pt-2">
           <p className="text-[7px] uppercase font-bold tracking-[0.5em] text-[#7a6e64]">
             Girassol Inteligência
           </p>

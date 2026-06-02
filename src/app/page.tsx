@@ -41,14 +41,12 @@ const DEFAULTS: LandingTextos = {
 
 export default function LandingPage() {
   const [fragments, setFragments] = useState<Fragment[]>([]);
-  const [textos, setTextos] = useState<LandingTextos | null>(null);
+  const [textos, setTextos] = useState<LandingTextos>(DEFAULTS);
 
   useEffect(() => {
-    const fallback = setTimeout(() => setTextos(DEFAULTS), 1500);
     fetch('/api/configuracoes/public')
       .then(r => r.json())
       .then((data: Record<string, string>) => {
-        clearTimeout(fallback);
         setTextos({
           landing_titulo_linha1: data.landing_titulo_linha1 || DEFAULTS.landing_titulo_linha1,
           landing_titulo_linha2: data.landing_titulo_linha2 || DEFAULTS.landing_titulo_linha2,
@@ -61,7 +59,7 @@ export default function LandingPage() {
           landing_reforco: data.landing_reforco || DEFAULTS.landing_reforco,
         });
       })
-      .catch(() => { clearTimeout(fallback); setTextos(DEFAULTS); });
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -107,9 +105,7 @@ export default function LandingPage() {
             />
           </motion.div>
 
-          {/* Conteúdo de texto — só renderiza após carregar textos da API */}
-          {textos && (
-            <motion.div
+          <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
@@ -160,7 +156,6 @@ export default function LandingPage() {
                 ))}
               </div>
             </motion.div>
-          )}
         </div>
       </div>
 

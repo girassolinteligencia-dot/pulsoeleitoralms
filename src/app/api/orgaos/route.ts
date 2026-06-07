@@ -36,9 +36,9 @@ export async function GET(req: NextRequest) {
         take: 50,
       }),
       prisma.atributo.findMany({
-        where: { visivel: true },
+        where: { visivel: true, categoria: 'orgao' },
         select: { id: true, nome: true, polaridade: true },
-        orderBy: { nome: 'asc' },
+        orderBy: [{ polaridade: 'desc' }, { nome: 'asc' }],
       }),
     ]);
 

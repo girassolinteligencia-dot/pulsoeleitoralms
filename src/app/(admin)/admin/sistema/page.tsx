@@ -2,10 +2,11 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { adminFetch } from '@/lib/adminClient';
+import { GestaoAtributos } from '@/components/admin/GestaoAtributos';
 
 // ─── tipos compartilhados ────────────────────────────────────────────────────
 
-type Aba = 'saude' | 'auditoria' | 'tokens' | 'configuracoes' | 'seguranca';
+type Aba = 'saude' | 'auditoria' | 'tokens' | 'configuracoes' | 'seguranca' | 'atributos';
 
 // ─── Aba: Saúde ──────────────────────────────────────────────────────────────
 
@@ -628,13 +629,14 @@ const ABAS: { id: Aba; label: string; icon: string }[] = [
   { id: 'tokens', label: 'API Tokens', icon: '🔑' },
   { id: 'configuracoes', label: 'Configurações', icon: '⚙️' },
   { id: 'seguranca', label: 'Segurança', icon: '🛡️' },
+  { id: 'atributos', label: 'Atributos', icon: '🏷️' },
 ];
 
 export default function SistemaPage() {
   const [aba, setAba] = useState<Aba>(() => {
     if (typeof window !== 'undefined') {
       const p = new URLSearchParams(window.location.search).get('aba');
-      if (p && ['saude', 'auditoria', 'tokens', 'configuracoes', 'seguranca'].includes(p)) return p as Aba;
+      if (p && ['saude', 'auditoria', 'tokens', 'configuracoes', 'seguranca', 'atributos'].includes(p)) return p as Aba;
     }
     return 'saude';
   });
@@ -668,6 +670,7 @@ export default function SistemaPage() {
         {aba === 'tokens' && <AbaTokens />}
         {aba === 'configuracoes' && <AbaConfiguracoes />}
         {aba === 'seguranca' && <AbaSeguranca />}
+        {aba === 'atributos' && <GestaoAtributos />}
       </div>
     </div>
   );

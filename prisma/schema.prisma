@@ -8,6 +8,7 @@ generator client {
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model Campanha {
@@ -37,11 +38,13 @@ model Atributo {
   descricao   String?
   icone       String?
   polaridade  Int      @default(1) // 1: Positivo, -1: Negativo
-  visivel     Boolean  @default(true) // Controle de visibilidade no frontend
-  
+  visivel     Boolean  @default(true)
+  categoria   String   @default("politico") // politico | orgao | servico
+
   campanhas   CampanhaAtributo[]
   avaliacoes  Avaliacao[]
 
+  @@index([categoria])
   @@map("atributos")
 }
 

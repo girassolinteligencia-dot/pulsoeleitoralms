@@ -17,14 +17,14 @@ const passos = [
   {
     numero: '02',
     icone: '👤',
-    titulo: 'Escolha um(a) político(a)',
-    descricao: 'Busque por nome e selecione o(a) candidato(a) ou mandatário(a) que deseja avaliar. Você pode avaliar mais de um(a).',
+    titulo: 'Escolha o que avaliar',
+    descricao: 'Selecione uma categoria — político(a), órgão ou serviço público — e busque pelo nome. Você pode avaliar mais de um.',
   },
   {
     numero: '03',
     icone: '✅',
-    titulo: 'Dê sua opinião',
-    descricao: 'Associe características ao perfil do político. Não há resposta certa ou errada — apenas a sua percepção.',
+    titulo: 'Avalie com sua percepção',
+    descricao: 'Associe características ao que está avaliando. Não há resposta certa ou errada — apenas a sua visão.',
   },
 ];
 

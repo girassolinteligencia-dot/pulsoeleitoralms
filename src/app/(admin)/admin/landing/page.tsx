@@ -31,7 +31,7 @@ const CAMPOS: Campo[] = [
     label: 'Subtítulo / Descrição',
     descricao: 'Parágrafo explicativo abaixo do título',
     tipo: 'textarea',
-    padrao: 'PULSO ELEITORAL MS é a plataforma de inteligência e percepção pública do Mato Grosso do Sul. Um espaço seguro, projetado para que sua visão modele as Eleições de 2026.',
+    padrao: 'PULSOMS.IA é a plataforma de inteligência e percepção pública de Mato Grosso do Sul. Avalie políticos, órgãos e serviços públicos — sua voz conta.',
   },
   {
     chave: 'landing_cta_principal',

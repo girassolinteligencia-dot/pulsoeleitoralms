@@ -128,7 +128,7 @@ export const Etapa5: React.FC<Etapa5Props> = ({
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
         >
-          Selecione <span className="text-[#f5f0e8] font-bold">{minimoSelecao}</span> ou mais características que você associa a este político.
+          Selecione <span className="text-[#f5f0e8] font-bold">{minimoSelecao}</span> ou mais características que você associa a esta entidade.
         </motion.p>
 
         {/* Unified Attributes — No polarity division */}

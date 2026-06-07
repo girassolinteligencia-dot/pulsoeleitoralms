@@ -12,7 +12,7 @@ export default function PrivacidadePage() {
 
         <header className="flex flex-col gap-4">
           <p className="text-[10px] uppercase tracking-[0.35em] text-[#c8933a] font-bold">
-            PULSO ELEITORAL MS
+            PULSOMS.IA
           </p>
           <h1 className="text-2xl sm:text-3xl md:text-5xl font-bold uppercase tracking-tight">
             Política de Privacidade
@@ -27,9 +27,9 @@ export default function PrivacidadePage() {
           <h2 className="text-sm font-bold uppercase tracking-[0.22em] text-[#d97757]">Finalidade</h2>
           <p>
             A plataforma coleta manifestações espontâneas de percepção pública sobre políticos,
-            com finalidade estatística, metodológica e de inteligência territorial agregada. A
-            participação não constitui pesquisa eleitoral registrada nem medição representativa
-            de intenção de voto.
+            órgãos e serviços públicos, com finalidade estatística, metodológica e de inteligência
+            territorial agregada. A participação não constitui pesquisa eleitoral, avaliação
+            institucional oficial, nem medição de desempenho de serviços.
           </p>
 
           <h2 className="text-sm font-bold uppercase tracking-[0.22em] text-[#d97757]">Dados Utilizados</h2>

@@ -10,7 +10,7 @@ export default function TermosPage() {
 
         <header className="flex flex-col gap-4">
           <p className="text-[10px] uppercase tracking-[0.35em] text-[#c8933a] font-bold">
-            PULSO ELEITORAL MS
+            PULSOMS.IA
           </p>
           <h1 className="text-3xl md:text-5xl font-bold uppercase tracking-tight">
             Termos de Uso
@@ -23,9 +23,10 @@ export default function TermosPage() {
         <section className="rounded-3xl border border-[#3d3128] bg-[#1c1814]/70 p-6 md:p-8 flex flex-col gap-5 text-sm text-[#d9d0c5] leading-relaxed">
           <h2 className="text-sm font-bold uppercase tracking-[0.22em] text-[#d97757]">Natureza da Plataforma</h2>
           <p>
-            O PULSO ELEITORAL MS é uma plataforma de manifestação espontânea de percepção pública.
-            Os resultados exibidos representam interações registradas no sistema e não substituem
-            pesquisa eleitoral registrada, amostragem probabilística ou sondagem formal.
+            O PULSOMS.IA é uma plataforma de manifestação espontânea de percepção pública sobre
+            agentes e entidades públicas. Os resultados exibidos representam interações registradas
+            no sistema e não substituem pesquisa registrada, avaliação institucional ou auditoria
+            de serviços públicos.
           </p>
 
           <h2 className="text-sm font-bold uppercase tracking-[0.22em] text-[#d97757]">Participação</h2>

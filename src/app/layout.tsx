@@ -16,8 +16,8 @@ const roboto = Roboto({
 });
 
 export const metadata: Metadata = {
-  title: "PULSO ELEITORAL MS | Mato Grosso do Sul 2026",
-  description: "Plataforma de inteligência e percepção pública eleitoral de Mato Grosso do Sul.",
+  title: "PULSOMS.IA | Percepção Pública de Mato Grosso do Sul",
+  description: "Plataforma de inteligência e percepção pública de Mato Grosso do Sul. Avalie políticos, órgãos e serviços públicos.",
   icons: {
     icon: [
       { url: "/favicon.webp", type: "image/webp" },

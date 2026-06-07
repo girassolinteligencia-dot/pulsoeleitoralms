@@ -142,7 +142,7 @@ export const EtapaCategoria: React.FC<EtapaCategoriaProps> = ({ onSelect, onBack
           className="inline-flex items-center gap-2 text-[9px] uppercase font-bold text-[#7a6e64] tracking-[0.24em] hover:text-[#f5f0e8] transition-colors"
         >
           <ArrowLeft size={14} />
-          Voltar ao perfil
+          Voltar
         </button>
       </div>
     </motion.div>

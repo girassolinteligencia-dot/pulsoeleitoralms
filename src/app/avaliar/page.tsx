@@ -135,19 +135,19 @@ export default function AvaliarPage() {
     userData.localidadeOrigem === 'manual_pendente'
   );
 
-  const goToCategoriaStep = () => {
-    if (needsRegionStep()) {
-      setStep(3);
-      return;
-    }
-    setStep(4);
+  const goToEntitySearch = (cat: Categoria) => {
+    setStep(2);
+    if (cat === 'orgao_publico') fetchOrgaos();
+    else if (cat === 'servico_publico') fetchServicos();
+    else fetchCandidatos();
   };
 
-  const goToCandidateSearch = () => {
-    setStep(5);
-    if (categoria === 'orgao_publico') fetchOrgaos();
-    else if (categoria === 'servico_publico') fetchServicos();
-    else fetchCandidatos();
+  const goToAttributesAfterProfile = () => {
+    if (needsRegionStep()) {
+      setStep(5);
+    } else {
+      setStep(6);
+    }
   };
 
   const fetchCandidatos = async (query: string = '') => {
@@ -209,7 +209,7 @@ export default function AvaliarPage() {
       setEvaluations([]);
       setOrgao(null); setServico(null);
       setCandidato(cand);
-      setStep(6);
+      setStep(3);
     } catch {
       alert('Não foi possível iniciar a avaliação. Tente novamente.');
     } finally {
@@ -231,7 +231,7 @@ export default function AvaliarPage() {
       setEvaluations([]);
       setCandidato(null); setServico(null);
       setOrgao(org);
-      setStep(6);
+      setStep(3);
     } catch {
       alert('Não foi possível iniciar a avaliação. Tente novamente.');
     } finally {
@@ -253,7 +253,7 @@ export default function AvaliarPage() {
       setEvaluations([]);
       setCandidato(null); setOrgao(null);
       setServico(svc);
-      setStep(6);
+      setStep(3);
     } catch {
       alert('Não foi possível iniciar a avaliação. Tente novamente.');
     } finally {
@@ -276,7 +276,7 @@ export default function AvaliarPage() {
     if (isSubmitting) return;
     if (!sessionToken) {
       alert('Sessão de avaliação expirada. Selecione o candidato novamente.');
-      setStep(5);
+      setStep(2);
       return;
     }
     setIsSubmitting(true);
@@ -424,48 +424,22 @@ export default function AvaliarPage() {
                 />
               )}
               {step === 1 && (
-                <Etapa1
-                  userData={userData} 
-                  setUserData={setUserData as any} 
-                  onNext={() => setStep(2)} 
-                  config={config}
-                />
-              )}
-              {step === 2 && (
-                <Etapa2
-                  userData={userData}
-                  setUserData={setUserData as any}
-                  onNext={goToCategoriaStep}
-                  onBack={() => setStep(1)}
-                  config={config}
-                />
-              )}
-              {step === 3 && (
-                <Etapa3
-                  userData={userData}
-                  setUserData={setUserData as any}
-                  onNext={() => setStep(4)}
-                  onBack={() => setStep(2)}
-                  cidades={cidades}
-                />
-              )}
-              {step === 4 && (
                 <EtapaCategoria
-                  onSelect={(cat) => { setCategoria(cat); goToCandidateSearch(); }}
-                  onBack={() => needsRegionStep() ? setStep(3) : setStep(2)}
+                  onSelect={(cat) => { setCategoria(cat); goToEntitySearch(cat); }}
+                  onBack={() => setStep(0)}
                 />
               )}
-              {step === 5 && categoria === 'politico' && (
+              {step === 2 && categoria === 'politico' && (
                 <Etapa4
                   candidatos={candidatos}
                   onSelect={handleCandidatoSelect}
-                  onBack={() => setStep(4)}
-                  onEditRegion={() => setStep(3)}
+                  onBack={() => setStep(1)}
+                  onEditRegion={() => setStep(5)}
                   onSearch={fetchCandidatos}
                   regionLabel={[userData.bairro, userData.cidade, userData.uf || 'MS'].filter(Boolean).join(' • ')}
                 />
               )}
-              {step === 5 && categoria === 'orgao_publico' && (
+              {step === 2 && categoria === 'orgao_publico' && (
                 <Etapa4
                   candidatos={orgaos.map(o => ({
                     id: o.id,
@@ -477,8 +451,8 @@ export default function AvaliarPage() {
                     campanha: o.campanha,
                   }))}
                   onSelect={(item) => handleOrgaoSelect(orgaos.find(o => o.id === item.id)!)}
-                  onBack={() => setStep(4)}
-                  onEditRegion={() => setStep(3)}
+                  onBack={() => setStep(1)}
+                  onEditRegion={() => setStep(5)}
                   onSearch={fetchOrgaos}
                   regionLabel={[userData.cidade, userData.uf || 'MS'].filter(Boolean).join(' • ')}
                   tituloBusca="Órgãos Públicos"
@@ -486,7 +460,7 @@ export default function AvaliarPage() {
                   placeholderBusca="Nome do órgão ou cidade..."
                 />
               )}
-              {step === 5 && categoria === 'servico_publico' && (
+              {step === 2 && categoria === 'servico_publico' && (
                 <Etapa4
                   candidatos={servicos.map(s => ({
                     id: s.id,
@@ -498,13 +472,39 @@ export default function AvaliarPage() {
                     campanha: s.campanha,
                   }))}
                   onSelect={(item) => handleServicoSelect(servicos.find(s => s.id === item.id)!)}
-                  onBack={() => setStep(4)}
-                  onEditRegion={() => setStep(3)}
+                  onBack={() => setStep(1)}
+                  onEditRegion={() => setStep(5)}
                   onSearch={fetchServicos}
                   regionLabel={[userData.cidade, userData.uf || 'MS'].filter(Boolean).join(' • ')}
                   tituloBusca="Serviços Públicos"
                   subtituloBusca="SERVIÇOS DISPONÍVEIS"
                   placeholderBusca="Nome do serviço ou cidade..."
+                />
+              )}
+              {step === 3 && (
+                <Etapa1
+                  userData={userData}
+                  setUserData={setUserData as any}
+                  onNext={() => setStep(4)}
+                  config={config}
+                />
+              )}
+              {step === 4 && (
+                <Etapa2
+                  userData={userData}
+                  setUserData={setUserData as any}
+                  onNext={goToAttributesAfterProfile}
+                  onBack={() => setStep(3)}
+                  config={config}
+                />
+              )}
+              {step === 5 && (
+                <Etapa3
+                  userData={userData}
+                  setUserData={setUserData as any}
+                  onNext={() => setStep(6)}
+                  onBack={() => setStep(4)}
+                  cidades={cidades}
                 />
               )}
               {step === 6 && (candidato || orgao || servico) && (

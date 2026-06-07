@@ -82,19 +82,25 @@ function sanitizePerfil(value: unknown) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { 
-      candidatoId, 
-      avaliacoes, 
+    const {
+      candidatoId,
+      orgaoId,
+      servicoId,
+      avaliacoes,
       fingerprint,
       sessionToken,
       honeypot,
       perfil,
       aprovacao,
-      expectativaVitoria
+      expectativaVitoria,
     } = body;
 
+    const entityId = typeof orgaoId === 'string' ? orgaoId
+      : typeof servicoId === 'string' ? servicoId
+      : typeof candidatoId === 'string' ? candidatoId
+      : null;
     if (
-      typeof candidatoId !== 'string' ||
+      !entityId ||
       typeof fingerprint !== 'string' ||
       typeof sessionToken !== 'string' ||
       !Array.isArray(avaliacoes) ||
@@ -117,7 +123,7 @@ export async function POST(req: NextRequest) {
 
     if (
       !evaluationSession ||
-      evaluationSession.candidatoId !== candidatoId ||
+      evaluationSession.candidatoId !== entityId ||
       evaluationSession.fingerprintHash !== fingerprintHash
     ) {
       return NextResponse.json({ error: 'Sessão de avaliação inválida ou expirada.' }, { status: 400 });
@@ -126,32 +132,50 @@ export async function POST(req: NextRequest) {
     const endTime = Date.now();
     const duration = endTime - evaluationSession.startedAt;
 
-    const scopeConfig = await getPublicScopeConfig();
-    const candidato = await prisma.candidato.findFirst({
-      where: buildPublicCandidateWhere(scopeConfig, { id: candidatoId }),
-      include: {
-        campanha: {
-          include: {
-            atributos: {
-              where: {
-                atributo: {
-                  visivel: true,
-                },
-              },
-              select: {
-                atributo_id: true,
+    // Resolve entidade avaliada e atributos permitidos
+    let campanha_id: string;
+    let atributosPermitidos: Set<string>;
+
+    if (typeof orgaoId === 'string') {
+      const orgao = await prisma.orgaoPublico.findFirst({
+        where: { id: orgaoId, status: 'Ativo' },
+        include: { campanha: { include: { atributos: { where: { atributo: { visivel: true } }, select: { atributo_id: true } } } } },
+      });
+      if (!orgao || !orgao.campanha) return NextResponse.json({ error: 'Órgão indisponível para avaliação.' }, { status: 404 });
+      campanha_id = orgao.campanha_id!;
+      atributosPermitidos = new Set(orgao.campanha.atributos.map(a => a.atributo_id));
+    } else if (typeof servicoId === 'string') {
+      const svc = await prisma.servicoPublico.findFirst({
+        where: { id: servicoId, status: 'Ativo' },
+        include: { campanha: { include: { atributos: { where: { atributo: { visivel: true } }, select: { atributo_id: true } } } } },
+      });
+      if (!svc || !svc.campanha) return NextResponse.json({ error: 'Serviço indisponível para avaliação.' }, { status: 404 });
+      campanha_id = svc.campanha_id!;
+      atributosPermitidos = new Set(svc.campanha.atributos.map(a => a.atributo_id));
+    } else {
+      const scopeConfig = await getPublicScopeConfig();
+      const candidato = await prisma.candidato.findFirst({
+        where: buildPublicCandidateWhere(scopeConfig, { id: candidatoId }),
+        include: {
+          campanha: {
+            include: {
+              atributos: {
+                where: { atributo: { visivel: true } },
+                select: { atributo_id: true },
               },
             },
           },
         },
-      },
-    });
+      });
 
-    if (!candidato) {
-      return NextResponse.json({ error: 'Candidato indisponível para avaliação.' }, { status: 404 });
+      if (!candidato) {
+        return NextResponse.json({ error: 'Candidato indisponível para avaliação.' }, { status: 404 });
+      }
+
+      campanha_id = candidato.campanha_id;
+      atributosPermitidos = new Set(candidato.campanha.atributos.map(a => a.atributo_id));
     }
 
-    const atributosPermitidos = new Set(candidato.campanha.atributos.map((item) => item.atributo_id));
     const hasInvalidAtributo = avaliacoes.some((av: AvaliacaoInput) => !atributosPermitidos.has(av.atributoId));
     if (hasInvalidAtributo) {
       return NextResponse.json({ error: 'Atributo inválido para a campanha selecionada.' }, { status: 400 });
@@ -167,11 +191,8 @@ export async function POST(req: NextRequest) {
     const activeBlock = await prisma.bloqueio.findFirst({
       where: {
         hash: { in: [ipHash, fingerprintHash] },
-        OR: [
-          { expira_em: null },
-          { expira_em: { gt: new Date() } }
-        ]
-      }
+        OR: [{ expira_em: null }, { expira_em: { gt: new Date() } }],
+      },
     });
 
     if (activeBlock) {
@@ -182,10 +203,7 @@ export async function POST(req: NextRequest) {
     const recentManifestacoes = await prisma.manifestacao.count({
       where: {
         criado_em: { gte: recentWindow },
-        OR: [
-          { ip_hash: ipHash },
-          { fingerprint_hash: fingerprintHash },
-        ],
+        OR: [{ ip_hash: ipHash }, { fingerprint_hash: fingerprintHash }],
       },
     });
 
@@ -195,10 +213,11 @@ export async function POST(req: NextRequest) {
 
     // 2. Processamento da Avaliação
     await prisma.$transaction(async (tx) => {
-      // Criar a Manifestação (Sessão de Voto)
       const manifestacao = await tx.manifestacao.create({
         data: {
-          candidato_id: candidatoId,
+          candidato_id: typeof candidatoId === 'string' ? candidatoId : null,
+          orgao_id: typeof orgaoId === 'string' ? orgaoId : null,
+          servico_id: typeof servicoId === 'string' ? servicoId : null,
           aprovacao,
           expectativa_vitoria: expectativaVitoria,
           perfil: sanitizedPerfil,
@@ -207,17 +226,18 @@ export async function POST(req: NextRequest) {
           user_agent: userAgent,
           duration_ms: duration,
           is_valid: isValid,
-          honeypot_triggered: isBot
-        }
+          honeypot_triggered: isBot,
+        },
       });
 
-      // Criar as avaliações linkadas
       const created = await Promise.all(
-        avaliacoes.map((av: AvaliacaoInput) => 
+        avaliacoes.map((av: AvaliacaoInput) =>
           tx.avaliacao.create({
             data: {
               manifestacao_id: manifestacao.id,
-              candidato_id: candidatoId,
+              candidato_id: typeof candidatoId === 'string' ? candidatoId : null,
+              orgao_id: typeof orgaoId === 'string' ? orgaoId : null,
+              servico_id: typeof servicoId === 'string' ? servicoId : null,
               atributo_id: av.atributoId,
               valor: av.valor,
               is_valid: isValid,
@@ -226,50 +246,44 @@ export async function POST(req: NextRequest) {
               user_agent: userAgent,
               duration_ms: duration,
               honeypot_triggered: isBot,
-              device_info: { 
+              device_info: {
                 ua: userAgent,
-                platform: req.headers.get('sec-ch-ua-platform') || 'unknown'
-              }
-            }
+                platform: req.headers.get('sec-ch-ua-platform') || 'unknown',
+              },
+            },
           })
         )
       );
 
-      // Se for válido, atualizar estatísticas
       if (isValid) {
-        await tx.candidato.update({
-          where: { id: candidatoId },
-          data: { total_avaliacoes: { increment: 1 } } // Incrementamos sessões, não atributos individualmente
-        });
-
+        if (typeof candidatoId === 'string') {
+          await tx.candidato.update({
+            where: { id: candidatoId },
+            data: { total_avaliacoes: { increment: 1 } },
+          });
+        }
         await tx.campanha.update({
-          where: { id: candidato.campanha_id },
-          data: { total_votos: { increment: 1 } }
+          where: { id: campanha_id },
+          data: { total_votos: { increment: 1 } },
         });
       } else {
-        // Log de Auditoria para atividade suspeita
         await tx.auditLog.create({
           data: {
             acao: isBot ? 'BOT_DETECTED' : 'SUSPICIOUS_TIMING',
             entidade: 'Manifestacao',
             entidade_id: manifestacao.id,
-            detalhes: {
-              ip_hash: ipHash,
-              duration_ms: duration,
-              fingerprint: fingerprintHash
-            }
-          }
+            detalhes: { ip_hash: ipHash, duration_ms: duration, fingerprint: fingerprintHash },
+          },
         });
       }
 
       return created;
     });
 
-    return NextResponse.json({ 
-      success: true, 
-      status: isValid ? 'confirmed' : 'flagged' 
+    return NextResponse.json({
+      success: true,
+      status: isValid ? 'confirmed' : 'flagged',
     });
-
   } catch (error) {
     console.error('Erro ao processar voz:', error);
     return NextResponse.json({ error: 'Erro interno no processamento da manifestação.' }, { status: 500 });

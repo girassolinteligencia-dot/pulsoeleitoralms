@@ -34,14 +34,27 @@ interface AtividadeDia {
   total: number;
 }
 
+interface TopEntidade {
+  id: string | null;
+  nome: string;
+  tipo: string;
+  cidade: string;
+  total: number;
+  liquidScore: number;
+}
+
 interface StatsData {
   totalEvaluations: number;
   totalCandidatos: number;
   totalCampanhas: number;
   totalAtributos: number;
+  totalOrgaos: number;
+  totalServicos: number;
   avaliacoes24h: number;
   bloqueiosAtivos: number;
   topCandidatos: TopCandidato[];
+  topOrgaos: TopEntidade[];
+  topServicos: TopEntidade[];
   topAtributos: TopAtributo[];
   atividadeSemanal: AtividadeDia[];
 }
@@ -220,11 +233,13 @@ export default function AdminDashboard() {
       </header>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
         {[
           { label: 'Total Avaliações', value: (stats?.totalEvaluations ?? 0).toLocaleString('pt-BR'), accent: true },
           { label: 'Nas últimas 24h', value: (stats?.avaliacoes24h ?? 0).toLocaleString('pt-BR'), accent: false },
           { label: 'Políticos Ativos', value: (stats?.totalCandidatos ?? 0).toLocaleString('pt-BR'), accent: false },
+          { label: 'Órgãos Públicos', value: (stats?.totalOrgaos ?? 0).toLocaleString('pt-BR'), accent: false },
+          { label: 'Serviços Públicos', value: (stats?.totalServicos ?? 0).toLocaleString('pt-BR'), accent: false },
           { label: 'Atributos Visíveis', value: (stats?.totalAtributos ?? 0).toLocaleString('pt-BR'), accent: false },
           { label: 'Campanhas', value: (stats?.totalCampanhas ?? 0).toLocaleString('pt-BR'), accent: false },
           { label: 'Bloqueios Ativos', value: (stats?.bloqueiosAtivos ?? 0).toLocaleString('pt-BR'), accent: false },
@@ -376,6 +391,82 @@ export default function AdminDashboard() {
                 <p className="text-text-muted text-[9px] uppercase tracking-widest opacity-30">Aguardando sinal...</p>
               </div>
             )}
+          </div>
+        </div>
+      </div>
+
+      {/* Linha 4: Top Órgãos + Top Serviços */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        {/* Top 5 Órgãos Públicos */}
+        <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-6">
+          <h3 className="text-[11px] font-bold uppercase tracking-widest mb-5">Top 5 Órgãos Públicos</h3>
+          <div className="flex flex-col gap-4">
+            {(stats?.topOrgaos ?? []).length === 0 && (
+              <p className="text-[9px] text-text-muted opacity-30 uppercase tracking-widest text-center py-8">Sem avaliações de órgãos ainda</p>
+            )}
+            {(stats?.topOrgaos ?? []).map((o, i) => {
+              const maxO = Math.max(...(stats?.topOrgaos?.map(x => x.total) ?? [1]), 1);
+              return (
+                <div key={o.id ?? i} className="flex flex-col gap-1.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-start gap-2 min-w-0">
+                      <span className="text-[8px] font-bold text-primary opacity-60 mt-0.5 shrink-0">#{i + 1}</span>
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-text truncate">{o.nome}</p>
+                        <p className="text-[7px] text-text-muted opacity-50 uppercase tracking-widest truncate">{o.tipo} · {o.cidade}</p>
+                      </div>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <p className="text-[10px] font-bold text-primary">{o.total.toLocaleString('pt-BR')}</p>
+                      <p className={`text-[7px] font-bold ${o.liquidScore >= 0 ? 'text-positive' : 'text-negative'}`}>
+                        {o.liquidScore >= 0 ? '+' : ''}{o.liquidScore}
+                      </p>
+                    </div>
+                  </div>
+                  <LiquidBar score={o.liquidScore} total={o.total} />
+                  <div className="h-0.5 w-full bg-white/10 rounded-full overflow-hidden">
+                    <div className="h-full bg-primary/30 rounded-full" style={{ width: `${Math.round((o.total / maxO) * 100)}%` }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Top 5 Serviços Públicos */}
+        <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-6">
+          <h3 className="text-[11px] font-bold uppercase tracking-widest mb-5">Top 5 Serviços Públicos</h3>
+          <div className="flex flex-col gap-4">
+            {(stats?.topServicos ?? []).length === 0 && (
+              <p className="text-[9px] text-text-muted opacity-30 uppercase tracking-widest text-center py-8">Sem avaliações de serviços ainda</p>
+            )}
+            {(stats?.topServicos ?? []).map((s, i) => {
+              const maxS = Math.max(...(stats?.topServicos?.map(x => x.total) ?? [1]), 1);
+              return (
+                <div key={s.id ?? i} className="flex flex-col gap-1.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-start gap-2 min-w-0">
+                      <span className="text-[8px] font-bold text-primary opacity-60 mt-0.5 shrink-0">#{i + 1}</span>
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-text truncate">{s.nome}</p>
+                        <p className="text-[7px] text-text-muted opacity-50 uppercase tracking-widest truncate">{s.tipo} · {s.cidade}</p>
+                      </div>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <p className="text-[10px] font-bold text-primary">{s.total.toLocaleString('pt-BR')}</p>
+                      <p className={`text-[7px] font-bold ${s.liquidScore >= 0 ? 'text-positive' : 'text-negative'}`}>
+                        {s.liquidScore >= 0 ? '+' : ''}{s.liquidScore}
+                      </p>
+                    </div>
+                  </div>
+                  <LiquidBar score={s.liquidScore} total={s.total} />
+                  <div className="h-0.5 w-full bg-white/10 rounded-full overflow-hidden">
+                    <div className="h-full bg-primary/30 rounded-full" style={{ width: `${Math.round((s.total / maxS) * 100)}%` }} />
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>

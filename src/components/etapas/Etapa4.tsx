@@ -22,6 +22,9 @@ interface Etapa4Props {
   onEditRegion: () => void;
   onSearch: (query: string) => void;
   regionLabel?: string;
+  tituloBusca?: string;
+  subtituloBusca?: string;
+  placeholderBusca?: string;
 }
 
 export const Etapa4: React.FC<Etapa4Props> = ({
@@ -31,6 +34,9 @@ export const Etapa4: React.FC<Etapa4Props> = ({
   onEditRegion,
   onSearch,
   regionLabel,
+  tituloBusca = 'Busca',
+  subtituloBusca = 'POLÍTICOS DISPONÍVEIS',
+  placeholderBusca = 'Nome do político...',
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -49,10 +55,10 @@ export const Etapa4: React.FC<Etapa4Props> = ({
     >
       <div className="text-center shrink-0 max-w-lg">
         <h1 className="text-2xl sm:text-3xl font-bold font-display uppercase tracking-tight text-[#f5f0e8] drop-shadow-[0_0_15px_rgba(245,240,232,0.3)]">
-          Busca
+          {tituloBusca}
         </h1>
         <p className="text-[9px] sm:text-[10px] text-[#b0aea5] uppercase tracking-[0.28em] sm:tracking-[0.4em] mt-2 font-bold leading-relaxed">
-          POLÍTICOS DISPONÍVEIS
+          {subtituloBusca}
         </p>
       </div>
 
@@ -82,7 +88,7 @@ export const Etapa4: React.FC<Etapa4Props> = ({
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full bg-[#1c1814]/80 border border-[#3d3128] rounded-xl px-5 py-4 sm:py-5 text-sm focus:outline-none focus:border-[#d97757] transition-all placeholder:text-[#7a6e64]/50 text-[#f5f0e8] pr-12"
-            placeholder="Nome do político..."
+            placeholder={placeholderBusca}
           />
           <button 
             type="submit"
@@ -123,8 +129,9 @@ export const Etapa4: React.FC<Etapa4Props> = ({
       </div>
 
       <div className="mt-auto pb-8 flex flex-col items-center gap-4 w-full">
-        <button 
-          onClick={onBack} 
+        <button
+          type="button"
+          onClick={onBack}
           className="inline-flex items-center gap-2 text-[9px] uppercase font-bold text-[#7a6e64] tracking-[0.24em] hover:text-[#f5f0e8] transition-colors"
         >
           <ArrowLeft size={14} />

@@ -52,13 +52,13 @@ export async function GET(req: NextRequest) {
     const rows = avaliacoes.map(a => [
       scope.rodada?.titulo || '',
       scope.rodada?.tipo || '',
-      scope.rodada?.campanha?.nome || a.candidato.cidade || '',
+      scope.rodada?.campanha?.nome || a.candidato?.cidade || '',
       scopedExport ? scope.startDate.toISOString() : '',
       scopedExport ? scope.endDate?.toISOString() || '' : '',
       a.id,
-      a.candidato.nome,
-      a.candidato.cargo,
-      a.candidato.partido,
+      a.candidato?.nome ?? '',
+      a.candidato?.cargo ?? '',
+      a.candidato?.partido ?? '',
       a.atributo.nome,
       a.valor,
       a.criado_em.toISOString()

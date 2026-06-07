@@ -16,9 +16,13 @@ export async function GET(req: NextRequest) {
       totalCandidatos,
       totalCampanhas,
       totalAtributos,
+      totalOrgaos,
+      totalServicos,
       avaliacoes24h,
       bloqueiosAtivos,
       topCandidatosRaw,
+      topOrgaosRaw,
+      topServicosRaw,
       topAtributosRaw,
       atividadeSemanalRaw,
     ] = await Promise.all([
@@ -26,26 +30,42 @@ export async function GET(req: NextRequest) {
       prisma.candidato.count({ where: { status: 'Ativo' } }),
       prisma.campanha.count(),
       prisma.atributo.count({ where: { visivel: true } }),
+      prisma.orgaoPublico.count({ where: { status: 'Ativo' } }),
+      prisma.servicoPublico.count({ where: { status: 'Ativo' } }),
       prisma.manifestacao.count({ where: { criado_em: { gte: inicio24h } } }),
       prisma.bloqueio.count({
         where: { OR: [{ expira_em: null }, { expira_em: { gt: agora } }] },
       }),
-      // top 5 candidatos por volume de avaliações
       prisma.avaliacao.groupBy({
         by: ['candidato_id'],
+        where: { candidato_id: { not: null } },
         _count: { _all: true },
         _sum: { valor: true },
         orderBy: { _count: { candidato_id: 'desc' } },
         take: 5,
       }),
-      // top 5 atributos por volume
+      prisma.avaliacao.groupBy({
+        by: ['orgao_id'],
+        where: { orgao_id: { not: null } },
+        _count: { _all: true },
+        _sum: { valor: true },
+        orderBy: { _count: { orgao_id: 'desc' } },
+        take: 5,
+      }),
+      prisma.avaliacao.groupBy({
+        by: ['servico_id'],
+        where: { servico_id: { not: null } },
+        _count: { _all: true },
+        _sum: { valor: true },
+        orderBy: { _count: { servico_id: 'desc' } },
+        take: 5,
+      }),
       prisma.avaliacao.groupBy({
         by: ['atributo_id'],
         _count: { _all: true },
         orderBy: { _count: { atributo_id: 'desc' } },
         take: 5,
       }),
-      // atividade diária últimos 7 dias via raw query
       prisma.$queryRaw<{ dia: string; total: number }[]>`
         SELECT DATE(criado_em AT TIME ZONE 'America/Campo_Grande') AS dia,
                COUNT(*)::int AS total
@@ -56,31 +76,57 @@ export async function GET(req: NextRequest) {
       `,
     ]);
 
-    // enriquece top candidatos com nome/cargo
-    const candidatoIds = topCandidatosRaw.map(r => r.candidato_id);
+    const candidatoIds = topCandidatosRaw.map(r => r.candidato_id).filter(Boolean) as string[];
     const candidatos = await prisma.candidato.findMany({
       where: { id: { in: candidatoIds } },
       select: { id: true, nome: true, cargo: true, cidade: true },
     });
     const candidatoMap = Object.fromEntries(candidatos.map(c => [c.id, c]));
-
     const topCandidatos = topCandidatosRaw.map(r => ({
       id: r.candidato_id,
-      nome: candidatoMap[r.candidato_id]?.nome ?? '—',
-      cargo: candidatoMap[r.candidato_id]?.cargo ?? '—',
-      cidade: candidatoMap[r.candidato_id]?.cidade ?? '—',
+      nome: candidatoMap[r.candidato_id!]?.nome ?? '—',
+      cargo: candidatoMap[r.candidato_id!]?.cargo ?? '—',
+      cidade: candidatoMap[r.candidato_id!]?.cidade ?? '—',
       total: r._count._all,
       liquidScore: r._sum.valor ?? 0,
     }));
 
-    // enriquece top atributos com nome/polaridade
+    const orgaoIds = topOrgaosRaw.map(r => r.orgao_id).filter(Boolean) as string[];
+    const orgaosTop = await prisma.orgaoPublico.findMany({
+      where: { id: { in: orgaoIds } },
+      select: { id: true, nome: true, tipo: true, cidade: true },
+    });
+    const orgaoMap = Object.fromEntries(orgaosTop.map(o => [o.id, o]));
+    const topOrgaos = topOrgaosRaw.map(r => ({
+      id: r.orgao_id,
+      nome: orgaoMap[r.orgao_id!]?.nome ?? '—',
+      tipo: orgaoMap[r.orgao_id!]?.tipo ?? '—',
+      cidade: orgaoMap[r.orgao_id!]?.cidade ?? '—',
+      total: r._count._all,
+      liquidScore: r._sum.valor ?? 0,
+    }));
+
+    const servicoIds = topServicosRaw.map(r => r.servico_id).filter(Boolean) as string[];
+    const servicosTop = await prisma.servicoPublico.findMany({
+      where: { id: { in: servicoIds } },
+      select: { id: true, nome: true, tipo: true, cidade: true },
+    });
+    const servicoMap = Object.fromEntries(servicosTop.map(s => [s.id, s]));
+    const topServicos = topServicosRaw.map(r => ({
+      id: r.servico_id,
+      nome: servicoMap[r.servico_id!]?.nome ?? '—',
+      tipo: servicoMap[r.servico_id!]?.tipo ?? '—',
+      cidade: servicoMap[r.servico_id!]?.cidade ?? '—',
+      total: r._count._all,
+      liquidScore: r._sum.valor ?? 0,
+    }));
+
     const atributoIds = topAtributosRaw.map(r => r.atributo_id);
     const atributos = await prisma.atributo.findMany({
       where: { id: { in: atributoIds } },
       select: { id: true, nome: true, polaridade: true },
     });
     const atributoMap = Object.fromEntries(atributos.map(a => [a.id, a]));
-
     const topAtributos = topAtributosRaw.map(r => ({
       id: r.atributo_id,
       nome: atributoMap[r.atributo_id]?.nome ?? '—',
@@ -88,7 +134,6 @@ export async function GET(req: NextRequest) {
       total: r._count._all,
     }));
 
-    // normaliza atividade semanal (garante 7 dias mesmo sem dados)
     const atividadeSemanal: { dia: string; total: number }[] = [];
     for (let i = 6; i >= 0; i--) {
       const d = new Date(agora);
@@ -103,9 +148,13 @@ export async function GET(req: NextRequest) {
       totalCandidatos,
       totalCampanhas,
       totalAtributos,
+      totalOrgaos,
+      totalServicos,
       avaliacoes24h,
       bloqueiosAtivos,
       topCandidatos,
+      topOrgaos,
+      topServicos,
       topAtributos,
       atividadeSemanal,
     });

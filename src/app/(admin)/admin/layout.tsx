@@ -71,6 +71,8 @@ export default function AdminLayout({
     { id: 'home', label: 'Início', icon: '🏠', path: '/admin/dashboard' },
     { id: 'campanhas', label: 'Campanhas', icon: '📢', path: '/admin/dashboard/campanhas' },
     { id: 'candidatos', label: 'Candidatos', icon: '👥', path: '/admin/dashboard/candidatos' },
+    { id: 'orgaos', label: 'Órgãos Públicos', icon: '🏛️', path: '/admin/orgaos' },
+    { id: 'servicos', label: 'Serviços Públicos', icon: '🔧', path: '/admin/servicos' },
     { id: 'atributos', label: 'Atributos', icon: '🏷️', path: '/admin/atributos' },
     { id: 'moderacao', label: 'Moderação', icon: '⚖️', path: '/admin/moderacao' },
     { id: 'metodologia', label: 'Metodologia', icon: '🧭', path: '/admin/metodologia' },

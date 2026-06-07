@@ -44,7 +44,7 @@ function buildTerritorialStats(
     perfil: unknown;
     aprovacao: boolean | null;
     expectativa_vitoria: boolean | null;
-    candidato_id: string;
+    candidato_id: string | null;
   }[],
   candidatoNomeById: Map<string, string>,
   field: 'cidade' | 'bairro',
@@ -70,10 +70,8 @@ function buildTerritorialStats(
     current.total++;
     if (manifestacao.aprovacao === true) current.aprovacao++;
     if (manifestacao.expectativa_vitoria === true) current.expectativa++;
-    current.candidatos.set(
-      manifestacao.candidato_id,
-      (current.candidatos.get(manifestacao.candidato_id) || 0) + 1
-    );
+    const cid = manifestacao.candidato_id ?? '';
+    current.candidatos.set(cid, (current.candidatos.get(cid) || 0) + 1);
     stats.set(name, current);
   }
 
@@ -99,7 +97,7 @@ function buildCandidatoCidadeStats(
     perfil: unknown;
     aprovacao: boolean | null;
     expectativa_vitoria: boolean | null;
-    candidato_id: string;
+    candidato_id: string | null;
   }[],
   candidatoNomeById: Map<string, string>,
 ) {
@@ -115,8 +113,8 @@ function buildCandidatoCidadeStats(
     const cidade = getPerfilString(manifestacao.perfil, 'cidade');
     if (!cidade) continue;
 
-    const candidato = candidatoNomeById.get(manifestacao.candidato_id) || 'Desconhecido';
-    const key = `${cidade}::${manifestacao.candidato_id}`;
+    const candidato = candidatoNomeById.get(manifestacao.candidato_id ?? '') || 'Desconhecido';
+    const key = `${cidade}::${manifestacao.candidato_id ?? ''}`;
     const current = stats.get(key) || {
       cidade,
       candidato,
@@ -190,7 +188,7 @@ export async function GET(req: NextRequest) {
 
     const cargoMap: Record<string, { apoio: number; neutro: number; rejeicao: number; total: number }> = {};
     cargoRaw.forEach(av => {
-      const cargo = av.candidato.cargo;
+      const cargo = av.candidato?.cargo ?? 'Outro';
       if (!cargoMap[cargo]) cargoMap[cargo] = { apoio: 0, neutro: 0, rejeicao: 0, total: 0 };
       
       if (av.valor > 0) cargoMap[cargo].apoio++;

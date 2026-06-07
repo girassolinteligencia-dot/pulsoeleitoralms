@@ -237,7 +237,7 @@ export default function AdminDashboard() {
         {[
           { label: 'Total Avaliações', value: (stats?.totalEvaluations ?? 0).toLocaleString('pt-BR'), accent: true },
           { label: 'Nas últimas 24h', value: (stats?.avaliacoes24h ?? 0).toLocaleString('pt-BR'), accent: false },
-          { label: 'Políticos Ativos', value: (stats?.totalCandidatos ?? 0).toLocaleString('pt-BR'), accent: false },
+          { label: 'Políticos', value: (stats?.totalCandidatos ?? 0).toLocaleString('pt-BR'), accent: false },
           { label: 'Órgãos Públicos', value: (stats?.totalOrgaos ?? 0).toLocaleString('pt-BR'), accent: false },
           { label: 'Serviços Públicos', value: (stats?.totalServicos ?? 0).toLocaleString('pt-BR'), accent: false },
           { label: 'Atributos Visíveis', value: (stats?.totalAtributos ?? 0).toLocaleString('pt-BR'), accent: false },
@@ -297,7 +297,7 @@ export default function AdminDashboard() {
 
         {/* Top 5 Políticos */}
         <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-6">
-          <h3 className="text-[11px] font-bold uppercase tracking-widest mb-5">Top 5 Políticos</h3>
+          <h3 className="text-[11px] font-bold uppercase tracking-widest mb-5">Top 5 — Políticos</h3>
           <div className="flex flex-col gap-4">
             {(stats?.topCandidatos ?? []).length === 0 && (
               <p className="text-[9px] text-text-muted opacity-30 uppercase tracking-widest text-center py-8">Sem dados</p>

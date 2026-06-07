@@ -57,9 +57,9 @@ const CAMPOS: Campo[] = [
   {
     chave: 'landing_passo_2',
     label: 'Como Funciona — Passo 2',
-    descricao: 'Segundo passo exibido com ícone 👤 (ex: Escolha um político)',
+    descricao: 'Segundo passo exibido com ícone 👤 (ex: Escolha o que avaliar)',
     tipo: 'text',
-    padrao: 'Escolha um político',
+    padrao: 'Escolha o que avaliar',
   },
   {
     chave: 'landing_passo_3',

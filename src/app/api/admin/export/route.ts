@@ -29,6 +29,8 @@ export async function GET(req: NextRequest) {
       where: scopedExport ? scope.avaliacaoWhere : undefined,
       include: {
         candidato: true,
+        orgao: true,
+        servico: true,
         atributo: true
       },
       orderBy: { criado_em: 'desc' }
@@ -42,6 +44,9 @@ export async function GET(req: NextRequest) {
       'Periodo_Inicio',
       'Periodo_Fim',
       'ID',
+      'Tipo_Entidade',
+      'Entidade',
+      'Tipo_Label',
       'Candidato',
       'Cargo',
       'Partido',
@@ -49,20 +54,43 @@ export async function GET(req: NextRequest) {
       'Valor',
       'Data'
     ];
-    const rows = avaliacoes.map(a => [
-      scope.rodada?.titulo || '',
-      scope.rodada?.tipo || '',
-      scope.rodada?.campanha?.nome || a.candidato?.cidade || '',
-      scopedExport ? scope.startDate.toISOString() : '',
-      scopedExport ? scope.endDate?.toISOString() || '' : '',
-      a.id,
-      a.candidato?.nome ?? '',
-      a.candidato?.cargo ?? '',
-      a.candidato?.partido ?? '',
-      a.atributo.nome,
-      a.valor,
-      a.criado_em.toISOString()
-    ]);
+    const rows = avaliacoes.map(a => {
+      let tipoEntidade = '';
+      let entidade = '';
+      let tipoLabel = '';
+
+      if (a.candidato) {
+        tipoEntidade = 'politico';
+        entidade = a.candidato.nome;
+        tipoLabel = a.candidato.cargo;
+      } else if (a.orgao) {
+        tipoEntidade = 'orgao_publico';
+        entidade = a.orgao.nome;
+        tipoLabel = a.orgao.tipo;
+      } else if (a.servico) {
+        tipoEntidade = 'servico_publico';
+        entidade = a.servico.nome;
+        tipoLabel = a.servico.tipo;
+      }
+
+      return [
+        scope.rodada?.titulo || '',
+        scope.rodada?.tipo || '',
+        scope.rodada?.campanha?.nome || entidade || '',
+        scopedExport ? scope.startDate.toISOString() : '',
+        scopedExport ? scope.endDate?.toISOString() || '' : '',
+        a.id,
+        tipoEntidade,
+        entidade,
+        tipoLabel,
+        a.candidato?.nome ?? '',
+        a.candidato?.cargo ?? '',
+        a.candidato?.partido ?? '',
+        a.atributo.nome,
+        a.valor,
+        a.criado_em.toISOString()
+      ];
+    });
 
     const csvContent = [headers, ...rows]
       .map(row => row.map(escapeCsvValue).join(','))
@@ -84,7 +112,7 @@ export async function GET(req: NextRequest) {
     return new NextResponse(csvContent, {
       headers: {
         'Content-Type': 'text/csv',
-        'Content-Disposition': `attachment; filename=${scope.rodada ? `rodada_${scope.rodada.id}` : 'avaliacoes'}_pulso_eleitoral_ms.csv`
+        'Content-Disposition': `attachment; filename=${scope.rodada ? `rodada_${scope.rodada.id}` : 'avaliacoes'}_pulsoms_ia.csv`
       }
     });
   } catch (error) {

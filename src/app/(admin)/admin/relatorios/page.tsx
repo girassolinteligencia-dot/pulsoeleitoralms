@@ -99,6 +99,15 @@ interface ReportData {
   };
 }
 
+type CategoriaFiltro = 'todos' | 'politico' | 'orgao_publico' | 'servico_publico';
+
+const CATEGORIA_LABELS: Record<CategoriaFiltro, string> = {
+  todos: 'Todos',
+  politico: 'Políticos',
+  orgao_publico: 'Órgãos',
+  servico_publico: 'Serviços',
+};
+
 export default function AdminRelatoriosPage() {
   const [data, setData] = useState<ReportData | null>(null);
   const [rodadas, setRodadas] = useState<RodadaOption[]>([]);
@@ -106,6 +115,7 @@ export default function AdminRelatoriosPage() {
   const [exporting, setExporting] = useState(false);
   const [dias, setDias] = useState(30);
   const [rodadaId, setRodadaId] = useState('');
+  const [categoria, setCategoria] = useState<CategoriaFiltro>('todos');
   const [abertos, setAbertos] = useState<Set<string>>(new Set());
 
   const toggleAberto = (id: string) =>
@@ -118,6 +128,7 @@ export default function AdminRelatoriosPage() {
         const params = new URLSearchParams();
         if (rodadaId) params.set('rodadaId', rodadaId);
         else params.set('dias', String(dias));
+        if (categoria !== 'todos') params.set('categoria', categoria);
 
         const res = await adminFetch(`/api/admin/relatorios?${params.toString()}`);
         const json = await res.json();
@@ -129,7 +140,7 @@ export default function AdminRelatoriosPage() {
       }
     };
     fetchData();
-  }, [dias, rodadaId]);
+  }, [dias, rodadaId, categoria]);
 
   useEffect(() => {
     const fetchRodadas = async () => {
@@ -191,6 +202,19 @@ export default function AdminRelatoriosPage() {
               </option>
             ))}
           </select>
+
+          <div className="flex bg-white/5 p-1 rounded-2xl border border-white/5">
+            {(Object.keys(CATEGORIA_LABELS) as CategoriaFiltro[]).map(cat => (
+              <button
+                type="button"
+                key={cat}
+                onClick={() => setCategoria(cat)}
+                className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${categoria === cat ? 'bg-primary text-white shadow-lg' : 'text-text-muted hover:text-white'}`}
+              >
+                {CATEGORIA_LABELS[cat]}
+              </button>
+            ))}
+          </div>
 
           <div className="flex bg-white/5 p-1 rounded-2xl border border-white/5">
             {[7, 30, 90].map(d => (
@@ -309,7 +333,7 @@ export default function AdminRelatoriosPage() {
                     <div className="min-w-0">
                       <p className="text-xs font-bold uppercase tracking-widest text-text truncate">{item.name}</p>
                       <p className="text-[9px] text-text-muted mt-1 truncate">
-                        Mais citado: {item.topCandidato || '-'} ({item.topCandidatoVozes} vozes)
+                        Mais avaliado: {item.topCandidato || '-'} ({item.topCandidatoVozes} vozes)
                       </p>
                     </div>
                     <div className="text-right">
@@ -329,7 +353,7 @@ export default function AdminRelatoriosPage() {
                     <div className="min-w-0">
                       <p className="text-xs font-bold uppercase tracking-widest text-text truncate">{item.name}</p>
                       <p className="text-[9px] text-text-muted mt-1 truncate">
-                        Mais citado: {item.topCandidato || '-'} ({item.topCandidatoVozes} vozes)
+                        Mais avaliado: {item.topCandidato || '-'} ({item.topCandidatoVozes} vozes)
                       </p>
                     </div>
                     <div className="text-right">
@@ -343,12 +367,12 @@ export default function AdminRelatoriosPage() {
           </div>
 
           <div className="bg-white/[0.02] border border-white/5 rounded-[2rem] p-6 overflow-x-auto">
-            <h4 className="text-[10px] font-bold uppercase tracking-widest text-text mb-5">Candidato × cidade do respondente</h4>
+            <h4 className="text-[10px] font-bold uppercase tracking-widest text-text mb-5">Entidade × cidade do respondente</h4>
             <table className="w-full min-w-[760px] text-left">
               <thead>
                 <tr className="border-b border-white/10">
                   <th className="py-3 text-[9px] uppercase tracking-widest text-text-muted">Cidade</th>
-                  <th className="py-3 text-[9px] uppercase tracking-widest text-text-muted">Candidato</th>
+                  <th className="py-3 text-[9px] uppercase tracking-widest text-text-muted">Entidade</th>
                   <th className="py-3 text-[9px] uppercase tracking-widest text-text-muted text-right">Vozes</th>
                   <th className="py-3 text-[9px] uppercase tracking-widest text-text-muted text-right">Aprovação</th>
                   <th className="py-3 text-[9px] uppercase tracking-widest text-text-muted text-right">Expectativa</th>
@@ -376,7 +400,7 @@ export default function AdminRelatoriosPage() {
           <div className="flex items-center gap-3">
             <div className="p-2 bg-white/5 rounded-lg text-primary"><User size={14} /></div>
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-widest">Perfil de Atributos por Político</h3>
+              <h3 className="text-xs font-bold uppercase tracking-widest">Perfil de Atributos por Entidade</h3>
               <p className="text-[9px] text-text-muted uppercase tracking-widest opacity-60 mt-1">
                 Clique em um nome para ver todos os atributos atribuídos
               </p>
@@ -398,9 +422,14 @@ export default function AdminRelatoriosPage() {
                     onClick={() => toggleAberto(cand.candidatoId)}
                     className="w-full flex items-center justify-between gap-4 px-6 py-4 hover:bg-white/[0.03] transition-colors group"
                   >
-                    <div className="flex items-center gap-4 min-w-0">
+                    <div className="flex items-center gap-3 min-w-0">
                       <span className="text-[10px] font-bold uppercase tracking-widest text-text truncate">{cand.nome}</span>
                       <span className="text-[8px] uppercase text-text-muted tracking-widest shrink-0 hidden sm:block">{cand.cargo}</span>
+                      {(cand as any).tipoEntidade && (cand as any).tipoEntidade !== 'politico' && (
+                        <span className="text-[7px] font-bold uppercase tracking-widest text-[#c8933a] border border-[#c8933a]/40 rounded px-1.5 py-0.5 shrink-0 hidden sm:block">
+                          {(cand as any).tipoEntidade === 'orgao_publico' ? 'Órgão' : 'Serviço'}
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center gap-5 shrink-0">
                       <span className="text-[9px] text-text-muted tabular-nums">{cand.totalVozes} vozes</span>

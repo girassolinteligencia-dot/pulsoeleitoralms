@@ -141,6 +141,15 @@ function buildCandidatoCidadeStats(
     .slice(0, 20);
 }
 
+type CategoriaFiltro = 'todos' | 'politico' | 'orgao_publico' | 'servico_publico';
+
+function buildCategoriaWhere(categoria: CategoriaFiltro, base: Record<string, unknown>) {
+  if (categoria === 'politico') return { ...base, candidato_id: { not: null } };
+  if (categoria === 'orgao_publico') return { ...base, orgao_id: { not: null } };
+  if (categoria === 'servico_publico') return { ...base, servico_id: { not: null } };
+  return base;
+}
+
 export async function GET(req: NextRequest) {
   const authError = await requireAdmin(req);
   if (authError) return authError;
@@ -149,52 +158,76 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const dias = parseInt(searchParams.get('dias') || '30');
     const rodadaId = searchParams.get('rodadaId');
+    const categoria = (searchParams.get('categoria') || 'todos') as CategoriaFiltro;
     const scope = await resolveRodadaScope({ rodadaId, dias });
 
     if (rodadaId && !scope.rodada) {
       return NextResponse.json({ error: 'Rodada metodológica não encontrada' }, { status: 404 });
     }
 
-    // 1. Ranking Líquido (Candidato x Sentimento)
-    const rankingRaw = await prisma.avaliacao.groupBy({
-      by: ['candidato_id'],
-      _sum: { valor: true },
-      _count: { _all: true },
-      where: scope.avaliacaoWhere
+    const avaliacaoWhere = buildCategoriaWhere(categoria, scope.avaliacaoWhere as Record<string, unknown>);
+    const manifestacaoWhere = buildCategoriaWhere(categoria, scope.manifestacaoWhere as Record<string, unknown>);
+
+    // 1. Ranking Líquido — todas as entidades
+    const [rankingCandRaw, rankingOrgRaw, rankingSvcRaw] = await Promise.all([
+      categoria === 'todos' || categoria === 'politico'
+        ? prisma.avaliacao.groupBy({ by: ['candidato_id'], _sum: { valor: true }, _count: { _all: true }, where: { ...avaliacaoWhere, candidato_id: { not: null } } })
+        : Promise.resolve([]),
+      categoria === 'todos' || categoria === 'orgao_publico'
+        ? prisma.avaliacao.groupBy({ by: ['orgao_id'], _sum: { valor: true }, _count: { _all: true }, where: { ...avaliacaoWhere, orgao_id: { not: null } } })
+        : Promise.resolve([]),
+      categoria === 'todos' || categoria === 'servico_publico'
+        ? prisma.avaliacao.groupBy({ by: ['servico_id'], _sum: { valor: true }, _count: { _all: true }, where: { ...avaliacaoWhere, servico_id: { not: null } } })
+        : Promise.resolve([]),
+    ]);
+
+    const [candidatos, orgaos, servicos] = await Promise.all([
+      rankingCandRaw.length > 0
+        ? prisma.candidato.findMany({ where: scope.rodada?.campanha_id ? { campanha_id: scope.rodada.campanha_id } : {}, select: { id: true, nome: true, cargo: true, partido: true } })
+        : Promise.resolve([]),
+      rankingOrgRaw.length > 0
+        ? prisma.orgaoPublico.findMany({ select: { id: true, nome: true, tipo: true } })
+        : Promise.resolve([]),
+      rankingSvcRaw.length > 0
+        ? prisma.servicoPublico.findMany({ select: { id: true, nome: true, tipo: true } })
+        : Promise.resolve([]),
+    ]);
+
+    const candidatoNomeById = new Map(candidatos.map(c => [c.id, c.nome]));
+    const orgaoNomeById = new Map(orgaos.map(o => [o.id, o.nome]));
+    const servicoNomeById = new Map(servicos.map(s => [s.id, s.nome]));
+
+    const toRankingItem = (nome: string, tipo: string, sum: number | null, count: number) => ({
+      nome,
+      tipo,
+      score: sum || 0,
+      total: count,
+      liquidScore: Math.round(((sum || 0) / count) * 100),
     });
 
-    const candidatos = await prisma.candidato.findMany({
-      where: scope.rodada?.campanha_id ? { campanha_id: scope.rodada.campanha_id } : {},
-      select: { id: true, nome: true, cargo: true, partido: true }
-    });
-    const candidatoNomeById = new Map(candidatos.map((candidato) => [candidato.id, candidato.nome]));
+    const ranking = [
+      ...rankingCandRaw.map(r => toRankingItem(candidatos.find(c => c.id === r.candidato_id)?.nome || 'Desconhecido', 'politico', r._sum.valor, r._count._all)),
+      ...rankingOrgRaw.map(r => toRankingItem(orgaoNomeById.get(r.orgao_id ?? '') || 'Desconhecido', 'orgao_publico', r._sum.valor, r._count._all)),
+      ...rankingSvcRaw.map(r => toRankingItem(servicoNomeById.get(r.servico_id ?? '') || 'Desconhecido', 'servico_publico', r._sum.valor, r._count._all)),
+    ].sort((a, b) => b.liquidScore - a.liquidScore);
 
-    const ranking = rankingRaw.map(r => {
-      const cand = candidatos.find(c => c.id === r.candidato_id);
-      return {
-        nome: cand?.nome || 'Desconhecido',
-        score: r._sum.valor || 0,
-        total: r._count._all,
-        // Score líquido normalizado de -100 a 100
-        liquidScore: Math.round(((r._sum.valor || 0) / r._count._all) * 100)
-      };
-    }).sort((a, b) => b.liquidScore - a.liquidScore);
-
-    // 2. Sentimento por Cargo
+    // 2. Sentimento por Categoria/Cargo
     const cargoRaw = await prisma.avaliacao.findMany({
-      where: scope.avaliacaoWhere,
-      include: { candidato: { select: { cargo: true } } }
+      where: avaliacaoWhere,
+      include: {
+        candidato: { select: { cargo: true } },
+        orgao: { select: { tipo: true } },
+        servico: { select: { tipo: true } },
+      }
     });
 
     const cargoMap: Record<string, { apoio: number; neutro: number; rejeicao: number; total: number }> = {};
     cargoRaw.forEach(av => {
-      const cargo = av.candidato?.cargo ?? 'Outro';
+      const cargo = av.candidato?.cargo ?? av.orgao?.tipo ?? av.servico?.tipo ?? 'Outro';
       if (!cargoMap[cargo]) cargoMap[cargo] = { apoio: 0, neutro: 0, rejeicao: 0, total: 0 };
-      
       if (av.valor > 0) cargoMap[cargo].apoio++;
       else if (av.valor < 0) cargoMap[cargo].rejeicao++;
       else cargoMap[cargo].neutro++;
-      
       cargoMap[cargo].total++;
     });
 
@@ -209,7 +242,7 @@ export async function GET(req: NextRequest) {
     const temasRaw = await prisma.avaliacao.groupBy({
       by: ['atributo_id'],
       _count: { _all: true },
-      where: scope.avaliacaoWhere,
+      where: avaliacaoWhere,
       orderBy: { _count: { atributo_id: 'desc' } },
       take: 8
     });
@@ -226,7 +259,7 @@ export async function GET(req: NextRequest) {
 
     // 4. Tendência de Sentimento (Últimos 30 dias)
     const tendenciaRaw = await prisma.avaliacao.findMany({
-      where: scope.avaliacaoWhere,
+      where: avaliacaoWhere,
       select: { valor: true, criado_em: true }
     });
 
@@ -261,7 +294,7 @@ export async function GET(req: NextRequest) {
 
     // 6. Dados Demográficos e de Aprovação (da tabela Manifestacao)
     const manifestacoes = await prisma.manifestacao.findMany({
-      where: scope.manifestacaoWhere,
+      where: manifestacaoWhere,
       select: { perfil: true, aprovacao: true, expectativa_vitoria: true, candidato_id: true }
     });
 
@@ -319,7 +352,7 @@ export async function GET(req: NextRequest) {
     const avAtributosRaw = await prisma.avaliacao.groupBy({
       by: ['atributo_id'],
       _count: { _all: true },
-      where: scope.avaliacaoWhere
+      where: avaliacaoWhere
     });
 
     const virtudes = avAtributosRaw
@@ -340,34 +373,67 @@ export async function GET(req: NextRequest) {
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
 
-    // 9. Atributos por candidato (acordeão)
-    const avPorCandidatoAtributo = await prisma.avaliacao.groupBy({
-      by: ['candidato_id', 'atributo_id'],
-      _count: { _all: true },
-      where: scope.avaliacaoWhere,
-    });
+    // 9. Atributos por entidade (acordeão) — todas as categorias
+    const [avPorCandAtrib, avPorOrgAtrib, avPorSvcAtrib] = await Promise.all([
+      prisma.avaliacao.groupBy({ by: ['candidato_id', 'atributo_id'], _count: { _all: true }, where: { ...avaliacaoWhere, candidato_id: { not: null } } }),
+      prisma.avaliacao.groupBy({ by: ['orgao_id', 'atributo_id'], _count: { _all: true }, where: { ...avaliacaoWhere, orgao_id: { not: null } } }),
+      prisma.avaliacao.groupBy({ by: ['servico_id', 'atributo_id'], _count: { _all: true }, where: { ...avaliacaoWhere, servico_id: { not: null } } }),
+    ]);
+
+    const buildAtributosEntidade = (entityId: string, rows: { atributo_id: string; _count: { _all: number } }[]) =>
+      rows.map(av => {
+        const attr = atributosData.find(a => a.id === av.atributo_id);
+        return { nome: attr?.nome || 'N/A', count: av._count._all, polaridade: attr?.polaridade ?? 0 };
+      }).sort((a, b) => b.count - a.count);
 
     const atributosPorCandidato = ranking.map(r => {
-      const cand = candidatos.find(c => c.nome === r.nome);
-      if (!cand) return null;
-      const atributos = avPorCandidatoAtributo
-        .filter(av => av.candidato_id === cand.id)
-        .map(av => {
-          const attr = atributosData.find(a => a.id === av.atributo_id);
-          return { nome: attr?.nome || 'N/A', count: av._count._all, polaridade: attr?.polaridade ?? 0 };
-        })
-        .sort((a, b) => b.count - a.count);
-      return {
-        candidatoId: cand.id,
-        nome: cand.nome,
-        cargo: cand.cargo,
-        totalVozes: r.total,
-        liquidScore: r.liquidScore,
-        atributos,
-      };
+      let entityId: string | undefined;
+      let cargo = '';
+      let tipoEntidade = r.tipo;
+
+      if (r.tipo === 'politico') {
+        const cand = candidatos.find(c => c.nome === r.nome);
+        if (!cand) return null;
+        entityId = cand.id;
+        cargo = cand.cargo;
+        return {
+          candidatoId: cand.id,
+          nome: cand.nome,
+          cargo,
+          tipoEntidade,
+          totalVozes: r.total,
+          liquidScore: r.liquidScore,
+          atributos: buildAtributosEntidade(cand.id, avPorCandAtrib.filter(av => av.candidato_id === cand.id)),
+        };
+      } else if (r.tipo === 'orgao_publico') {
+        const orgao = orgaos.find(o => o.nome === r.nome);
+        if (!orgao) return null;
+        return {
+          candidatoId: orgao.id,
+          nome: orgao.nome,
+          cargo: orgao.tipo,
+          tipoEntidade,
+          totalVozes: r.total,
+          liquidScore: r.liquidScore,
+          atributos: buildAtributosEntidade(orgao.id, avPorOrgAtrib.filter(av => av.orgao_id === orgao.id)),
+        };
+      } else {
+        const svc = servicos.find(s => s.nome === r.nome);
+        if (!svc) return null;
+        return {
+          candidatoId: svc.id,
+          nome: svc.nome,
+          cargo: svc.tipo,
+          tipoEntidade,
+          totalVozes: r.total,
+          liquidScore: r.liquidScore,
+          atributos: buildAtributosEntidade(svc.id, avPorSvcAtrib.filter(av => av.servico_id === svc.id)),
+        };
+      }
     }).filter(Boolean);
 
     return NextResponse.json({
+      categoria,
       ranking,
       cargoSentimento,
       temas,

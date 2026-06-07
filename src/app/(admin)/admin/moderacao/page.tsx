@@ -4,9 +4,15 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { adminFetch } from '@/lib/adminClient';
 
+const TIPO_LABEL: Record<string, string> = {
+  politico: 'Político',
+  orgao_publico: 'Órgão',
+  servico_publico: 'Serviço',
+};
+
 interface Avaliacao {
   id: string;
-  candidato: { nome: string };
+  entidade: { nome: string; tipo: string };
   atributo: { nome: string };
   valor: number;
   is_valid: boolean;
@@ -17,8 +23,9 @@ interface Avaliacao {
   criado_em: string;
 }
 
-interface GrupoCandidato {
+interface GrupoEntidade {
   nome: string;
+  tipo: string;
   avaliacoes: Avaliacao[];
   total: number;
   suspeitas: number;
@@ -26,21 +33,25 @@ interface GrupoCandidato {
   ultimaData: string;
 }
 
-function agruparPorCandidato(avaliacoes: Avaliacao[]): GrupoCandidato[] {
+function agruparPorEntidade(avaliacoes: Avaliacao[]): GrupoEntidade[] {
   const mapa = new Map<string, Avaliacao[]>();
   for (const av of avaliacoes) {
-    const nome = av.candidato.nome;
-    if (!mapa.has(nome)) mapa.set(nome, []);
-    mapa.get(nome)!.push(av);
+    const chave = `${av.entidade.tipo}::${av.entidade.nome}`;
+    if (!mapa.has(chave)) mapa.set(chave, []);
+    mapa.get(chave)!.push(av);
   }
-  return Array.from(mapa.entries()).map(([nome, avs]) => ({
-    nome,
-    avaliacoes: avs,
-    total: avs.length,
-    suspeitas: avs.filter(a => (a.duration_ms !== null && a.duration_ms < 8000) || a.honeypot_triggered).length,
-    bots: avs.filter(a => a.honeypot_triggered).length,
-    ultimaData: avs[0]?.criado_em ?? '',
-  }));
+  return Array.from(mapa.entries()).map(([chave, avs]) => {
+    const [tipo, nome] = chave.split('::');
+    return {
+      nome,
+      tipo,
+      avaliacoes: avs,
+      total: avs.length,
+      suspeitas: avs.filter(a => (a.duration_ms !== null && a.duration_ms < 8000) || a.honeypot_triggered).length,
+      bots: avs.filter(a => a.honeypot_triggered).length,
+      ultimaData: avs[0]?.criado_em ?? '',
+    };
+  });
 }
 
 export default function ModeracaoAdmin() {
@@ -77,7 +88,7 @@ export default function ModeracaoAdmin() {
     }
   };
 
-  const grupos = useMemo(() => agruparPorCandidato(avaliacoes), [avaliacoes]);
+  const grupos = useMemo(() => agruparPorEntidade(avaliacoes), [avaliacoes]);
 
   return (
     <div className="max-w-7xl mx-auto flex flex-col gap-10">
@@ -105,18 +116,18 @@ export default function ModeracaoAdmin() {
       {/* Acordeão por candidato */}
       <div className="flex flex-col gap-2">
         <p className="text-[9px] text-[#7a6e64] uppercase tracking-widest font-bold mb-2">
-          {grupos.length} político(s) nas últimas 50 avaliações — clique para expandir
+          {grupos.length} entidade(s) nas últimas 50 avaliações — clique para expandir
         </p>
 
         {grupos.map(grupo => {
-          const aberto = abertos.has(grupo.nome);
+          const aberto = abertos.has(`${grupo.tipo}::${grupo.nome}`);
           return (
-            <div key={grupo.nome} className="bg-[#1c1814] border border-[#3d3128] rounded-2xl overflow-hidden">
+            <div key={`${grupo.tipo}::${grupo.nome}`} className="bg-[#1c1814] border border-[#3d3128] rounded-2xl overflow-hidden">
 
-              {/* Linha do candidato */}
+              {/* Linha da entidade */}
               <button
                 type="button"
-                onClick={() => toggleAberto(grupo.nome)}
+                onClick={() => toggleAberto(`${grupo.tipo}::${grupo.nome}`)}
                 className="w-full flex items-center justify-between gap-4 px-6 py-4 hover:bg-[#241e18] transition-colors group"
               >
                 <div className="flex items-center gap-4 min-w-0">
@@ -129,6 +140,9 @@ export default function ModeracaoAdmin() {
                   </motion.span>
                   <span className="text-[11px] font-bold uppercase tracking-wider text-[#f5f0e8] truncate">
                     {grupo.nome}
+                  </span>
+                  <span className="text-[8px] font-bold uppercase tracking-widest text-[#7a6e64] border border-[#3d3128] rounded px-1.5 py-0.5 shrink-0 hidden sm:block">
+                    {TIPO_LABEL[grupo.tipo] ?? grupo.tipo}
                   </span>
                 </div>
 

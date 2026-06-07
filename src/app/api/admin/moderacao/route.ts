@@ -17,9 +17,19 @@ export async function GET(req: NextRequest) {
       orderBy: { criado_em: 'desc' },
       include: {
         candidato: { select: { nome: true } },
+        orgao: { select: { nome: true } },
+        servico: { select: { nome: true } },
         atributo: { select: { nome: true } }
       }
     });
+
+    const avaliacoesNormalizadas = avaliacoes.map(av => ({
+      ...av,
+      entidade: {
+        nome: av.candidato?.nome ?? av.orgao?.nome ?? av.servico?.nome ?? 'Desconhecido',
+        tipo: av.candidato ? 'politico' : av.orgao ? 'orgao_publico' : av.servico ? 'servico_publico' : 'desconhecido',
+      },
+    }));
 
     const total = await prisma.avaliacao.count();
     const suspicious = await prisma.avaliacao.count({
@@ -35,7 +45,7 @@ export async function GET(req: NextRequest) {
     });
 
     return NextResponse.json({
-      avaliacoes,
+      avaliacoes: avaliacoesNormalizadas,
       stats: { total, suspicious, bots }
     });
   } catch {

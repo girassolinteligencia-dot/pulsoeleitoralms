@@ -10,6 +10,7 @@ import { Etapa1 } from '@/components/etapas/Etapa1';
 import { Etapa2 } from '@/components/etapas/Etapa2';
 import { Etapa3 } from '@/components/etapas/Etapa3';
 import { Etapa4 } from '@/components/etapas/Etapa4';
+import { EtapaDestaque, type EntidadeDestaque } from '@/components/etapas/EtapaDestaque';
 import { Etapa5 } from '@/components/etapas/Etapa5';
 import { EtapaCategoria, type Categoria } from '@/components/etapas/EtapaCategoria';
 import { EtapaAprovacao } from '@/components/etapas/EtapaAprovacao';
@@ -95,7 +96,18 @@ export default function AvaliarPage() {
         console.error('Erro ao carregar configurações:', error);
       }
     };
+    const loadDestaques = async () => {
+      try {
+        const res = await fetch('/api/public/destaques');
+        const data = await res.json();
+        setDestaquesOrgaos(data.orgaos ?? []);
+        setDestaquesServicos(data.servicos ?? []);
+      } catch {
+        // destaques são opcionais — cai para busca normal
+      }
+    };
     loadConfig();
+    loadDestaques();
   }, []);
 
   const [categoria, setCategoria] = useState<Categoria>('politico');
@@ -105,6 +117,8 @@ export default function AvaliarPage() {
   const [orgao, setOrgao] = useState<OrgaoPublico | null>(null);
   const [servicos, setServicos] = useState<ServicoPublico[]>([]);
   const [servico, setServico] = useState<ServicoPublico | null>(null);
+  const [destaquesOrgaos, setDestaquesOrgaos] = useState<EntidadeDestaque[]>([]);
+  const [destaquesServicos, setDestaquesServicos] = useState<EntidadeDestaque[]>([]);
 
   const [evaluations, setEvaluations] = useState<{ atributoId: string; valor: number }[]>([]);
   const [aprovacao, setAprovacao] = useState<boolean | null>(null);
@@ -440,45 +454,27 @@ export default function AvaliarPage() {
                 />
               )}
               {step === 2 && categoria === 'orgao_publico' && (
-                <Etapa4
-                  candidatos={orgaos.map(o => ({
-                    id: o.id,
-                    nome: o.nome,
-                    nomeExibido: o.nome,
-                    cargo: o.tipo,
-                    cidade: o.cidade,
-                    foto_url: o.foto_url,
-                    campanha: o.campanha,
-                  }))}
-                  onSelect={(item) => handleOrgaoSelect(orgaos.find(o => o.id === item.id)!)}
-                  onBack={() => setStep(1)}
-                  onEditRegion={() => setStep(5)}
+                <EtapaDestaque
+                  key="destaque-orgao"
+                  categoria="orgao_publico"
+                  destaques={destaquesOrgaos}
+                  resultadosBusca={orgaos.map(o => ({ id: o.id, nome: o.nome, tipo: o.tipo, cidade: o.cidade, foto_url: o.foto_url }))}
+                  buscando={loading}
+                  onSelect={(ent) => handleOrgaoSelect(orgaos.find(o => o.id === ent.id) ?? ent as OrgaoPublico)}
                   onSearch={fetchOrgaos}
-                  regionLabel={[userData.cidade, userData.uf || 'MS'].filter(Boolean).join(' • ')}
-                  tituloBusca="Órgãos Públicos"
-                  subtituloBusca="ÓRGÃOS DISPONÍVEIS"
-                  placeholderBusca="Nome do órgão ou cidade..."
+                  onBack={() => setStep(1)}
                 />
               )}
               {step === 2 && categoria === 'servico_publico' && (
-                <Etapa4
-                  candidatos={servicos.map(s => ({
-                    id: s.id,
-                    nome: s.nome,
-                    nomeExibido: s.nome,
-                    cargo: s.tipo,
-                    cidade: s.cidade,
-                    foto_url: s.foto_url,
-                    campanha: s.campanha,
-                  }))}
-                  onSelect={(item) => handleServicoSelect(servicos.find(s => s.id === item.id)!)}
-                  onBack={() => setStep(1)}
-                  onEditRegion={() => setStep(5)}
+                <EtapaDestaque
+                  key="destaque-servico"
+                  categoria="servico_publico"
+                  destaques={destaquesServicos}
+                  resultadosBusca={servicos.map(s => ({ id: s.id, nome: s.nome, tipo: s.tipo, cidade: s.cidade, foto_url: s.foto_url }))}
+                  buscando={loading}
+                  onSelect={(ent) => handleServicoSelect(servicos.find(s => s.id === ent.id) ?? ent as ServicoPublico)}
                   onSearch={fetchServicos}
-                  regionLabel={[userData.cidade, userData.uf || 'MS'].filter(Boolean).join(' • ')}
-                  tituloBusca="Serviços Públicos"
-                  subtituloBusca="SERVIÇOS DISPONÍVEIS"
-                  placeholderBusca="Nome do serviço ou cidade..."
+                  onBack={() => setStep(1)}
                 />
               )}
               {step === 3 && (

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { adminFetch } from '@/lib/adminClient';
+import { GestaoDestaques } from '@/components/admin/GestaoDestaques';
 
 interface OrgaoPublico {
   id: string;
@@ -194,6 +195,17 @@ export default function ManageOrgaos() {
           </button>
         </div>
       </div>
+
+      {/* Destaques */}
+      <GestaoDestaques
+        categoria="orgaos"
+        buscarTodos={async (query) => {
+          const params = new URLSearchParams({ limit: '50', ...(query && { search: query }) });
+          const res = await adminFetch(`/api/admin/orgaos?${params}`);
+          const data = await res.json();
+          return (data.data || []).map((o: OrgaoPublico) => ({ id: o.id, nome: o.nome, tipo: o.tipo, cidade: o.cidade }));
+        }}
+      />
 
       {/* Desktop Table */}
       <div className="hidden md:block bg-surface-1 border border-border rounded-[2.5rem] overflow-hidden">

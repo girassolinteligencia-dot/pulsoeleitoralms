@@ -6,36 +6,51 @@ export async function GET(req: NextRequest) {
   const search = (searchParams.get('search') || '').trim();
 
   try {
-    const orgaos = await prisma.orgaoPublico.findMany({
-      where: {
-        status: 'Ativo',
-        ...(search && {
-          OR: [
-            { nome: { contains: search, mode: 'insensitive' } },
-            { tipo: { contains: search, mode: 'insensitive' } },
-            { cidade: { contains: search, mode: 'insensitive' } },
-          ],
-        }),
-      },
-      include: {
-        campanha: {
-          select: {
-            atributos: {
-              select: {
-                atributo: {
-                  select: { id: true, nome: true, polaridade: true },
+    const [orgaos, atributosGlobais] = await Promise.all([
+      prisma.orgaoPublico.findMany({
+        where: {
+          status: 'Ativo',
+          ...(search && {
+            OR: [
+              { nome: { contains: search, mode: 'insensitive' } },
+              { tipo: { contains: search, mode: 'insensitive' } },
+              { cidade: { contains: search, mode: 'insensitive' } },
+            ],
+          }),
+        },
+        include: {
+          campanha: {
+            select: {
+              atributos: {
+                select: {
+                  atributo: {
+                    select: { id: true, nome: true, polaridade: true },
+                  },
                 },
+                where: { atributo: { visivel: true } },
               },
-              where: { atributo: { visivel: true } },
             },
           },
         },
-      },
-      orderBy: [{ cidade: 'asc' }, { nome: 'asc' }],
-      take: 50,
+        orderBy: [{ cidade: 'asc' }, { nome: 'asc' }],
+        take: 50,
+      }),
+      prisma.atributo.findMany({
+        where: { visivel: true },
+        select: { id: true, nome: true, polaridade: true },
+        orderBy: { nome: 'asc' },
+      }),
+    ]);
+
+    // Fallback: entidades sem campanha ou com campanha sem atributos recebem todos os atributos visíveis
+    const fallback = atributosGlobais.map(a => ({ atributo: a }));
+    const result = orgaos.map(o => {
+      const temAtributos = (o.campanha?.atributos?.length ?? 0) > 0;
+      if (temAtributos) return o;
+      return { ...o, campanha: { atributos: fallback } };
     });
 
-    return NextResponse.json(orgaos);
+    return NextResponse.json(result);
   } catch (error) {
     console.error('Erro ao buscar órgãos públicos:', error);
     return NextResponse.json([], { status: 200 });

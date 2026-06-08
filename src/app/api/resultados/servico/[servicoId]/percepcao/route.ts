@@ -61,15 +61,16 @@ export async function GET(
     const satisfacaoPct = percent(satisfacao, vozesValidas);
     const saldoPercepcao = aprovacaoPct - desaprovacaoPct;
 
-    const atributoCounts = new Map<string, { nome: string; total: number; valor: number; recente: number }>();
+    const atributoCounts = new Map<string, { nome: string; total: number; saldo: number; recente: number }>();
     const manifestacoesRecentes = new Set(
       manifestacoes.filter((m) => new Date(m.criado_em) >= inicio48h).map((m) => m.id)
     );
 
     manifestacoes.forEach((m) => {
       m.avaliacoes.forEach((av) => {
-        const cur = atributoCounts.get(av.atributo_id) || { nome: av.atributo.nome, total: 0, valor: av.valor, recente: 0 };
+        const cur = atributoCounts.get(av.atributo_id) || { nome: av.atributo.nome, total: 0, saldo: 0, recente: 0 };
         cur.total += 1;
+        cur.saldo += av.valor;
         if (manifestacoesRecentes.has(m.id)) cur.recente += 1;
         atributoCounts.set(av.atributo_id, cur);
       });
@@ -77,10 +78,10 @@ export async function GET(
 
     const atributos = Array.from(atributoCounts.values())
       .sort((a, b) => b.total - a.total)
-      .map((a) => ({ ...a, pct: percent(a.total, vozesValidas) }));
+      .map((a) => ({ ...a, valor: a.saldo, pct: percent(a.total, vozesValidas) }));
 
-    const forcas = atributos.filter((a) => a.valor > 0).slice(0, 5);
-    const alertas = atributos.filter((a) => a.valor < 0).slice(0, 3);
+    const forcas = atributos.filter((a) => a.saldo > 0).slice(0, 5);
+    const alertas = atributos.filter((a) => a.saldo < 0).slice(0, 3);
 
     const totalRecente = manifestacoes.filter((m) => new Date(m.criado_em) >= inicio48h).length;
     const tendencias = Array.from(atributoCounts.values())
@@ -88,7 +89,7 @@ export async function GET(
       .map((a) => {
         const pctHistorico = percent(a.total, vozesValidas);
         const pctRecente = percent(a.recente, Math.max(totalRecente, 1));
-        return { nome: a.nome, valor: a.valor, pctHistorico, pctRecente, delta: pctRecente - pctHistorico };
+        return { nome: a.nome, valor: a.saldo, pctHistorico, pctRecente, delta: pctRecente - pctHistorico };
       })
       .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))
       .slice(0, 6);

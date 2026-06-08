@@ -619,6 +619,91 @@ function AbaConfiguracoes() {
           </div>
         </section>
 
+        <section className="bg-surface-1 border border-border rounded-2xl p-6 space-y-6 lg:col-span-2">
+          <div className="flex items-center gap-3"><span>🎨</span><h3 className="text-xs font-bold uppercase tracking-widest">Identidade Visual &amp; Compartilhamento</h3></div>
+          <p className="text-[10px] text-text-muted leading-relaxed tracking-widest">
+            Configure o favicon, o ícone PWA (atalho no celular/computador), a imagem e a frase exibidas ao compartilhar avaliações nas redes sociais.
+            Use URLs públicas (hospedadas no Supabase Storage ou outro CDN).
+          </p>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="flex flex-col gap-2">
+              <label className="text-[10px] uppercase font-bold text-primary tracking-widest ml-1">Favicon (URL da imagem)</label>
+              <div className="flex gap-3 items-center">
+                {get('geral_favicon_url') && (
+                  <img src={String(get('geral_favicon_url'))} alt="favicon" className="w-8 h-8 rounded object-contain bg-dark border border-border shrink-0" />
+                )}
+                <input
+                  type="url"
+                  defaultValue={String(get('geral_favicon_url') || '')}
+                  placeholder="/favicon.webp ou URL pública"
+                  onBlur={e => update('geral_favicon_url', e.target.value, 'geral', 'URL do favicon do site.')}
+                  className="flex-1 bg-dark border border-border rounded-2xl px-5 py-4 text-sm text-text focus:border-primary outline-none transition-all"
+                />
+              </div>
+              <p className="text-[9px] text-text-muted tracking-widest ml-1">Exibido na aba do navegador. Suporta .webp, .png, .svg, .ico</p>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-[10px] uppercase font-bold text-primary tracking-widest ml-1">Ícone PWA — Atalho na Tela Inicial</label>
+              <div className="flex gap-3 items-center">
+                {get('geral_pwa_icone_url') && (
+                  <img src={String(get('geral_pwa_icone_url'))} alt="pwa" className="w-8 h-8 rounded object-contain bg-dark border border-border shrink-0" />
+                )}
+                <input
+                  type="url"
+                  defaultValue={String(get('geral_pwa_icone_url') || '')}
+                  placeholder="/favicon.webp ou URL pública"
+                  onBlur={e => update('geral_pwa_icone_url', e.target.value, 'geral', 'Ícone exibido ao instalar o site como app.')}
+                  className="flex-1 bg-dark border border-border rounded-2xl px-5 py-4 text-sm text-text focus:border-primary outline-none transition-all"
+                />
+              </div>
+              <p className="text-[9px] text-text-muted tracking-widest ml-1">Aparece como atalho ao adicionar à tela inicial (celular/desktop). Idealmente 512×512 px.</p>
+            </div>
+
+            <div className="flex flex-col gap-2 lg:col-span-2">
+              <label className="text-[10px] uppercase font-bold text-primary tracking-widest ml-1">Imagem ao Compartilhar (Open Graph)</label>
+              <div className="flex gap-3 flex-wrap">
+                {(['logo', 'favicon', 'custom'] as const).map(tipo => (
+                  <button
+                    key={tipo}
+                    type="button"
+                    onClick={() => update('geral_og_imagem_tipo', tipo, 'geral', 'Tipo da imagem Open Graph.')}
+                    className={`px-5 py-2.5 rounded-xl border text-[9px] font-bold uppercase tracking-widest transition-all ${String(get('geral_og_imagem_tipo') || 'logo') === tipo ? 'bg-primary border-primary text-white' : 'bg-dark border-border text-text-muted hover:text-white'}`}
+                  >
+                    {tipo === 'logo' ? 'Logo (/logo.webp)' : tipo === 'favicon' ? 'Favicon (mesmo acima)' : 'URL personalizada'}
+                  </button>
+                ))}
+              </div>
+              {String(get('geral_og_imagem_tipo') || 'logo') === 'custom' && (
+                <div className="flex gap-3 items-center mt-2">
+                  {get('geral_og_imagem_url') && (
+                    <img src={String(get('geral_og_imagem_url'))} alt="og" className="w-12 h-8 rounded object-contain bg-dark border border-border shrink-0" />
+                  )}
+                  <input
+                    type="url"
+                    defaultValue={String(get('geral_og_imagem_url') || '')}
+                    placeholder="https://... (1200×630 px recomendado)"
+                    onBlur={e => update('geral_og_imagem_url', e.target.value, 'geral', 'URL da imagem Open Graph personalizada.')}
+                    className="flex-1 bg-dark border border-border rounded-2xl px-5 py-4 text-sm text-text focus:border-primary outline-none transition-all"
+                  />
+                </div>
+              )}
+              <p className="text-[9px] text-text-muted tracking-widest ml-1">Imagem exibida no preview ao compartilhar o link no WhatsApp, redes sociais etc.</p>
+            </div>
+
+            <div className="flex flex-col gap-2 lg:col-span-2">
+              <label className="text-[10px] uppercase font-bold text-primary tracking-widest ml-1">Frase de Compartilhamento (descrição do site)</label>
+              <textarea
+                defaultValue={String(get('geral_og_frase') || '')}
+                placeholder="Plataforma de inteligência e percepção pública de Mato Grosso do Sul."
+                onBlur={e => update('geral_og_frase', e.target.value, 'geral', 'Frase/descrição exibida ao compartilhar o link.')}
+                className="w-full bg-dark border border-border rounded-2xl px-5 py-4 text-sm text-text focus:border-primary outline-none transition-all resize-none h-20"
+              />
+              <p className="text-[9px] text-text-muted tracking-widest ml-1">Aparece como subtítulo ao compartilhar o link. Ideal: até 160 caracteres.</p>
+            </div>
+          </div>
+        </section>
+
         <section className="bg-surface-1 border border-border rounded-2xl p-6 space-y-4 lg:col-span-2">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3"><span>⚙️</span><h3 className="text-xs font-bold uppercase tracking-widest">Parâmetros Avançados (JSON)</h3></div>

@@ -38,6 +38,11 @@ const STATUS_MAP: Record<string, { label: string; color: string; bg: string }> =
   encerrado: { label: 'Encerrada', color: 'text-negative', bg: 'bg-negative/10' },
 };
 
+interface ConfirmModal {
+  tipo: 'arquivar' | 'excluir';
+  campanha: Campanha;
+}
+
 export default function ManageCampanhas() {
   const [campanhas, setCampanhas] = useState<Campanha[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,6 +55,8 @@ export default function ManageCampanhas() {
   const [creating, setCreating] = useState(false);
   const [newCampanha, setNewCampanha] = useState({ nome: '', slug: '' });
   const [toggling, setToggling] = useState<string | null>(null);
+  const [confirm, setConfirm] = useState<ConfirmModal | null>(null);
+  const [actioning, setActioning] = useState(false);
   const LIMIT = 20;
 
   const fetchCampanhas = useCallback(async (pageNum: number, searchTerm: string) => {
@@ -122,6 +129,46 @@ export default function ManageCampanhas() {
       console.error('Erro ao alterar status:', error);
     } finally {
       setToggling(null);
+    }
+  };
+
+  const arquivarCiclo = async (campanha: Campanha) => {
+    setActioning(true);
+    try {
+      const res = await adminFetch('/api/admin/campanhas', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: campanha.id, status: 'encerrado' }),
+      });
+      if (res.ok) { setConfirm(null); fetchCampanhas(page, search); }
+    } catch (error) {
+      console.error('Erro ao arquivar:', error);
+    } finally {
+      setActioning(false);
+    }
+  };
+
+  const excluirCiclo = async (campanha: Campanha) => {
+    setActioning(true);
+    try {
+      const res = await adminFetch('/api/admin/campanhas', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: campanha.id }),
+      });
+      if (res.ok) {
+        setConfirm(null);
+        fetchCampanhas(1, search);
+        setPage(1);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(err.error || 'Erro ao excluir ciclo.');
+        setConfirm(null);
+      }
+    } catch (error) {
+      console.error('Erro ao excluir:', error);
+    } finally {
+      setActioning(false);
     }
   };
 
@@ -293,17 +340,38 @@ export default function ManageCampanhas() {
                       }`}>
                         {camp.public_scope?.visivel ? 'Pública' : 'Privada'}
                       </span>
-                      <button
-                        onClick={() => toggleStatus(camp)}
-                        disabled={toggling === camp.id}
-                        className={`text-[9px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full border transition-all hover:brightness-110 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed ${
-                          camp.status === 'ativo'
-                            ? 'text-[#c8933a] border-[#c8933a]/20 bg-[#c8933a]/5 hover:bg-[#c8933a]/10'
-                            : 'text-positive border-positive/20 bg-positive/5 hover:bg-positive/10'
-                        }`}
-                      >
-                        {toggling === camp.id ? '…' : camp.status === 'ativo' ? 'Pausar' : 'Ativar'}
-                      </button>
+                      {camp.status !== 'encerrado' && (
+                        <button
+                          type="button"
+                          onClick={() => toggleStatus(camp)}
+                          disabled={toggling === camp.id}
+                          className={`text-[9px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full border transition-all hover:brightness-110 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed ${
+                            camp.status === 'ativo'
+                              ? 'text-[#c8933a] border-[#c8933a]/20 bg-[#c8933a]/5 hover:bg-[#c8933a]/10'
+                              : 'text-positive border-positive/20 bg-positive/5 hover:bg-positive/10'
+                          }`}
+                        >
+                          {toggling === camp.id ? '…' : camp.status === 'ativo' ? 'Pausar' : 'Ativar'}
+                        </button>
+                      )}
+                      {camp.status !== 'encerrado' && (
+                        <button
+                          type="button"
+                          onClick={() => setConfirm({ tipo: 'arquivar', campanha: camp })}
+                          className="text-[9px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full border border-negative/20 bg-negative/5 text-negative hover:bg-negative/10 transition-all active:scale-95"
+                        >
+                          Encerrar
+                        </button>
+                      )}
+                      {camp.status === 'encerrado' && camp.total_votos === 0 && camp._count.candidatos === 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setConfirm({ tipo: 'excluir', campanha: camp })}
+                          className="text-[9px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full border border-negative/40 bg-negative/10 text-negative hover:bg-negative/20 transition-all active:scale-95"
+                        >
+                          Excluir
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -392,25 +460,44 @@ export default function ManageCampanhas() {
               </div>
 
               {/* Actions */}
-              <div className="flex justify-between items-center pt-4 border-t border-border/50">
+              <div className="flex flex-wrap justify-between items-center gap-2 pt-4 border-t border-border/50">
                 <span className="text-[8px] font-mono text-text-muted opacity-50">
                   {camp.public_scope?.visivel ? 'Publica ao usuario' : 'Fora do escopo publico'}
                 </span>
-                <button
-                  onClick={() => toggleStatus(camp)}
-                  disabled={toggling === camp.id}
-                  className={`text-[9px] font-bold uppercase tracking-widest px-4 py-2 rounded-full border transition-all active:scale-95 disabled:opacity-30 ${
-                    camp.status === 'ativo'
-                      ? 'text-[#c8933a] border-[#c8933a]/20 bg-[#c8933a]/5'
-                      : 'text-positive border-positive/20 bg-positive/5'
-                  }`}
-                >
-                  {toggling === camp.id
-                    ? '...'
-                    : camp.status === 'ativo'
-                    ? 'Pausar'
-                    : 'Ativar'}
-                </button>
+                <div className="flex gap-2 flex-wrap justify-end">
+                  {camp.status !== 'encerrado' && (
+                    <button
+                      type="button"
+                      onClick={() => toggleStatus(camp)}
+                      disabled={toggling === camp.id}
+                      className={`text-[9px] font-bold uppercase tracking-widest px-4 py-2 rounded-full border transition-all active:scale-95 disabled:opacity-30 ${
+                        camp.status === 'ativo'
+                          ? 'text-[#c8933a] border-[#c8933a]/20 bg-[#c8933a]/5'
+                          : 'text-positive border-positive/20 bg-positive/5'
+                      }`}
+                    >
+                      {toggling === camp.id ? '...' : camp.status === 'ativo' ? 'Pausar' : 'Ativar'}
+                    </button>
+                  )}
+                  {camp.status !== 'encerrado' && (
+                    <button
+                      type="button"
+                      onClick={() => setConfirm({ tipo: 'arquivar', campanha: camp })}
+                      className="text-[9px] font-bold uppercase tracking-widest px-4 py-2 rounded-full border border-negative/20 bg-negative/5 text-negative transition-all active:scale-95"
+                    >
+                      Encerrar
+                    </button>
+                  )}
+                  {camp.status === 'encerrado' && camp.total_votos === 0 && camp._count.candidatos === 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setConfirm({ tipo: 'excluir', campanha: camp })}
+                      className="text-[9px] font-bold uppercase tracking-widest px-4 py-2 rounded-full border border-negative/40 bg-negative/10 text-negative transition-all active:scale-95"
+                    >
+                      Excluir
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           );
@@ -435,6 +522,45 @@ export default function ManageCampanhas() {
           </div>
         )}
       </div>
+
+      {/* Modal de confirmação */}
+      {confirm && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => !actioning && setConfirm(null)} />
+          <div className="relative w-full max-w-sm bg-surface-1 border border-border rounded-[2.5rem] p-8 shadow-2xl flex flex-col gap-6">
+            <div className="flex flex-col gap-2">
+              <span className="text-2xl">{confirm.tipo === 'excluir' ? '🗑️' : '🔒'}</span>
+              <h3 className="text-sm font-bold font-display uppercase tracking-widest text-text">
+                {confirm.tipo === 'excluir' ? 'Excluir ciclo' : 'Encerrar ciclo'}
+              </h3>
+              <p className="text-[11px] text-text-muted leading-relaxed">
+                {confirm.tipo === 'excluir'
+                  ? <>Tem certeza que deseja <span className="text-negative font-bold">excluir permanentemente</span> o ciclo <span className="text-text font-bold">"{confirm.campanha.nome}"</span>? Esta ação não pode ser desfeita.</>
+                  : <>O ciclo <span className="text-text font-bold">"{confirm.campanha.nome}"</span> será marcado como <span className="text-negative font-bold">Encerrado</span> e removido do escopo público. Os dados são preservados.</>
+                }
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => confirm.tipo === 'excluir' ? excluirCiclo(confirm.campanha) : arquivarCiclo(confirm.campanha)}
+                disabled={actioning}
+                className="flex-1 bg-negative/10 border border-negative/30 text-negative py-3 rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-negative/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {actioning ? 'Aguarde…' : confirm.tipo === 'excluir' ? 'Sim, excluir' : 'Sim, encerrar'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirm(null)}
+                disabled={actioning}
+                className="px-5 py-3 border border-border text-text-muted rounded-full text-[10px] font-bold uppercase tracking-widest hover:text-white transition-all disabled:opacity-40"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Pagination */}
       {totalPages > 1 && (

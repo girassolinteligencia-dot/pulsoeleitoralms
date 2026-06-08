@@ -123,6 +123,44 @@ export async function POST(req: NextRequest) {
   }
 }
 
+// DELETE campanha — só permitido se sem votos e sem candidatos
+export async function DELETE(req: NextRequest) {
+  const auth = await getAdminIdentity(req);
+  if ('error' in auth) return auth.error;
+
+  try {
+    const { id } = await req.json();
+    if (!id) return NextResponse.json({ error: 'ID é obrigatório' }, { status: 400 });
+
+    const campanha = await prisma.campanha.findUnique({
+      where: { id },
+      include: { _count: { select: { candidatos: true } } },
+    });
+    if (!campanha) return NextResponse.json({ error: 'Ciclo não encontrado' }, { status: 404 });
+
+    if (campanha.total_votos > 0 || campanha._count.candidatos > 0) {
+      return NextResponse.json(
+        { error: 'Ciclo com dados não pode ser excluído. Use "Encerrar" para arquivá-lo.' },
+        { status: 409 }
+      );
+    }
+
+    await prisma.campanha.delete({ where: { id } });
+    await recordAuditLog({
+      admin: auth,
+      acao: 'CAMPANHA_EXCLUIDA',
+      entidade: 'Campanha',
+      entidadeId: id,
+      detalhes: { nome: campanha.nome, slug: campanha.slug },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Erro ao excluir campanha:', error);
+    return NextResponse.json({ error: 'Erro interno ao excluir campanha' }, { status: 500 });
+  }
+}
+
 // PATCH update a campanha
 export async function PATCH(req: NextRequest) {
   const auth = await getAdminIdentity(req);

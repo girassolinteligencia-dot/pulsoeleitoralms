@@ -18,7 +18,7 @@ export async function getAdminHeaders(init?: HeadersInit) {
 export async function adminFetch(input: RequestInfo | URL, init: RequestInit = {}) {
   const headers = await getAdminHeaders(init.headers);
 
-  if (init.body && !headers.has('Content-Type')) {
+  if (init.body && !headers.has('Content-Type') && !(init.body instanceof FormData)) {
     headers.set('Content-Type', 'application/json');
   }
 

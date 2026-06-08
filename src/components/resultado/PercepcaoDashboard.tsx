@@ -75,9 +75,16 @@ interface BlocosConfig {
   [key: string]: boolean | undefined;
 }
 
+interface PatrocinioConfig {
+  imagemUrl: string;
+  link?: string;
+  label?: string;
+}
+
 interface PercepcaoDashboardProps {
   data: PercepcaoData | null;
   blocos?: BlocosConfig;
+  patrocinio?: PatrocinioConfig;
 }
 
 // ── helpers visuais ────────────────────────────────────────────────
@@ -366,7 +373,7 @@ function ComparativoCargo({ comparativo }: { comparativo: PercepcaoData['compara
 
 // ── Dashboard principal ───────────────────────────────────────────
 
-export const PercepcaoDashboard: React.FC<PercepcaoDashboardProps> = ({ data, blocos = {} }) => {
+export const PercepcaoDashboard: React.FC<PercepcaoDashboardProps> = ({ data, blocos = {}, patrocinio }) => {
   const [mostrarAlerta, setMostrarAlerta] = useState(false);
 
   const b = {
@@ -470,6 +477,30 @@ export const PercepcaoDashboard: React.FC<PercepcaoDashboardProps> = ({ data, bl
       {/* Comparativo de Cargo (desativado por padrão) */}
       {b.cargo && data.comparativoCargo && (
         <ComparativoCargo comparativo={data.comparativoCargo} />
+      )}
+
+      {/* Banner de patrocínio — posição C (pós-resultado) */}
+      {patrocinio?.imagemUrl && (
+        patrocinio.link ? (
+          <a
+            href={patrocinio.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex flex-col items-center gap-2 px-4 py-3 bg-[#1c1814] border border-[#3d3128] rounded-xl hover:border-[#7a6e64]/50 transition-colors"
+          >
+            <span className="text-[8px] uppercase tracking-[0.22em] text-[#7a6e64] font-bold">
+              {patrocinio.label || 'Realizado com apoio de'}
+            </span>
+            <img src={patrocinio.imagemUrl} alt="Patrocinador" className="h-8 max-w-[160px] object-contain opacity-80" />
+          </a>
+        ) : (
+          <div className="flex flex-col items-center gap-2 px-4 py-3 bg-[#1c1814] border border-[#3d3128] rounded-xl">
+            <span className="text-[8px] uppercase tracking-[0.22em] text-[#7a6e64] font-bold">
+              {patrocinio.label || 'Realizado com apoio de'}
+            </span>
+            <img src={patrocinio.imagemUrl} alt="Patrocinador" className="h-8 max-w-[160px] object-contain opacity-80" />
+          </div>
+        )
       )}
 
       {/* Aviso metodológico colapsável */}

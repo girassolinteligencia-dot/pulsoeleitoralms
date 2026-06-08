@@ -208,6 +208,15 @@ export const Etapa6: React.FC<Etapa6Props> = ({
         <PercepcaoDashboard
           data={advancedResults}
           blocos={blocos}
+          patrocinio={
+            config?.geral_patrocinio_ativo === 'ativo' && config?.geral_patrocinio_imagem_url
+              ? {
+                  imagemUrl: String(config.geral_patrocinio_imagem_url),
+                  link: config.geral_patrocinio_link ? String(config.geral_patrocinio_link) : undefined,
+                  label: config.geral_patrocinio_label ? String(config.geral_patrocinio_label) : undefined,
+                }
+              : undefined
+          }
         />
       </div>
 

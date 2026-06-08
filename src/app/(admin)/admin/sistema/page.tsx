@@ -756,6 +756,50 @@ function AbaConfiguracoes() {
           </div>
         </section>
 
+        <section className="bg-surface-1 border border-border rounded-2xl p-6 space-y-6 lg:col-span-2">
+          <div className="flex items-center gap-3"><span>💼</span><h3 className="text-xs font-bold uppercase tracking-widest">Banner de Patrocínio</h3></div>
+          <p className="text-[10px] text-text-muted leading-relaxed">
+            Exibido em dois momentos: antes do usuário iniciar a avaliação (Etapa 1) e ao final, antes da nota metodológica.
+            Deixe a URL de destino em branco para desativar o banner.
+          </p>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <UploadImagem
+              chave="geral_patrocinio_imagem_url"
+              label="Logo do patrocinador"
+              dica="Recomendado fundo transparente (PNG/WebP). Será convertido para .webp — máx. 512 KB"
+              currentUrl={String(get('geral_patrocinio_imagem_url') || '')}
+              previewSize="lg"
+              onSaved={fetchP}
+            />
+            <div className="flex flex-col gap-4">
+              <InputConfig
+                chave="geral_patrocinio_link"
+                label="URL de destino do patrocinador"
+                value={get('geral_patrocinio_link') || ''}
+                onUpdate={update}
+              />
+              <InputConfig
+                chave="geral_patrocinio_label"
+                label="Texto do banner"
+                value={get('geral_patrocinio_label') || 'Realizado com apoio de'}
+                onUpdate={update}
+              />
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] uppercase font-bold text-primary tracking-widest ml-1">Status do banner</label>
+                <div className="flex gap-3">
+                  {(['ativo', 'inativo'] as const).map(v => (
+                    <button key={v} type="button"
+                      onClick={() => update('geral_patrocinio_ativo', v, 'geral', 'Status do banner de patrocínio.')}
+                      className={`flex-1 px-3 py-2.5 rounded-xl border text-[9px] font-bold uppercase tracking-widest transition-all ${String(get('geral_patrocinio_ativo') || 'inativo') === v ? 'bg-primary border-primary text-white' : 'bg-dark border-border text-text-muted hover:text-white'}`}>
+                      {v === 'ativo' ? 'Ativo' : 'Inativo'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <section className="bg-surface-1 border border-border rounded-2xl p-6 space-y-4 lg:col-span-2">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3"><span>⚙️</span><h3 className="text-xs font-bold uppercase tracking-widest">Parâmetros Avançados (JSON)</h3></div>

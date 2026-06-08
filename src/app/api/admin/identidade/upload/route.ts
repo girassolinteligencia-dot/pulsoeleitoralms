@@ -1,17 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
+import sharp from 'sharp';
 import { getAdminIdentity } from '@/lib/adminAuth';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { prisma } from '@/lib/prisma';
 
 const MAX_SIZE = 512 * 1024;
 const BUCKET = 'site';
-const CHAVES_PERMITIDAS = ['geral_favicon_url', 'geral_pwa_icone_url', 'geral_og_imagem_url'] as const;
+const CHAVES_PERMITIDAS = [
+  'geral_favicon_url',
+  'geral_pwa_icone_url',
+  'geral_og_imagem_url',
+  'geral_patrocinio_imagem_url',
+] as const;
 type ChavePermitida = typeof CHAVES_PERMITIDAS[number];
 
 const DESCRICOES: Record<ChavePermitida, string> = {
   geral_favicon_url: 'URL do favicon do site.',
   geral_pwa_icone_url: 'Ícone exibido ao instalar o site como app.',
   geral_og_imagem_url: 'URL da imagem Open Graph personalizada.',
+  geral_patrocinio_imagem_url: 'Logo do patrocinador exibida nos banners da plataforma.',
 };
 
 export async function POST(req: NextRequest) {
@@ -35,15 +42,31 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `Arquivo muito grande (${(file.size / 1024).toFixed(0)} KB). Máximo: 512 KB.` }, { status: 422 });
     }
 
-    const ext = file.name.split('.').pop() || 'webp';
-    const storagePath = `${chave}.${ext}`;
     const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    const rawBuffer = Buffer.from(bytes);
+
+    // SVG e ICO não passam pelo sharp — ficam no formato original
+    const isBitmap = ['image/webp', 'image/png', 'image/jpeg'].includes(file.type);
+    let buffer: Buffer;
+    let contentType: string;
+    let ext: string;
+
+    if (isBitmap) {
+      buffer = await sharp(rawBuffer).webp({ quality: 90 }).toBuffer();
+      contentType = 'image/webp';
+      ext = 'webp';
+    } else {
+      buffer = rawBuffer;
+      contentType = file.type;
+      ext = file.name.split('.').pop() || 'bin';
+    }
+
+    const storagePath = `${chave}.${ext}`;
 
     const supabaseAdmin = getSupabaseAdmin();
     const { error: uploadError } = await supabaseAdmin.storage
       .from(BUCKET)
-      .upload(storagePath, buffer, { contentType: file.type, upsert: true });
+      .upload(storagePath, buffer, { contentType, upsert: true });
 
     if (uploadError) {
       console.error('Erro upload Supabase Storage (site):', uploadError);

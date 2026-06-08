@@ -241,13 +241,46 @@ export const Etapa1: React.FC<Etapa1Props> = ({ userData, setUserData, onNext, c
         </div>
       </div>
 
+      {config?.geral_patrocinio_ativo === 'ativo' && config?.geral_patrocinio_imagem_url && (
+        <div className="w-full max-w-sm shrink-0">
+          {config?.geral_patrocinio_link ? (
+            <a
+              href={String(config.geral_patrocinio_link)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex flex-col items-center gap-2 px-4 py-3 bg-[#1c1814]/60 border border-[#3d3128] rounded-2xl hover:border-[#7a6e64]/50 transition-colors"
+            >
+              <span className="text-[8px] uppercase tracking-[0.22em] text-[#7a6e64] font-bold">
+                {config?.geral_patrocinio_label || 'Realizado com apoio de'}
+              </span>
+              <img
+                src={String(config.geral_patrocinio_imagem_url)}
+                alt="Patrocinador"
+                className="h-8 max-w-[160px] object-contain opacity-80"
+              />
+            </a>
+          ) : (
+            <div className="flex flex-col items-center gap-2 px-4 py-3 bg-[#1c1814]/60 border border-[#3d3128] rounded-2xl">
+              <span className="text-[8px] uppercase tracking-[0.22em] text-[#7a6e64] font-bold">
+                {config?.geral_patrocinio_label || 'Realizado com apoio de'}
+              </span>
+              <img
+                src={String(config.geral_patrocinio_imagem_url)}
+                alt="Patrocinador"
+                className="h-8 max-w-[160px] object-contain opacity-80"
+              />
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="mt-auto pb-8">
-        <button 
+        <button
           onClick={() => onNext()}
           disabled={!isComplete}
           className={`relative z-50 px-14 py-5 rounded-full font-bold text-[10px] uppercase tracking-[0.4em] transition-all duration-700 ${
             isComplete
-              ? 'bg-[#d97757] text-[#f5f0e8] shadow-[0_0_50px_rgba(217,119,87,0.4)] scale-100 hover:scale-105 active:scale-95 cursor-pointer' 
+              ? 'bg-[#d97757] text-[#f5f0e8] shadow-[0_0_50px_rgba(217,119,87,0.4)] scale-100 hover:scale-105 active:scale-95 cursor-pointer'
               : 'bg-[#1c1814] text-[#7a6e64] opacity-20 scale-95 cursor-not-allowed border border-[#3d3128]'
           }`}
         >

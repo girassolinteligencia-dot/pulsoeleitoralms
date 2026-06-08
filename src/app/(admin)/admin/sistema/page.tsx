@@ -370,6 +370,79 @@ function InputConfig({ chave, label, value, onUpdate }: { chave: string; label: 
   );
 }
 
+function UploadImagem({
+  chave,
+  label,
+  dica,
+  currentUrl,
+  previewSize,
+  onSaved,
+}: {
+  chave: string;
+  label: string;
+  dica: string;
+  currentUrl: string;
+  previewSize: 'sm' | 'lg';
+  onSaved: () => void;
+}) {
+  const [preview, setPreview] = useState<string>(currentUrl);
+  const [uploading, setUploading] = useState(false);
+  const [erro, setErro] = useState('');
+
+  useEffect(() => { setPreview(currentUrl); }, [currentUrl]);
+
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setErro('');
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('chave', chave);
+      const res = await adminFetch('/api/admin/identidade/upload', { method: 'POST', body: fd });
+      const d = await res.json();
+      if (!res.ok) { setErro(d.error || 'Erro no upload.'); return; }
+      setPreview(d.url);
+      onSaved();
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
+  };
+
+  const imgClass = previewSize === 'lg'
+    ? 'w-full max-w-[240px] h-[126px] object-contain rounded-xl bg-dark border border-border'
+    : 'w-12 h-12 object-contain rounded-xl bg-dark border border-border shrink-0';
+
+  return (
+    <div className="flex flex-col gap-2">
+      {label && <label className="text-[10px] uppercase font-bold text-primary tracking-widest ml-1">{label}</label>}
+      <div className={`flex gap-4 items-center ${previewSize === 'lg' ? 'flex-col sm:flex-row' : ''}`}>
+        {preview && (
+          <img src={preview} alt={label || chave} className={imgClass} onError={() => setPreview('')} />
+        )}
+        <div className="flex flex-col gap-2 flex-1">
+          <label className={`flex items-center gap-3 px-5 py-3 rounded-2xl border border-dashed cursor-pointer transition-all ${uploading ? 'border-primary/30 bg-primary/5 opacity-60' : 'border-border hover:border-primary/40 hover:bg-primary/5'}`}>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-text-muted">
+              {uploading ? 'Enviando…' : preview ? 'Trocar arquivo' : 'Selecionar arquivo'}
+            </span>
+            <input
+              type="file"
+              accept="image/webp,image/png,image/jpeg,image/svg+xml,image/x-icon"
+              onChange={handleFile}
+              disabled={uploading}
+              className="sr-only"
+            />
+          </label>
+          {erro && <p className="text-[9px] text-negative font-bold ml-1">{erro}</p>}
+        </div>
+      </div>
+      {dica && <p className="text-[9px] text-text-muted tracking-widest ml-1">{dica}</p>}
+    </div>
+  );
+}
+
 function AbaConfiguracoes() {
   const [parametros, setParametros] = useState<Parametro[]>([]);
   const [campanhas, setCampanhas] = useState<CampanhaOption[]>([]);
@@ -621,46 +694,27 @@ function AbaConfiguracoes() {
 
         <section className="bg-surface-1 border border-border rounded-2xl p-6 space-y-6 lg:col-span-2">
           <div className="flex items-center gap-3"><span>🎨</span><h3 className="text-xs font-bold uppercase tracking-widest">Identidade Visual &amp; Compartilhamento</h3></div>
-          <p className="text-[10px] text-text-muted leading-relaxed tracking-widest">
-            Configure o favicon, o ícone PWA (atalho no celular/computador), a imagem e a frase exibidas ao compartilhar avaliações nas redes sociais.
-            Use URLs públicas (hospedadas no Supabase Storage ou outro CDN).
-          </p>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="flex flex-col gap-2">
-              <label className="text-[10px] uppercase font-bold text-primary tracking-widest ml-1">Favicon (URL da imagem)</label>
-              <div className="flex gap-3 items-center">
-                {get('geral_favicon_url') && (
-                  <img src={String(get('geral_favicon_url'))} alt="favicon" className="w-8 h-8 rounded object-contain bg-dark border border-border shrink-0" />
-                )}
-                <input
-                  type="url"
-                  defaultValue={String(get('geral_favicon_url') || '')}
-                  placeholder="/favicon.webp ou URL pública"
-                  onBlur={e => update('geral_favicon_url', e.target.value, 'geral', 'URL do favicon do site.')}
-                  className="flex-1 bg-dark border border-border rounded-2xl px-5 py-4 text-sm text-text focus:border-primary outline-none transition-all"
-                />
-              </div>
-              <p className="text-[9px] text-text-muted tracking-widest ml-1">Exibido na aba do navegador. Suporta .webp, .png, .svg, .ico</p>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label className="text-[10px] uppercase font-bold text-primary tracking-widest ml-1">Ícone PWA — Atalho na Tela Inicial</label>
-              <div className="flex gap-3 items-center">
-                {get('geral_pwa_icone_url') && (
-                  <img src={String(get('geral_pwa_icone_url'))} alt="pwa" className="w-8 h-8 rounded object-contain bg-dark border border-border shrink-0" />
-                )}
-                <input
-                  type="url"
-                  defaultValue={String(get('geral_pwa_icone_url') || '')}
-                  placeholder="/favicon.webp ou URL pública"
-                  onBlur={e => update('geral_pwa_icone_url', e.target.value, 'geral', 'Ícone exibido ao instalar o site como app.')}
-                  className="flex-1 bg-dark border border-border rounded-2xl px-5 py-4 text-sm text-text focus:border-primary outline-none transition-all"
-                />
-              </div>
-              <p className="text-[9px] text-text-muted tracking-widest ml-1">Aparece como atalho ao adicionar à tela inicial (celular/desktop). Idealmente 512×512 px.</p>
-            </div>
-
-            <div className="flex flex-col gap-2 lg:col-span-2">
+            {/* Favicon */}
+            <UploadImagem
+              chave="geral_favicon_url"
+              label="Favicon"
+              dica="Exibido na aba do navegador. Suporta .webp, .png, .svg, .ico — máx. 512 KB"
+              currentUrl={String(get('geral_favicon_url') || '')}
+              previewSize="sm"
+              onSaved={fetchP}
+            />
+            {/* Ícone PWA */}
+            <UploadImagem
+              chave="geral_pwa_icone_url"
+              label="Ícone PWA — Atalho na Tela Inicial"
+              dica="Aparece ao adicionar à tela inicial (celular/desktop). Idealmente 512×512 px — máx. 512 KB"
+              currentUrl={String(get('geral_pwa_icone_url') || '')}
+              previewSize="sm"
+              onSaved={fetchP}
+            />
+            {/* Imagem OG */}
+            <div className="flex flex-col gap-3 lg:col-span-2">
               <label className="text-[10px] uppercase font-bold text-primary tracking-widest ml-1">Imagem ao Compartilhar (Open Graph)</label>
               <div className="flex gap-3 flex-wrap">
                 {(['logo', 'favicon', 'custom'] as const).map(tipo => (
@@ -670,27 +724,25 @@ function AbaConfiguracoes() {
                     onClick={() => update('geral_og_imagem_tipo', tipo, 'geral', 'Tipo da imagem Open Graph.')}
                     className={`px-5 py-2.5 rounded-xl border text-[9px] font-bold uppercase tracking-widest transition-all ${String(get('geral_og_imagem_tipo') || 'logo') === tipo ? 'bg-primary border-primary text-white' : 'bg-dark border-border text-text-muted hover:text-white'}`}
                   >
-                    {tipo === 'logo' ? 'Logo (/logo.webp)' : tipo === 'favicon' ? 'Favicon (mesmo acima)' : 'URL personalizada'}
+                    {tipo === 'logo' ? 'Logo (/logo.webp)' : tipo === 'favicon' ? 'Favicon (mesmo acima)' : 'Imagem personalizada'}
                   </button>
                 ))}
               </div>
               {String(get('geral_og_imagem_tipo') || 'logo') === 'custom' && (
-                <div className="flex gap-3 items-center mt-2">
-                  {get('geral_og_imagem_url') && (
-                    <img src={String(get('geral_og_imagem_url'))} alt="og" className="w-12 h-8 rounded object-contain bg-dark border border-border shrink-0" />
-                  )}
-                  <input
-                    type="url"
-                    defaultValue={String(get('geral_og_imagem_url') || '')}
-                    placeholder="https://... (1200×630 px recomendado)"
-                    onBlur={e => update('geral_og_imagem_url', e.target.value, 'geral', 'URL da imagem Open Graph personalizada.')}
-                    className="flex-1 bg-dark border border-border rounded-2xl px-5 py-4 text-sm text-text focus:border-primary outline-none transition-all"
-                  />
-                </div>
+                <UploadImagem
+                  chave="geral_og_imagem_url"
+                  label=""
+                  dica="Recomendado 1200×630 px — máx. 512 KB. Exibida no preview ao compartilhar no WhatsApp, redes sociais etc."
+                  currentUrl={String(get('geral_og_imagem_url') || '')}
+                  previewSize="lg"
+                  onSaved={fetchP}
+                />
               )}
-              <p className="text-[9px] text-text-muted tracking-widest ml-1">Imagem exibida no preview ao compartilhar o link no WhatsApp, redes sociais etc.</p>
+              {String(get('geral_og_imagem_tipo') || 'logo') !== 'custom' && (
+                <p className="text-[9px] text-text-muted tracking-widest ml-1">Imagem exibida no preview ao compartilhar o link no WhatsApp, redes sociais etc.</p>
+              )}
             </div>
-
+            {/* Frase OG */}
             <div className="flex flex-col gap-2 lg:col-span-2">
               <label className="text-[10px] uppercase font-bold text-primary tracking-widest ml-1">Frase de Compartilhamento (descrição do site)</label>
               <textarea

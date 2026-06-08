@@ -63,8 +63,21 @@ interface PercepcaoData {
   aviso: string;
 }
 
+interface BlocosConfig {
+  termometro?: boolean;
+  expectativa?: boolean;
+  forcas?: boolean;
+  tendencias?: boolean;
+  ideologia?: boolean;
+  demografico?: boolean;
+  regional?: boolean;
+  cargo?: boolean;
+  [key: string]: boolean | undefined;
+}
+
 interface PercepcaoDashboardProps {
   data: PercepcaoData | null;
+  blocos?: BlocosConfig;
 }
 
 // ── helpers visuais ────────────────────────────────────────────────
@@ -250,48 +263,30 @@ function PerfilDemografico({ demografico }: { demografico: PercepcaoData['demogr
 
 // ── 5. Força Regional com Saldo ───────────────────────────────────
 
-function RegiaoComSaldo({ cidades, bairros }: { cidades: IndicadorRegiao[]; bairros: IndicadorRegiao[] }) {
+function RegiaoComSaldo({ cidades }: { cidades: IndicadorRegiao[] }) {
   return (
     <Card>
       <SectionTitle>Força Regional</SectionTitle>
-      <div className="flex flex-col gap-4">
-        {cidades.length === 0 && bairros.length === 0 ? (
+      <div className="flex flex-col gap-2">
+        {cidades.length === 0 ? (
           <Empty text="Origem regional ainda não disponível em volume suficiente." />
         ) : (
-          <>
-            {cidades.length > 0 && (
-              <div className="flex flex-col gap-2">
-                <span className="text-[8px] uppercase tracking-[0.2em] text-[#d97757] font-bold">Cidades</span>
-                {cidades.map(c => (
-                  <div key={c.nome} className="flex flex-col gap-1">
-                    <div className="flex justify-between items-center gap-2">
-                      <span className="text-[9px] text-[#b0aea5] truncate">{c.nome}</span>
-                      <div className="flex items-center gap-2 shrink-0">
-                        {c.saldo !== undefined && (
-                          <span className={`text-[8px] font-bold ${c.saldo >= 0 ? 'text-[#a8c47a]' : 'text-[#d97757]'}`}>
-                            {c.saldo >= 0 ? '+' : ''}{c.saldo}
-                          </span>
-                        )}
-                        <span className="text-[9px] font-bold text-[#c8933a] tabular-nums">{c.pct ?? 0}%</span>
-                      </div>
-                    </div>
-                    <Bar pct={c.pct ?? 0} color={c.saldo !== undefined && c.saldo >= 0 ? 'bg-[#a8c47a]/50' : 'bg-[#d97757]/50'} />
-                  </div>
-                ))}
+          cidades.map(c => (
+            <div key={c.nome} className="flex flex-col gap-1">
+              <div className="flex justify-between items-center gap-2">
+                <span className="text-[9px] text-[#b0aea5] truncate">{c.nome}</span>
+                <div className="flex items-center gap-2 shrink-0">
+                  {c.saldo !== undefined && (
+                    <span className={`text-[8px] font-bold ${c.saldo >= 0 ? 'text-[#a8c47a]' : 'text-[#d97757]'}`}>
+                      {c.saldo >= 0 ? '+' : ''}{c.saldo}
+                    </span>
+                  )}
+                  <span className="text-[9px] font-bold text-[#c8933a] tabular-nums">{c.pct ?? 0}%</span>
+                </div>
               </div>
-            )}
-            {bairros.length > 0 && (
-              <div className="flex flex-col gap-2">
-                <span className="text-[8px] uppercase tracking-[0.2em] text-[#d97757] font-bold">Bairros</span>
-                {bairros.map(b => (
-                  <div key={b.nome} className="flex justify-between items-center gap-2">
-                    <span className="text-[9px] text-[#b0aea5] truncate">{b.nome}</span>
-                    <span className="text-[9px] font-bold text-[#c8933a] tabular-nums shrink-0">{b.pct ?? 0}%</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
+              <Bar pct={c.pct ?? 0} color={c.saldo !== undefined && c.saldo >= 0 ? 'bg-[#a8c47a]/50' : 'bg-[#d97757]/50'} />
+            </div>
+          ))
         )}
       </div>
     </Card>
@@ -371,8 +366,19 @@ function ComparativoCargo({ comparativo }: { comparativo: PercepcaoData['compara
 
 // ── Dashboard principal ───────────────────────────────────────────
 
-export const PercepcaoDashboard: React.FC<PercepcaoDashboardProps> = ({ data }) => {
+export const PercepcaoDashboard: React.FC<PercepcaoDashboardProps> = ({ data, blocos = {} }) => {
   const [mostrarAlerta, setMostrarAlerta] = useState(false);
+
+  const b = {
+    termometro:  blocos.termometro  !== false,
+    forcas:      blocos.forcas      !== false,
+    regional:    blocos.regional    !== false,
+    expectativa: blocos.expectativa === true,
+    tendencias:  blocos.tendencias  === true,
+    ideologia:   blocos.ideologia   === true,
+    demografico: blocos.demografico === true,
+    cargo:       blocos.cargo       === true,
+  };
 
   if (!data) {
     return (
@@ -391,81 +397,78 @@ export const PercepcaoDashboard: React.FC<PercepcaoDashboardProps> = ({ data }) 
   return (
     <div className="w-full flex flex-col gap-3 pb-12">
 
-      {/* Leitura rápida */}
+      {/* Leitura rápida — sempre visível */}
       <div className={`rounded-xl border px-4 py-3 flex flex-col gap-1 ${tomCor}`}>
         <span className="text-[9px] font-bold uppercase tracking-[0.2em]">{data.leitura.titulo}</span>
         <p className="text-[10px] leading-relaxed opacity-80">{data.leitura.descricao}</p>
-        <span className="text-[8px] opacity-50 uppercase tracking-widest">{data.resumo.vozesValidas} vozes válidas</span>
       </div>
 
-      {/* 1 — Termômetro */}
-      <Termometro resumo={data.resumo} />
+      {/* Termômetro de Aprovação */}
+      {b.termometro && <Termometro resumo={data.resumo} />}
 
-      {/* 2 — Expectativa de Vitória */}
-      <ExpectativaVitoria resumo={data.resumo} />
+      {/* Expectativa de Vitória (desativado por padrão) */}
+      {b.expectativa && <ExpectativaVitoria resumo={data.resumo} />}
 
-      {/* 3 + 4 lado a lado em telas maiores */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {/* Forças percebidas */}
-        <Card>
-          <SectionTitle>Principais forças percebidas</SectionTitle>
-          {data.atributos.forcas.length === 0 ? (
-            <Empty text="Ainda não há atributos positivos suficientes para destacar." />
-          ) : (
-            <div className="flex flex-col gap-2">
-              {data.atributos.forcas.map(item => (
-                <div key={item.nome} className="flex flex-col gap-1">
-                  <div className="flex justify-between">
-                    <span className="text-[10px] text-[#b0aea5] uppercase tracking-[0.08em] break-words">{item.nome}</span>
-                    <span className="text-[10px] font-bold text-[#a8c47a] tabular-nums shrink-0 ml-2">{item.pct ?? 0}%</span>
+      {/* Forças + Alertas */}
+      {b.forcas && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Card>
+            <SectionTitle>Principais forças percebidas</SectionTitle>
+            {data.atributos.forcas.length === 0 ? (
+              <Empty text="Ainda não há atributos positivos suficientes para destacar." />
+            ) : (
+              <div className="flex flex-col gap-2">
+                {data.atributos.forcas.map(item => (
+                  <div key={item.nome} className="flex flex-col gap-1">
+                    <div className="flex justify-between">
+                      <span className="text-[10px] text-[#b0aea5] uppercase tracking-[0.08em] break-words">{item.nome}</span>
+                      <span className="text-[10px] font-bold text-[#a8c47a] tabular-nums shrink-0 ml-2">{item.pct ?? 0}%</span>
+                    </div>
+                    <Bar pct={item.pct ?? 0} color="bg-[#a8c47a]/60" />
                   </div>
-                  <Bar pct={item.pct ?? 0} color="bg-[#a8c47a]/60" />
-                </div>
-              ))}
-            </div>
-          )}
-        </Card>
-
-        {/* Alertas */}
-        <Card>
-          <SectionTitle>Pontos de alerta</SectionTitle>
-          {data.atributos.alertas.length === 0 ? (
-            <Empty text="Nenhum atributo negativo em destaque." />
-          ) : (
-            <div className="flex flex-col gap-2">
-              {data.atributos.alertas.map(item => (
-                <div key={item.nome} className="flex flex-col gap-1">
-                  <div className="flex justify-between">
-                    <span className="text-[10px] text-[#b0aea5] uppercase tracking-[0.08em] break-words">{item.nome}</span>
-                    <span className="text-[10px] font-bold text-[#d97757] tabular-nums shrink-0 ml-2">{item.pct ?? 0}%</span>
+                ))}
+              </div>
+            )}
+          </Card>
+          <Card>
+            <SectionTitle>Pontos de alerta</SectionTitle>
+            {data.atributos.alertas.length === 0 ? (
+              <Empty text="Nenhum atributo negativo em destaque." />
+            ) : (
+              <div className="flex flex-col gap-2">
+                {data.atributos.alertas.map(item => (
+                  <div key={item.nome} className="flex flex-col gap-1">
+                    <div className="flex justify-between">
+                      <span className="text-[10px] text-[#b0aea5] uppercase tracking-[0.08em] break-words">{item.nome}</span>
+                      <span className="text-[10px] font-bold text-[#d97757] tabular-nums shrink-0 ml-2">{item.pct ?? 0}%</span>
+                    </div>
+                    <Bar pct={item.pct ?? 0} color="bg-[#d97757]/60" />
                   </div>
-                  <Bar pct={item.pct ?? 0} color="bg-[#d97757]/60" />
-                </div>
-              ))}
-            </div>
-          )}
-        </Card>
-      </div>
+                ))}
+              </div>
+            )}
+          </Card>
+        </div>
+      )}
 
-      {/* 5 — Tendências */}
-      <Tendencias tendencias={data.tendencias} />
+      {/* Tendências (desativado por padrão) */}
+      {b.tendencias && <Tendencias tendencias={data.tendencias} />}
 
-      {/* 6 — Mapa Ideológico */}
-      {data.ideologia && data.ideologia.length > 0 && (
+      {/* Espectro Ideológico (desativado por padrão) */}
+      {b.ideologia && data.ideologia && data.ideologia.length > 0 && (
         <MapaIdeologico ideologia={data.ideologia} />
       )}
 
-      {/* 7 — Perfil Demográfico */}
-      <PerfilDemografico demografico={data.demografico} />
+      {/* Perfil Demográfico (desativado por padrão) */}
+      {b.demografico && <PerfilDemografico demografico={data.demografico} />}
 
-      {/* 8 — Força Regional */}
-      <RegiaoComSaldo
-        cidades={data.origem.cidades}
-        bairros={data.origem.bairros}
-      />
+      {/* Força Regional */}
+      {b.regional && (
+        <RegiaoComSaldo cidades={data.origem.cidades} />
+      )}
 
-      {/* 9 — Comparativo de Cargo */}
-      {data.comparativoCargo && (
+      {/* Comparativo de Cargo (desativado por padrão) */}
+      {b.cargo && data.comparativoCargo && (
         <ComparativoCargo comparativo={data.comparativoCargo} />
       )}
 

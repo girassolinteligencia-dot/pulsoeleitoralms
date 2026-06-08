@@ -2,6 +2,11 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { adminFetch } from '@/lib/adminClient';
+import { GestaoAtributos } from '@/components/admin/GestaoAtributos';
+import { MUNICIPIOS_MS } from '@/lib/municipios-ms';
+import { convertToWebp } from '@/lib/convertToWebp';
+
+type Aba = 'lista' | 'atributos';
 
 interface Candidato {
   id: string;
@@ -44,9 +49,10 @@ const novoVazio = () => ({
   ano_eleicao: '2026',
 });
 
-const MAX_FOTO_KB = 100;
+const MAX_FOTO_KB = 300;
 
 export default function ManageCandidatos() {
+  const [aba, setAba] = useState<Aba>('lista');
   const [candidatos, setCandidatos] = useState<Candidato[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -140,22 +146,15 @@ export default function ManageCandidatos() {
     setShowNovo(true);
   };
 
-  const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setFotoErro('');
     const file = e.target.files?.[0] ?? null;
+    e.target.value = '';
     if (!file) { setFotoFile(null); setFotoPreview(null); return; }
-    if (file.type !== 'image/webp') {
-      setFotoErro('Formato inválido. Envie um arquivo .webp.');
-      e.target.value = '';
-      return;
-    }
-    if (file.size > MAX_FOTO_KB * 1024) {
-      setFotoErro(`Arquivo muito grande (${(file.size / 1024).toFixed(0)} KB). Máximo: ${MAX_FOTO_KB} KB.`);
-      e.target.value = '';
-      return;
-    }
-    setFotoFile(file);
-    setFotoPreview(URL.createObjectURL(file));
+    const result = await convertToWebp(file);
+    if (!result.ok) { setFotoErro(result.error); return; }
+    setFotoFile(result.file);
+    setFotoPreview(result.preview);
   };
 
   const handleCriar = async (e: React.FormEvent, forcar = false) => {
@@ -170,7 +169,7 @@ export default function ManageCandidatos() {
         return;
       }
     }
-    if (!novoCandidato.campanha_id) { setNovoErro('Selecione uma campanha.'); return; }
+    if (!novoCandidato.campanha_id) { setNovoErro('Selecione um ciclo de avaliação.'); return; }
 
     setCriando(true);
     try {
@@ -223,75 +222,105 @@ export default function ManageCandidatos() {
     }
   };
 
-  const inputClass = 'w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white focus:border-primary outline-none transition-all placeholder:text-white/20';
-  const labelClass = 'text-[9px] uppercase font-bold text-primary tracking-widest ml-1';
+  const inputClass = 'w-full bg-[#1c1c1c] border border-white/10 rounded-2xl px-5 py-4 text-sm text-white focus:border-primary outline-none transition-all placeholder:text-white/20 appearance-none';
+  const labelClass = 'text-[10px] uppercase font-bold text-primary tracking-widest ml-1';
 
   return (
     <div className="flex flex-col gap-8 pb-32">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
-          <h2 className="text-2xl md:text-3xl font-bold font-display uppercase tracking-widest text-text">Gestão de Candidatos</h2>
-          <p className="text-[10px] text-text-muted uppercase mt-3 tracking-widest leading-relaxed">
-            {total > 0 ? `${total.toLocaleString('pt-BR')} candidatos no escopo público — Página ${page}/${totalPages}` : 'Carregando...'}
+          <h2 className="text-2xl md:text-3xl font-bold font-display uppercase tracking-widest text-text">Gestão de Políticos</h2>
+          <p className="text-[11px] text-text-muted uppercase mt-3 tracking-widest leading-relaxed">
+            {total > 0 ? `${total.toLocaleString('pt-BR')} políticos no escopo público — Página ${page}/${totalPages}` : 'Carregando...'}
           </p>
         </div>
 
-        <div className="w-full md:w-auto flex gap-3">
-          <form onSubmit={handleSearch} className="flex gap-3 flex-1 md:flex-none">
-            <input
-              type="text"
-              value={searchInput}
-              onChange={e => setSearchInput(e.target.value)}
-              className="flex-1 md:w-64 bg-white/5 border border-white/10 focus:border-primary/50 outline-none rounded-2xl px-5 py-3 text-xs text-white transition-all placeholder:text-white/20"
-              placeholder="Nome, cargo, partido ou cidade..."
-            />
-            <button type="submit" className="bg-primary text-white px-5 py-3 rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all">🔍</button>
-          </form>
-          <button
-            onClick={abrirNovo}
-            className="bg-primary/20 border border-primary/40 text-primary px-5 py-3 rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:bg-primary hover:text-white active:scale-95 transition-all whitespace-nowrap"
-          >
-            + Novo
-          </button>
-        </div>
+        {aba === 'lista' && (
+          <div className="w-full md:w-auto flex gap-3">
+            <form onSubmit={handleSearch} className="flex gap-3 flex-1 md:flex-none">
+              <input
+                type="text"
+                value={searchInput}
+                onChange={e => setSearchInput(e.target.value)}
+                className="flex-1 md:w-64 bg-white/5 border border-white/10 focus:border-primary/50 outline-none rounded-2xl px-5 py-3 text-xs text-white transition-all placeholder:text-white/20"
+                placeholder="Nome, cargo, partido ou cidade..."
+              />
+              <button type="submit" className="bg-primary text-white px-5 py-3 rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all">🔍</button>
+            </form>
+            <button
+              onClick={abrirNovo}
+              className="bg-primary/20 border border-primary/40 text-primary px-5 py-3 rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:bg-primary hover:text-white active:scale-95 transition-all whitespace-nowrap"
+            >
+              + Novo
+            </button>
+          </div>
+        )}
       </div>
 
+      {/* Abas */}
+      <nav className="flex gap-2 border-b border-white/5 pb-4">
+        {([['lista', '👥', 'Políticos'], ['atributos', '🏷️', 'Atributos']] as const).map(([id, icon, label]) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setAba(id)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${aba === id ? 'bg-primary/10 text-primary border border-primary/20' : 'text-text-muted hover:text-white border border-transparent hover:border-white/10'}`}
+          >
+            <span>{icon}</span><span>{label}</span>
+          </button>
+        ))}
+      </nav>
+
+      {aba === 'atributos' && <GestaoAtributos categoriaFixa="politico" />}
+
+      {aba === 'lista' && <>
       {/* Desktop Table */}
       <div className="hidden md:block bg-surface-1 border border-border rounded-[2.5rem] overflow-hidden">
-        <table className="w-full text-left">
+        <table className="w-full text-left table-fixed">
+          <colgroup>
+            <col className="w-[22%]" />
+            <col className="w-[9%]" />
+            <col className="w-[8%]" />
+            <col className="w-[13%]" />
+            <col className="w-[7%]" />
+            <col className="w-[14%]" />
+            <col className="w-[9%]" />
+            <col className="w-[9%]" />
+            <col className="w-[9%]" />
+          </colgroup>
           <thead>
             <tr className="border-b border-border bg-surface-2/30">
-              <th className="px-8 py-6 text-[10px] uppercase font-bold text-text-muted tracking-widest">Nome</th>
-              <th className="px-8 py-6 text-[10px] uppercase font-bold text-text-muted tracking-widest">Partido</th>
-              <th className="px-8 py-6 text-[10px] uppercase font-bold text-text-muted tracking-widest">Número</th>
-              <th className="px-8 py-6 text-[10px] uppercase font-bold text-text-muted tracking-widest">Cargo</th>
-              <th className="px-8 py-6 text-[10px] uppercase font-bold text-text-muted tracking-widest">Ano</th>
-              <th className="px-8 py-6 text-[10px] uppercase font-bold text-text-muted tracking-widest">Cidade</th>
-              <th className="px-8 py-6 text-[10px] uppercase font-bold text-text-muted tracking-widest">Status</th>
-              <th className="px-8 py-6 text-[10px] uppercase font-bold text-text-muted tracking-widest">Nome Completo</th>
-              <th className="px-8 py-6 text-[10px] uppercase font-bold text-text-muted tracking-widest text-right">Ações</th>
+              <th className="px-4 py-4 text-[10px] uppercase font-bold text-text-muted tracking-widest">Nome</th>
+              <th className="px-3 py-4 text-[10px] uppercase font-bold text-text-muted tracking-widest">Partido</th>
+              <th className="px-3 py-4 text-[10px] uppercase font-bold text-text-muted tracking-widest">Nº</th>
+              <th className="px-3 py-4 text-[10px] uppercase font-bold text-text-muted tracking-widest">Cargo</th>
+              <th className="px-3 py-4 text-[10px] uppercase font-bold text-text-muted tracking-widest">Ano</th>
+              <th className="px-3 py-4 text-[10px] uppercase font-bold text-text-muted tracking-widest">Cidade</th>
+              <th className="px-3 py-4 text-[10px] uppercase font-bold text-text-muted tracking-widest">Status</th>
+              <th className="px-3 py-4 text-[10px] uppercase font-bold text-text-muted tracking-widest">Visível</th>
+              <th className="px-3 py-4 text-[10px] uppercase font-bold text-text-muted tracking-widest text-right">Ações</th>
             </tr>
           </thead>
           <tbody>
             {candidatos.map(cand => (
               <tr key={cand.id} className={`border-b border-border/30 hover:bg-white/[0.01] transition-colors group ${cand.status === 'Inativo' ? 'opacity-40' : ''}`}>
-                <td className="px-8 py-5 text-xs font-bold text-text">{cand.nome}</td>
-                <td className="px-8 py-5 text-[10px] font-bold text-[#d97757]">{cand.partido || '-'}</td>
-                <td className="px-8 py-5 text-[10px] font-mono text-text-muted">{cand.numero || '-'}</td>
-                <td className="px-8 py-5 text-[10px] uppercase font-medium text-text-muted">{cand.cargo}</td>
-                <td className="px-8 py-5 text-[10px] font-mono text-text-muted">{cand.ano_eleicao}</td>
-                <td className="px-8 py-5 text-[10px] text-text-muted truncate max-w-[140px]">{cand.cidade}</td>
-                <td className="px-8 py-5">
+                <td className="px-4 py-4 text-xs font-bold text-text truncate">{cand.nome}</td>
+                <td className="px-3 py-4 text-[10px] font-bold text-[#d97757] truncate">{cand.partido || '-'}</td>
+                <td className="px-3 py-4 text-[10px] font-mono text-text-muted">{cand.numero || '-'}</td>
+                <td className="px-3 py-4 text-[10px] uppercase font-medium text-text-muted truncate">{cand.cargo}</td>
+                <td className="px-3 py-4 text-[10px] font-mono text-text-muted">{cand.ano_eleicao}</td>
+                <td className="px-3 py-4 text-[10px] text-text-muted truncate">{cand.cidade}</td>
+                <td className="px-3 py-4">
                   <span className={`text-[8px] uppercase font-bold tracking-widest px-2 py-1 rounded-full ${cand.status === 'Ativo' ? 'bg-positive/10 text-positive' : 'bg-white/5 text-text-muted'}`}>
                     {cand.status}
                   </span>
                 </td>
-                <td className="px-8 py-5">
+                <td className="px-3 py-4">
                   <span className={`text-[8px] uppercase font-bold tracking-widest px-2 py-1 rounded-full ${cand.status_verificacao ? 'bg-primary/10 text-primary' : 'bg-white/5 text-text-muted'}`}>
-                    {cand.status_verificacao ? 'Visível' : 'Oculto'}
+                    {cand.status_verificacao ? 'Sim' : 'Não'}
                   </span>
                 </td>
-                <td className="px-8 py-5 text-right">
+                <td className="px-3 py-4 text-right">
                   <button type="button" onClick={() => setEditingCandidato(cand)} className="text-[10px] font-bold text-primary hover:text-white uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all">
                     Editar
                   </button>
@@ -303,7 +332,7 @@ export default function ManageCandidatos() {
         {loading && <div className="p-20 text-center text-text-muted animate-pulse font-display uppercase tracking-widest text-[10px]">Sincronizando...</div>}
         {!loading && candidatos.length === 0 && (
           <div className="p-20 text-center text-text-muted uppercase tracking-widest text-[10px]">
-            Nenhum candidato encontrado{search ? ` para "${search}"` : ''}
+            Nenhum político encontrado{search ? ` para "${search}"` : ''}
           </div>
         )}
       </div>
@@ -336,6 +365,7 @@ export default function ManageCandidatos() {
           <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages} className="bg-white/5 border border-white/10 rounded-full px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-text-muted hover:text-white hover:border-primary/30 disabled:opacity-20 disabled:cursor-not-allowed transition-all">Próximo →</button>
         </div>
       )}
+      </>}
 
       {/* Modal — Novo Candidato */}
       {showNovo && (
@@ -343,8 +373,8 @@ export default function ManageCandidatos() {
           <div onClick={() => setShowNovo(false)} className="absolute inset-0 bg-dark/80 backdrop-blur-sm" />
           <div className="relative w-full max-w-2xl bg-surface-1 border border-border rounded-[2.5rem] p-8 md:p-10 shadow-2xl my-8">
             <h3 className="text-xl font-bold font-display uppercase tracking-widest mb-2">Novo Político</h3>
-            <p className="text-[9px] text-text-muted uppercase tracking-widest mb-8">
-              Por padrão incluído na Campanha MS-2026. Verificação automática de duplicidade antes de salvar.
+            <p className="text-[10px] text-text-muted uppercase tracking-widest mb-8">
+              Por padrão incluído no Ciclo MS-2026. Verificação automática de duplicidade antes de salvar.
             </p>
 
             <form onSubmit={handleCriar} className="flex flex-col gap-5">
@@ -374,7 +404,10 @@ export default function ManageCandidatos() {
 
                 <div className="flex flex-col gap-2">
                   <label className={labelClass}>Cidade *</label>
-                  <input type="text" value={novoCandidato.cidade} onChange={e => setNovoCandidato({ ...novoCandidato, cidade: e.target.value })} className={inputClass} placeholder="Ex: Campo Grande" required />
+                  <select value={novoCandidato.cidade} onChange={e => setNovoCandidato({ ...novoCandidato, cidade: e.target.value })} title="Município do MS" className={inputClass} required>
+                    <option value="">Selecione o município...</option>
+                    {MUNICIPIOS_MS.map(m => <option key={m} value={m}>{m}</option>)}
+                  </select>
                 </div>
 
                 <div className="flex flex-col gap-2">
@@ -383,30 +416,9 @@ export default function ManageCandidatos() {
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <label className={labelClass}>Número Eleitoral</label>
-                  <input type="text" value={novoCandidato.numero} onChange={e => setNovoCandidato({ ...novoCandidato, numero: e.target.value })} className={inputClass} placeholder="Ex: 13, 22, 4500..." />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label className={labelClass}>Bairro / Região</label>
-                  <input type="text" value={novoCandidato.bairro} onChange={e => setNovoCandidato({ ...novoCandidato, bairro: e.target.value })} className={inputClass} placeholder="Opcional" />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label htmlFor="novo-ano" className={labelClass}>Ano da Eleição</label>
-                  <select id="novo-ano" aria-label="Ano da Eleição" value={novoCandidato.ano_eleicao} onChange={e => setNovoCandidato({ ...novoCandidato, ano_eleicao: e.target.value })} className={inputClass}>
-                    <option value="2026">2026</option>
-                    <option value="2024">2024</option>
-                    <option value="2022">2022</option>
-                    <option value="2020">2020</option>
-                    <option value="2018">2018</option>
-                  </select>
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label htmlFor="novo-campanha" className={labelClass}>Campanha *</label>
-                  <select id="novo-campanha" aria-label="Campanha" value={novoCandidato.campanha_id} onChange={e => setNovoCandidato({ ...novoCandidato, campanha_id: e.target.value })} className={inputClass} required>
-                    <option value="">Selecione uma campanha...</option>
+                  <label htmlFor="novo-campanha" className={labelClass}>Ciclo de Avaliação *</label>
+                  <select id="novo-campanha" aria-label="Ciclo de Avaliação" value={novoCandidato.campanha_id} onChange={e => setNovoCandidato({ ...novoCandidato, campanha_id: e.target.value })} className={inputClass} required>
+                    <option value="">Selecione um ciclo...</option>
                     {campanhas.map(c => (
                       <option key={c.id} value={c.id}>
                         {c.nome}{c.id === campanhaDefault ? ' (padrão)' : ''}
@@ -416,7 +428,7 @@ export default function ManageCandidatos() {
                 </div>
 
                 <div className="flex flex-col gap-2 md:col-span-2">
-                  <label className={labelClass}>Foto do Candidato</label>
+                  <label className={labelClass}>Foto do Político</label>
                   <div className="flex items-start gap-4">
                     {fotoPreview ? (
                       <img src={fotoPreview} alt="Preview" className="w-16 h-16 rounded-xl object-cover border border-white/10 shrink-0" />
@@ -426,14 +438,14 @@ export default function ManageCandidatos() {
                     <div className="flex flex-col gap-2 flex-1">
                       <input
                         type="file"
-                        accept=".webp,image/webp"
-                        aria-label="Selecionar foto do candidato em formato webp"
-                        title="Selecionar foto .webp (máx. 100 KB)"
+                        accept=".webp,.png,.jpg,.jpeg,image/webp,image/png,image/jpeg"
+                        aria-label="Selecionar foto do político"
+                        title="Selecionar foto .webp, .png ou .jpg (máx. 300 KB)"
                         onChange={handleFotoChange}
                         className="w-full text-xs text-white/60 file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:uppercase file:tracking-widest file:bg-primary/20 file:text-primary hover:file:bg-primary/30 file:transition-all cursor-pointer"
                       />
-                      <p className="text-[9px] text-text-muted opacity-60">Formato obrigatório: <strong>.webp</strong> · Tamanho máximo: <strong>100 KB</strong></p>
-                      {fotoErro && <p className="text-[9px] text-negative font-bold">{fotoErro}</p>}
+                      <p className="text-[10px] text-text-muted opacity-60">.webp · .png · .jpg — máx. 300 KB — salvo como .webp</p>
+                      {fotoErro && <p className="text-[10px] text-negative font-bold">{fotoErro}</p>}
                     </div>
                   </div>
                 </div>
@@ -448,7 +460,7 @@ export default function ManageCandidatos() {
                       {d.nome} | {d.cargo} | {d.cidade} | {d.partido || 'S/P'} | {d.ano_eleicao} | {(d as any).campanha}
                     </div>
                   ))}
-                  <p className="text-[9px] text-yellow-300/60 mt-1">Se for um político diferente com nome similar, corrija o nome e tente novamente.</p>
+                  <p className="text-[10px] text-yellow-300/60 mt-1">Se for um político diferente com nome similar, corrija o nome e tente novamente.</p>
                 </div>
               )}
 
@@ -477,7 +489,7 @@ export default function ManageCandidatos() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
           <div onClick={() => setEditingCandidato(null)} className="absolute inset-0 bg-dark/80 backdrop-blur-sm" />
           <div className="relative w-full max-w-lg bg-surface-1 border border-border rounded-[2.5rem] p-8 md:p-10 shadow-2xl">
-            <h3 className="text-xl font-bold font-display uppercase tracking-widest mb-8">Editar Candidato</h3>
+            <h3 className="text-xl font-bold font-display uppercase tracking-widest mb-8">Editar Político</h3>
             <form onSubmit={handleUpdate} className="flex flex-col gap-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="flex flex-col gap-2 md:col-span-2">
@@ -498,7 +510,10 @@ export default function ManageCandidatos() {
                 </div>
                 <div className="flex flex-col gap-2">
                   <label className={labelClass}>Cidade</label>
-                  <input type="text" value={editingCandidato.cidade || ''} onChange={e => setEditingCandidato({ ...editingCandidato, cidade: e.target.value })} className={inputClass} placeholder="Ex: Campo Grande..." />
+                  <select value={editingCandidato.cidade || ''} onChange={e => setEditingCandidato({ ...editingCandidato, cidade: e.target.value })} title="Município do MS" className={inputClass}>
+                    <option value="">Selecione o município...</option>
+                    {MUNICIPIOS_MS.map(m => <option key={m} value={m}>{m}</option>)}
+                  </select>
                 </div>
               </div>
 
@@ -506,7 +521,7 @@ export default function ManageCandidatos() {
               <div className="flex items-center justify-between gap-4 bg-white/[0.03] border border-white/5 rounded-2xl px-5 py-4">
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-widest text-text">Exibir Nome Completo</p>
-                  <p className="text-[9px] text-text-muted mt-1 opacity-60">
+                  <p className="text-[10px] text-text-muted mt-1 opacity-60">
                     Por padrão exibe apenas o nome de urna. Ative para mostrar o nome completo na plataforma.
                   </p>
                 </div>

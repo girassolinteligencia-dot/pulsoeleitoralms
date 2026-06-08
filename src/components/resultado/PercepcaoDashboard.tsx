@@ -43,7 +43,7 @@ interface PercepcaoData {
     alertas: IndicadorItem[];
   };
   tendencias?: TendenciaItem[];
-  origem: {
+  origem?: {
     cidades: IndicadorRegiao[];
     bairros: IndicadorRegiao[];
   };
@@ -463,7 +463,7 @@ export const PercepcaoDashboard: React.FC<PercepcaoDashboardProps> = ({ data, bl
       {b.demografico && <PerfilDemografico demografico={data.demografico} />}
 
       {/* Força Regional */}
-      {b.regional && (
+      {b.regional && data.origem && (
         <RegiaoComSaldo cidades={data.origem.cidades} />
       )}
 

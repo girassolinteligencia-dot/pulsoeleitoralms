@@ -109,6 +109,10 @@ export async function GET(
       faixaSalarial: countPerfil(manifestacoes, 'faixaSalarial', 4),
       ocupacao: countPerfil(manifestacoes, 'ocupacao', 4),
     };
+    const origem = {
+      cidades: countPerfil(manifestacoes, 'cidade', 5),
+      bairros: [] as { nome: string; total: number; pct: number }[],
+    };
 
     return NextResponse.json({
       resumo: {
@@ -121,10 +125,14 @@ export async function GET(
         desaprovacaoPct,
         confiancaPct,
         saldoPercepcao,
+        // aliases para compatibilidade com PercepcaoDashboard (espera expectativaPct)
+        expectativaVitoria: confianca,
+        expectativaPct: confiancaPct,
       },
       leitura: leituraRapida(vozesValidas, saldoPercepcao),
       atributos: { forcas, alertas },
       tendencias,
+      origem,
       ideologia,
       demografico,
       aviso: 'Dados de manifestações espontâneas na plataforma. Não representam pesquisa registrada, amostra probabilística ou margem de erro.',

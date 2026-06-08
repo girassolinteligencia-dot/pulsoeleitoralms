@@ -143,7 +143,7 @@ export default function LandingConfigPage() {
         <h2 className="text-2xl md:text-3xl font-bold font-display uppercase tracking-widest text-text">
           Landing Page
         </h2>
-        <p className="text-[10px] text-text-muted uppercase mt-3 tracking-widest">
+        <p className="text-[11px] text-text-muted uppercase mt-3 tracking-widest">
           Textos exibidos na página inicial pública — alterações entram em vigor imediatamente
         </p>
       </div>
@@ -177,7 +177,7 @@ export default function LandingConfigPage() {
             </React.Fragment>
           ))}
         </div>
-        <p className="text-[9px] text-[#7a6e64] mt-2">
+        <p className="text-[10px] text-[#7a6e64] mt-2">
           {valores.landing_reforco || CAMPOS[8].padrao}
         </p>
         <div className="flex gap-3 mt-3 flex-wrap">
@@ -196,7 +196,7 @@ export default function LandingConfigPage() {
           <div key={campo.chave} className="bg-white/[0.02] border border-white/5 rounded-3xl p-6 flex flex-col gap-4">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-widest text-primary">{campo.label}</p>
-              <p className="text-[9px] text-text-muted mt-1">{campo.descricao}</p>
+              <p className="text-[10px] text-text-muted mt-1">{campo.descricao}</p>
             </div>
 
             {campo.tipo === 'textarea' ? (

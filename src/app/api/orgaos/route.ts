@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { buildSearchOR } from '@/lib/normalize-search';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -10,13 +11,7 @@ export async function GET(req: NextRequest) {
       prisma.orgaoPublico.findMany({
         where: {
           status: 'Ativo',
-          ...(search && {
-            OR: [
-              { nome: { contains: search, mode: 'insensitive' } },
-              { tipo: { contains: search, mode: 'insensitive' } },
-              { cidade: { contains: search, mode: 'insensitive' } },
-            ],
-          }),
+          ...(search && { OR: buildSearchOR(search, ['nome', 'tipo', 'cidade']) }),
         },
         include: {
           campanha: {

@@ -131,7 +131,7 @@ export const Etapa1: React.FC<Etapa1Props> = ({ userData, setUserData, onNext, c
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold font-display uppercase tracking-tight text-[#f5f0e8] drop-shadow-[0_0_15px_rgba(245,240,232,0.3)]">
           {config?.onboarding_etapa1_titulo || 'Sua região'}
         </h1>
-        <p className="text-[10px] text-[#b0aea5] uppercase tracking-[0.4em] mt-3 font-bold drop-shadow-sm">
+        <p className="text-xs text-[#b0aea5] uppercase tracking-[0.4em] mt-3 font-bold drop-shadow-sm">
           Sem identificação nominal
         </p>
       </div>
@@ -161,7 +161,7 @@ export const Etapa1: React.FC<Etapa1Props> = ({ userData, setUserData, onNext, c
             </button>
           </div>
 
-          <p className="text-[10px] text-[#7a6e64] leading-relaxed">
+          <p className="text-sm text-[#7a6e64] leading-relaxed">
             O CEP é usado apenas para localizar cidade e bairro. O CEP completo não será salvo na manifestação.
             {' '}
             <Link href="/privacidade" className="text-[#c8933a] underline underline-offset-2">
@@ -170,7 +170,7 @@ export const Etapa1: React.FC<Etapa1Props> = ({ userData, setUserData, onNext, c
           </p>
 
           {cepMessage && (
-            <div className={`rounded-xl border px-4 py-3 text-[10px] leading-relaxed ${
+            <div className={`rounded-xl border px-4 py-3 text-sm leading-relaxed ${
               cepStatus === 'error'
                 ? 'border-[#d97757]/30 bg-[#d97757]/10 text-[#d97757]'
                 : 'border-[#a8c47a]/30 bg-[#a8c47a]/10 text-[#a8c47a]'
@@ -186,7 +186,7 @@ export const Etapa1: React.FC<Etapa1Props> = ({ userData, setUserData, onNext, c
                 <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#f5f0e8] break-words">
                   {[userData.bairro, userData.cidade, userData.uf].filter(Boolean).join(' • ')}
                 </p>
-                <p className="text-[9px] text-[#7a6e64] mt-1">
+                <p className="text-[11px] text-[#7a6e64] mt-1">
                   {userData.precisaConfirmarBairro
                     ? 'Este CEP tem mais de uma localidade possível.'
                     : 'Você poderá corrigir depois, se precisar.'}

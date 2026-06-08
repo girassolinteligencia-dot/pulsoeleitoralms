@@ -28,8 +28,12 @@ const CATEGORIA_LABEL: Record<CategoriaTab, string> = {
 
 const VAZIO: Omit<Atributo, 'id'> = { nome: '', descricao: '', polaridade: 1, visivel: true, categoria: 'politico' };
 
-export function GestaoAtributos() {
-  const [categoriaAtiva, setCategoriaAtiva] = useState<CategoriaTab>('politico');
+interface GestaoAtributosProps {
+  categoriaFixa?: CategoriaTab;
+}
+
+export function GestaoAtributos({ categoriaFixa }: GestaoAtributosProps = {}) {
+  const [categoriaAtiva, setCategoriaAtiva] = useState<CategoriaTab>(categoriaFixa ?? 'politico');
   const [atributos, setAtributos] = useState<Atributo[]>([]);
   const [loading, setLoading] = useState(true);
   const [editando, setEditando] = useState<Partial<Atributo> | null>(null);
@@ -103,9 +107,9 @@ export function GestaoAtributos() {
 
   return (
     <div className="space-y-6">
-      {/* Tabs de categoria */}
+      {/* Tabs de categoria — ocultas quando categoria é fixa */}
       <div className="flex flex-wrap gap-2 border-b border-white/5 pb-4">
-        {CATEGORIAS.map(c => (
+        {!categoriaFixa && CATEGORIAS.map(c => (
           <button
             key={c.id}
             type="button"
@@ -196,18 +200,21 @@ export function GestaoAtributos() {
                   </select>
                 </div>
 
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[9px] uppercase font-bold text-primary tracking-widest">Categoria</label>
-                  <select
-                    value={editando.categoria || 'politico'}
-                    onChange={e => setEditando({ ...editando, categoria: e.target.value })}
-                    className="bg-[#1c1814] border border-border rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-primary"
-                  >
-                    <option value="politico">Políticos</option>
-                    <option value="orgao">Órgãos Públicos</option>
-                    <option value="servico">Serviços Públicos</option>
-                  </select>
-                </div>
+                {!categoriaFixa && (
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[9px] uppercase font-bold text-primary tracking-widest">Categoria</label>
+                    <select
+                      value={editando.categoria || 'politico'}
+                      onChange={e => setEditando({ ...editando, categoria: e.target.value })}
+                      title="Categoria do atributo"
+                      className="bg-[#1c1814] border border-border rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-primary"
+                    >
+                      <option value="politico">Políticos</option>
+                      <option value="orgao">Órgãos Públicos</option>
+                      <option value="servico">Serviços Públicos</option>
+                    </select>
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center gap-3">

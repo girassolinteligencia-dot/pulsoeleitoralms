@@ -77,7 +77,7 @@ export const EtapaCategoria: React.FC<EtapaCategoriaProps> = ({ onSelect, onBack
         <h1 className="text-2xl sm:text-3xl font-bold font-display uppercase tracking-tight text-[#f5f0e8] drop-shadow-[0_0_15px_rgba(245,240,232,0.3)]">
           O que avaliar?
         </h1>
-        <p className="text-[9px] sm:text-[10px] text-[#b0aea5] uppercase tracking-[0.28em] sm:tracking-[0.4em] mt-2 font-bold leading-relaxed">
+        <p className="text-[11px] sm:text-xs text-[#b0aea5] uppercase tracking-[0.28em] sm:tracking-[0.4em] mt-2 font-bold leading-relaxed">
           ESCOLHA A CATEGORIA
         </p>
       </div>
@@ -105,7 +105,7 @@ export const EtapaCategoria: React.FC<EtapaCategoriaProps> = ({ onSelect, onBack
                   <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-[#f5f0e8] group-hover:text-[#d97757] transition-colors">
                     {opcao.titulo}
                   </span>
-                  <span className="text-[9px] sm:text-[10px] text-[#7a6e64] leading-relaxed">
+                  <span className="text-sm text-[#7a6e64] leading-relaxed">
                     {opcao.descricao}
                   </span>
                 </div>
@@ -121,11 +121,11 @@ export const EtapaCategoria: React.FC<EtapaCategoriaProps> = ({ onSelect, onBack
                     <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-[#7a6e64]">
                       {opcao.titulo}
                     </span>
-                    <span className="text-[7px] font-bold uppercase tracking-[0.2em] text-[#c8933a] border border-[#c8933a]/40 rounded px-1.5 py-0.5">
+                    <span className="text-[8px] font-bold uppercase tracking-[0.2em] text-[#c8933a] border border-[#c8933a]/40 rounded px-1.5 py-0.5">
                       Em Breve
                     </span>
                   </div>
-                  <span className="text-[9px] sm:text-[10px] text-[#5a4e44] leading-relaxed">
+                  <span className="text-[10px] sm:text-[11px] text-[#5a4e44] leading-relaxed">
                     {opcao.descricao}
                   </span>
                 </div>

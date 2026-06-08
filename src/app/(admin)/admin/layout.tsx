@@ -69,11 +69,10 @@ export default function AdminLayout({
 
   const navItems = [
     { id: 'home', label: 'Início', icon: '🏠', path: '/admin/dashboard' },
-    { id: 'campanhas', label: 'Campanhas', icon: '📢', path: '/admin/dashboard/campanhas' },
-    { id: 'candidatos', label: 'Candidatos', icon: '👥', path: '/admin/dashboard/candidatos' },
+    { id: 'campanhas', label: 'Ciclos', icon: '🔄', path: '/admin/dashboard/campanhas' },
+    { id: 'candidatos', label: 'Políticos', icon: '👥', path: '/admin/dashboard/candidatos' },
     { id: 'orgaos', label: 'Órgãos Públicos', icon: '🏛️', path: '/admin/orgaos' },
     { id: 'servicos', label: 'Serviços Públicos', icon: '🔧', path: '/admin/servicos' },
-    { id: 'atributos', label: 'Atributos', icon: '🏷️', path: '/admin/atributos' },
     { id: 'moderacao', label: 'Moderação', icon: '⚖️', path: '/admin/moderacao' },
     { id: 'metodologia', label: 'Metodologia', icon: '🧭', path: '/admin/metodologia' },
     { id: 'territorio', label: 'Território', icon: '🗺️', path: '/admin/territorio' },
@@ -94,7 +93,7 @@ export default function AdminLayout({
             className={`flex flex-col items-center gap-1 px-2 py-1 transition-all ${pathname === item.path ? 'text-primary' : 'text-text-muted opacity-60'}`}
           >
             <span className="text-lg leading-none">{item.icon}</span>
-            <span className="text-[7px] uppercase font-bold tracking-wider leading-none">{item.label}</span>
+            <span className="text-[9px] uppercase font-bold tracking-wider leading-none">{item.label}</span>
           </button>
         ))}
         <button
@@ -103,7 +102,7 @@ export default function AdminLayout({
           className="flex flex-col items-center gap-1 px-2 py-1 text-negative opacity-60"
         >
           <span className="text-lg leading-none">🚪</span>
-          <span className="text-[7px] uppercase font-bold tracking-wider leading-none">Sair</span>
+          <span className="text-[9px] uppercase font-bold tracking-wider leading-none">Sair</span>
         </button>
       </nav>
 
@@ -112,8 +111,8 @@ export default function AdminLayout({
         {/* Logo area */}
         <div className="flex flex-col items-center gap-1 px-6 pt-6 pb-4 shrink-0">
           <Image src="/logo.webp" alt="PULSO ELEITORAL MS" width={180} height={54} className="w-full h-auto object-contain" />
-          <p className="text-[7px] text-[#d97757] uppercase font-bold tracking-widest text-center">Painel Administrativo</p>
-          <p className="text-[7px] text-text-muted uppercase font-bold tracking-widest text-center truncate w-full opacity-60">{session?.user?.email}</p>
+          <p className="text-[8px] text-[#d97757] uppercase font-bold tracking-widest text-center">Painel Administrativo</p>
+          <p className="text-[8px] text-text-muted uppercase font-bold tracking-widest text-center truncate w-full opacity-60">{session?.user?.email}</p>
         </div>
 
         {/* Nav scrollable */}

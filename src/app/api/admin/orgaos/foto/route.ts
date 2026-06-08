@@ -4,7 +4,7 @@ import { getSupabaseAdmin } from '@/lib/supabase';
 import { prisma } from '@/lib/prisma';
 
 const MAX_SIZE = 300 * 1024;
-const BUCKET = 'candidatos';
+const BUCKET = 'orgaos';
 
 export async function POST(req: NextRequest) {
   const auth = await getAdminIdentity(req);
@@ -13,13 +13,13 @@ export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
     const file = formData.get('foto') as File | null;
-    const candidatoId = formData.get('candidatoId') as string | null;
+    const orgaoId = formData.get('orgaoId') as string | null;
 
     if (!file) return NextResponse.json({ error: 'Nenhum arquivo enviado.' }, { status: 400 });
-    if (!candidatoId) return NextResponse.json({ error: 'candidatoId obrigatório.' }, { status: 400 });
+    if (!orgaoId) return NextResponse.json({ error: 'orgaoId obrigatório.' }, { status: 400 });
 
     if (file.type !== 'image/webp') {
-      return NextResponse.json({ error: 'Formato inválido. Apenas .webp é aceito.' }, { status: 422 });
+      return NextResponse.json({ error: 'Apenas .webp é aceito.' }, { status: 422 });
     }
     if (file.size > MAX_SIZE) {
       return NextResponse.json({ error: `Arquivo muito grande (${(file.size / 1024).toFixed(0)} KB). Máximo: 300 KB.` }, { status: 422 });
@@ -27,31 +27,28 @@ export async function POST(req: NextRequest) {
 
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    const storagePath = `${candidatoId}.webp`;
+    const storagePath = `${orgaoId}.webp`;
 
     const supabaseAdmin = getSupabaseAdmin();
     const { error: uploadError } = await supabaseAdmin.storage
       .from(BUCKET)
-      .upload(storagePath, buffer, {
-        contentType: 'image/webp',
-        upsert: true,
-      });
+      .upload(storagePath, buffer, { contentType: 'image/webp', upsert: true });
 
     if (uploadError) {
-      console.error('Erro upload Supabase Storage:', uploadError);
+      console.error('Erro upload Supabase Storage (orgaos):', uploadError);
       return NextResponse.json({ error: 'Erro ao enviar imagem para o storage.' }, { status: 500 });
     }
 
-    const foto_url = `candidatos/${storagePath}`;
+    const foto_url = `orgaos/${storagePath}`;
 
-    await prisma.candidato.update({
-      where: { id: candidatoId },
+    await prisma.orgaoPublico.update({
+      where: { id: orgaoId },
       data: { foto_url },
     });
 
     return NextResponse.json({ foto_url });
   } catch (error) {
-    console.error('Erro no upload de foto:', error);
+    console.error('Erro no upload de logo de órgão:', error);
     return NextResponse.json({ error: 'Erro interno no upload.' }, { status: 500 });
   }
 }

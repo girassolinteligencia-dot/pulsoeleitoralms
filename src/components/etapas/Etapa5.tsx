@@ -105,25 +105,40 @@ export const Etapa5: React.FC<Etapa5Props> = ({
         </motion.div>
 
         {/* Progress Bar */}
-        <div className="w-full h-1 bg-[#1c1814] rounded-full overflow-hidden">
+        <div className="w-full h-1.5 bg-[#1c1814] rounded-full overflow-hidden">
           <motion.div
-            className="h-full bg-gradient-to-r from-[#d97757] to-[#c8933a] rounded-full"
+            className={`h-full rounded-full transition-colors duration-500 ${
+              canSubmit
+                ? 'bg-gradient-to-r from-[#a8c47a] to-[#8fb88e]'
+                : progresso >= 60
+                  ? 'bg-gradient-to-r from-[#d97757] to-[#c8933a]'
+                  : 'bg-[#3d3128]'
+            }`}
             animate={{ width: `${Math.min(progresso, 100)}%` }}
             transition={{ type: 'spring', stiffness: 50, damping: 15 }}
           />
         </div>
-        <div className="w-full flex justify-between items-center gap-3 -mt-2">
-          <p className="text-[8px] sm:text-[9px] text-[#7a6e64] uppercase tracking-[0.22em] sm:tracking-[0.4em] font-bold leading-relaxed">
+        <div className="w-full flex justify-between items-center gap-3 -mt-1">
+          <p className="text-[10px] sm:text-[11px] text-[#7a6e64] uppercase tracking-[0.22em] sm:tracking-[0.4em] font-bold leading-relaxed">
             Associação de Perfil
           </p>
-          <p className="text-[8px] sm:text-[9px] text-[#d97757] uppercase tracking-[0.22em] sm:tracking-[0.4em] font-bold text-right shrink-0">
-            {evaluations.length} / {minimoSelecao} (Mínimo)
-          </p>
+          <motion.p
+            key={canSubmit ? 'ok' : evaluations.length}
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={`text-[10px] sm:text-[11px] uppercase tracking-[0.22em] sm:tracking-[0.4em] font-bold text-right shrink-0 transition-colors duration-500 ${
+              canSubmit ? 'text-[#a8c47a]' : 'text-[#d97757]'
+            }`}
+          >
+            {canSubmit
+              ? `${evaluations.length} selecionados ✓`
+              : `${evaluations.length} / ${minimoSelecao} mínimo`}
+          </motion.p>
         </div>
 
         {/* Instruction */}
         <motion.p 
-          className="text-[10px] text-[#b0aea5] text-center font-body leading-tight mt-1"
+          className="text-sm text-[#b0aea5] text-center font-body leading-snug mt-1"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
@@ -172,7 +187,7 @@ export const Etapa5: React.FC<Etapa5Props> = ({
         
         {totalVisivel === 0 && (
           <div className="w-full py-12 flex flex-col items-center justify-center border border-dashed border-[#3d3128] rounded-3xl opacity-50">
-            <span className="text-[10px] uppercase tracking-widest font-bold text-[#7a6e64]">Nenhum atributo disponível</span>
+            <span className="text-[11px] uppercase tracking-widest font-bold text-[#7a6e64]">Nenhum atributo disponível</span>
           </div>
         )}
       </div>
@@ -192,9 +207,9 @@ export const Etapa5: React.FC<Etapa5Props> = ({
           {isSubmitting ? 'Ecoando...' : 'Prosseguir'}
         </button>
 
-        <motion.p className="text-[7px] text-[#7a6e64] uppercase tracking-widest font-bold">
-          {evaluations.length < minimoSelecao 
-            ? `Selecione mais ${minimoSelecao - evaluations.length} para liberar` 
+        <motion.p className="text-[10px] sm:text-[11px] text-[#7a6e64] uppercase tracking-widest font-bold">
+          {evaluations.length < minimoSelecao
+            ? `Selecione mais ${minimoSelecao - evaluations.length} para liberar`
             : `${evaluations.length} selecionados`}
         </motion.p>
       </div>

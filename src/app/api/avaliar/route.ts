@@ -22,6 +22,7 @@ const PERFIL_STRING_FIELDS = [
   'ideologia',
   'sexo',
   'cor',
+  'faixaEtaria',
   'escolaridade',
   'estadoCivil',
   'faixaSalarial',
@@ -121,11 +122,16 @@ export async function POST(req: NextRequest) {
     const fingerprintHash = generateSecureHash(fingerprint);
     const evaluationSession = verifyEvaluationSession(sessionToken);
 
-    if (
-      !evaluationSession ||
-      evaluationSession.candidatoId !== entityId ||
-      evaluationSession.fingerprintHash !== fingerprintHash
-    ) {
+    if (!evaluationSession) {
+      console.error('[avaliar] sessão inválida ou expirada — token não verificado');
+      return NextResponse.json({ error: 'Sessão de avaliação inválida ou expirada.' }, { status: 400 });
+    }
+    if (evaluationSession.candidatoId !== entityId) {
+      console.error('[avaliar] entityId mismatch — sessão:', evaluationSession.candidatoId, 'payload:', entityId);
+      return NextResponse.json({ error: 'Sessão de avaliação inválida ou expirada.' }, { status: 400 });
+    }
+    if (evaluationSession.fingerprintHash !== fingerprintHash) {
+      console.error('[avaliar] fingerprint mismatch — sessão:', evaluationSession.fingerprintHash, 'calculado:', fingerprintHash);
       return NextResponse.json({ error: 'Sessão de avaliação inválida ou expirada.' }, { status: 400 });
     }
 
@@ -133,7 +139,7 @@ export async function POST(req: NextRequest) {
     const duration = endTime - evaluationSession.startedAt;
 
     // Resolve entidade avaliada e atributos permitidos
-    let campanha_id: string;
+    let campanha_id: string | null;
     let atributosPermitidos: Set<string>;
 
     if (typeof orgaoId === 'string') {
@@ -141,17 +147,37 @@ export async function POST(req: NextRequest) {
         where: { id: orgaoId, status: 'Ativo' },
         include: { campanha: { include: { atributos: { where: { atributo: { visivel: true } }, select: { atributo_id: true } } } } },
       });
-      if (!orgao || !orgao.campanha) return NextResponse.json({ error: 'Órgão indisponível para avaliação.' }, { status: 404 });
-      campanha_id = orgao.campanha_id!;
-      atributosPermitidos = new Set(orgao.campanha.atributos.map(a => a.atributo_id));
+      if (!orgao) return NextResponse.json({ error: 'Órgão indisponível para avaliação.' }, { status: 404 });
+      if (orgao.campanha && (orgao.campanha.atributos?.length ?? 0) > 0) {
+        campanha_id = orgao.campanha_id!;
+        atributosPermitidos = new Set(orgao.campanha.atributos.map(a => a.atributo_id));
+      } else {
+        // Fallback: aceita todos os atributos visíveis da categoria orgao (igual ao GET /api/orgaos)
+        const atributosGlobais = await prisma.atributo.findMany({
+          where: { visivel: true, categoria: 'orgao' },
+          select: { id: true },
+        });
+        campanha_id = orgao.campanha_id ?? null;
+        atributosPermitidos = new Set(atributosGlobais.map(a => a.id));
+      }
     } else if (typeof servicoId === 'string') {
       const svc = await prisma.servicoPublico.findFirst({
         where: { id: servicoId, status: 'Ativo' },
         include: { campanha: { include: { atributos: { where: { atributo: { visivel: true } }, select: { atributo_id: true } } } } },
       });
-      if (!svc || !svc.campanha) return NextResponse.json({ error: 'Serviço indisponível para avaliação.' }, { status: 404 });
-      campanha_id = svc.campanha_id!;
-      atributosPermitidos = new Set(svc.campanha.atributos.map(a => a.atributo_id));
+      if (!svc) return NextResponse.json({ error: 'Serviço indisponível para avaliação.' }, { status: 404 });
+      if (svc.campanha && (svc.campanha.atributos?.length ?? 0) > 0) {
+        campanha_id = svc.campanha_id!;
+        atributosPermitidos = new Set(svc.campanha.atributos.map(a => a.atributo_id));
+      } else {
+        // Fallback: aceita todos os atributos visíveis da categoria servico (igual ao GET /api/servicos)
+        const atributosGlobais = await prisma.atributo.findMany({
+          where: { visivel: true, categoria: 'servico' },
+          select: { id: true },
+        });
+        campanha_id = svc.campanha_id ?? null;
+        atributosPermitidos = new Set(atributosGlobais.map(a => a.id));
+      }
     } else {
       const scopeConfig = await getPublicScopeConfig();
       const candidato = await prisma.candidato.findFirst({
@@ -262,10 +288,12 @@ export async function POST(req: NextRequest) {
             data: { total_avaliacoes: { increment: 1 } },
           });
         }
-        await tx.campanha.update({
-          where: { id: campanha_id },
-          data: { total_votos: { increment: 1 } },
-        });
+        if (campanha_id) {
+          await tx.campanha.update({
+            where: { id: campanha_id },
+            data: { total_votos: { increment: 1 } },
+          });
+        }
       } else {
         await tx.auditLog.create({
           data: {

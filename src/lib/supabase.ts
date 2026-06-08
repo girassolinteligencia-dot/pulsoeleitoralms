@@ -1,22 +1,29 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+/** Cliente com permissão de escrita no Storage (server-side only). */
+export function getSupabaseAdmin() {
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!serviceKey) throw new Error('SUPABASE_SERVICE_ROLE_KEY não configurada.');
+  return createClient(supabaseUrl, serviceKey, {
+    auth: { persistSession: false },
+  });
+}
 
 /**
- * Resolve a URL da foto, preferindo o Supabase Storage se for um caminho relativo.
+ * Resolve a URL pública de uma foto.
+ * O banco armazena apenas o caminho relativo, ex: "candidatos/ID.webp".
+ * Caminhos legados com "/" inicial também são tratados.
  */
-export function getFotoUrl(path: string | null) {
-  if (!path) return '/gi/placeholder-user.png';
+export function getFotoUrl(path: string | null | undefined): string | null {
+  if (!path) return null;
+  // Já é URL completa
   if (path.startsWith('http')) return path;
-  
-  // Se for caminho local legado (/candidatos/...), converter para Supabase Storage
-  if (path.startsWith('/candidatos/')) {
-    const fileName = path.split('/').pop();
-    return `${supabaseUrl}/storage/v1/object/public/candidatos/${fileName}`;
-  }
-  
-  return path;
+  // Remove barra inicial se houver (legado: "/candidatos/ID.webp")
+  const clean = path.startsWith('/') ? path.slice(1) : path;
+  return `${supabaseUrl}/storage/v1/object/public/${clean}`;
 }

@@ -10,6 +10,10 @@ export async function GET() {
           { chave: { startsWith: 'onboarding_' } },
           { chave: { startsWith: 'public_' } },
           { chave: { startsWith: 'landing_' } },
+          { chave: { startsWith: 'fluxo_' } },
+          { chave: { startsWith: 'etapafinal_' } },
+          { chave: { startsWith: 'resultado_' } },
+          { chave: { startsWith: 'sugestao_' } },
         ],
       },
     });

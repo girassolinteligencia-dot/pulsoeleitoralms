@@ -7,6 +7,7 @@ interface Etapa2Props {
   userData: {
     sexo: string;
     cor: string;
+    faixaEtaria: string;
     escolaridade: string;
     estadoCivil: string;
     faixaSalarial: string;
@@ -27,6 +28,7 @@ export const Etapa2: React.FC<Etapa2Props> = ({ userData, setUserData, onNext, o
   const options = {
     sexo: ['Masculino', 'Feminino', 'Outro', 'Prefiro não dizer'],
     cor: ['Branca', 'Preta', 'Parda', 'Amarela', 'Indígena', 'Outra'],
+    faixaEtaria: ['16–24', '25–34', '35–44', '45–59', '60+', 'Prefiro não dizer'],
     escolaridade: ['Sem Instrução', 'Fundamental', 'Médio', 'Superior', 'Pós-graduação', 'Doutorado/Mestrado'],
     estadoCivil: ['Solteiro(a)', 'Casado(a)', 'Divorciado(a)', 'Viúvo(a)', 'União Estável'],
     faixaSalarial: ['Até 1 salário', '1 a 3 salários', '3 a 6 salários', '6 a 10 salários', 'Acima de 10 salários'],
@@ -39,13 +41,14 @@ export const Etapa2: React.FC<Etapa2Props> = ({ userData, setUserData, onNext, o
   };
 
   const activeFields = config?.onboarding_campos || {
-    sexo: true, cor: true, escolaridade: true, estadoCivil: true, faixaSalarial: true,
+    sexo: true, cor: true, faixaEtaria: true, escolaridade: true, estadoCivil: true, faixaSalarial: true,
     religiao: true, ocupacao: true, filhos: true, orientacaoSexual: true, deficiencia: true, tempoResidencia: true
   };
 
   const isComplete = (
     (!activeFields.sexo || userData.sexo) &&
     (!activeFields.cor || userData.cor) &&
+    (!activeFields.faixaEtaria || userData.faixaEtaria) &&
     (!activeFields.escolaridade || userData.escolaridade) &&
     (!activeFields.estadoCivil || userData.estadoCivil) &&
     (!activeFields.faixaSalarial || userData.faixaSalarial) &&
@@ -71,7 +74,7 @@ export const Etapa2: React.FC<Etapa2Props> = ({ userData, setUserData, onNext, o
               key={opt}
               type="button"
               onClick={() => setUserData({ ...userData, [field]: opt })}
-              className={`py-3.5 px-3 rounded-xl border text-[11px] font-bold uppercase tracking-tighter transition-all duration-300 ${
+              className={`py-3 sm:py-3.5 px-2 sm:px-3 rounded-xl border text-[10px] sm:text-[11px] font-bold uppercase tracking-tight leading-snug transition-all duration-300 ${
                 current === opt 
                   ? 'bg-[#d97757] border-[#d97757] text-[#f5f0e8] shadow-[0_0_15px_rgba(217,119,87,0.3)]' 
                   : 'bg-[#1c1814]/50 border-[#3d3128] text-[#7a6e64] hover:border-[#7a6e64]'
@@ -97,7 +100,7 @@ export const Etapa2: React.FC<Etapa2Props> = ({ userData, setUserData, onNext, o
         <h1 className="text-2xl sm:text-3xl font-bold font-display uppercase tracking-tight text-[#f5f0e8] drop-shadow-[0_0_15px_rgba(245,240,232,0.3)]">
           {config?.onboarding_etapa2_titulo || 'Perfil'}
         </h1>
-        <p className="text-[10px] text-[#b0aea5] uppercase tracking-[0.4em] mt-2 font-bold">
+        <p className="text-xs text-[#b0aea5] uppercase tracking-[0.4em] mt-2 font-bold">
           DADOS DEMOGRÁFICOS
         </p>
       </div>
@@ -105,6 +108,7 @@ export const Etapa2: React.FC<Etapa2Props> = ({ userData, setUserData, onNext, o
       <div className="w-full max-w-sm flex flex-col gap-6 pb-10">
         {renderSelect('Sexo', 'sexo', userData.sexo)}
         {renderSelect('Cor/Raça', 'cor', userData.cor)}
+        {renderSelect('Faixa Etária', 'faixaEtaria', userData.faixaEtaria)}
         {renderSelect('Escolaridade', 'escolaridade', userData.escolaridade)}
         {renderSelect('Estado Civil', 'estadoCivil', userData.estadoCivil)}
         {renderSelect('Renda Mensal', 'faixaSalarial', userData.faixaSalarial)}

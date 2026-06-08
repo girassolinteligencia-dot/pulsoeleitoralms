@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { getAdminIdentity, requireAdmin } from '@/lib/adminAuth';
 import { recordAuditLog } from '@/lib/auditLog';
 import { buildPublicCandidateWhere, getPublicScopeConfig } from '@/lib/publicScope';
+import { buildSearchOR } from '@/lib/normalize-search';
 
 // GET candidates for admin with pagination
 export async function GET(req: NextRequest) {
@@ -18,14 +19,7 @@ export async function GET(req: NextRequest) {
 
     const scopeConfig = await getPublicScopeConfig();
     const where = buildPublicCandidateWhere(scopeConfig, {
-      ...(search && {
-        OR: [
-          { nome: { contains: search, mode: 'insensitive' as const } },
-          { cargo: { contains: search, mode: 'insensitive' as const } },
-          { partido: { contains: search, mode: 'insensitive' as const } },
-          { cidade: { contains: search, mode: 'insensitive' as const } },
-        ],
-      }),
+      ...(search && { OR: buildSearchOR(search, ['nome', 'cargo', 'partido', 'cidade']) }),
     });
 
     const [candidatos, total] = await Promise.all([

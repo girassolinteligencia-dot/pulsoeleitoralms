@@ -51,7 +51,7 @@ export const Etapa3: React.FC<Etapa3Props> = ({ userData, setUserData, onNext, o
         <h1 className="text-2xl sm:text-3xl font-bold font-display uppercase tracking-tight text-[#f5f0e8] drop-shadow-[0_0_15px_rgba(245,240,232,0.3)]">
           {title}
         </h1>
-        <p className="text-[10px] text-[#b0aea5] uppercase tracking-[0.4em] mt-2 font-bold">
+        <p className="text-xs text-[#b0aea5] uppercase tracking-[0.4em] mt-2 font-bold">
           {subtitle}
         </p>
       </div>
@@ -59,7 +59,7 @@ export const Etapa3: React.FC<Etapa3Props> = ({ userData, setUserData, onNext, o
       <div className="w-full max-w-sm flex flex-col gap-8">
         {!isManualPending && (
           <div className="rounded-2xl border border-[#3d3128] bg-[#1c1814]/55 px-4 py-3">
-            <p className="text-[9px] uppercase tracking-[0.22em] text-[#8d8177] font-bold">
+            <p className="text-[11px] uppercase tracking-[0.22em] text-[#8d8177] font-bold">
               Região detectada pelo CEP
             </p>
             <p className="mt-1 text-xs font-bold uppercase tracking-[0.14em] text-[#f5f0e8] leading-relaxed">
@@ -99,7 +99,7 @@ export const Etapa3: React.FC<Etapa3Props> = ({ userData, setUserData, onNext, o
               <p className="text-[10px] uppercase font-bold text-[#c8933a] tracking-widest">
                 Localidades encontradas pelo CEP
               </p>
-              <p className="text-[10px] text-[#8d8177] leading-relaxed">
+              <p className="text-sm text-[#8d8177] leading-relaxed">
                 Escolha a opção que melhor representa onde você mora. Se nenhuma servir, corrija manualmente abaixo.
               </p>
             </div>
@@ -132,7 +132,7 @@ export const Etapa3: React.FC<Etapa3Props> = ({ userData, setUserData, onNext, o
                       {item.bairro}
                     </span>
                     {confidenceLabel && (
-                      <span className="shrink-0 rounded-full border border-[#3d3128] px-2 py-1 text-[9px] text-[#8d8177]">
+                      <span className="shrink-0 rounded-full border border-[#3d3128] px-2 py-1 text-[11px] text-[#8d8177]">
                         {confidenceLabel}
                       </span>
                     )}

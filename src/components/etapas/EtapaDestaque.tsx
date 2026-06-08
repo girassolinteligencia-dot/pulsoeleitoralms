@@ -20,6 +20,7 @@ interface EtapaDestaqueProps {
   onSelect: (entidade: EntidadeDestaque) => void;
   onSearch: (query: string) => void;
   onBack: () => void;
+  onSugestao?: () => void;
 }
 
 const TIPO_LABEL: Record<string, string> = {
@@ -58,6 +59,7 @@ export const EtapaDestaque: React.FC<EtapaDestaqueProps> = ({
   onSelect,
   onSearch,
   onBack,
+  onSugestao,
 }) => {
   const [query, setQuery] = useState('');
   const [buscouAgora, setBuscouAgora] = useState(false);
@@ -89,14 +91,14 @@ export const EtapaDestaque: React.FC<EtapaDestaqueProps> = ({
         <h1 className="text-2xl sm:text-3xl font-bold font-display uppercase tracking-tight text-[#f5f0e8] drop-shadow-[0_0_15px_rgba(245,240,232,0.3)]">
           {TITULO[categoria]}
         </h1>
-        <p className="text-[9px] sm:text-[10px] text-[#b0aea5] uppercase tracking-[0.28em] sm:tracking-[0.4em] mt-2 font-bold leading-relaxed">
+        <p className="text-[11px] sm:text-xs text-[#b0aea5] uppercase tracking-[0.28em] sm:tracking-[0.4em] mt-2 font-bold leading-relaxed">
           Selecione ou busque
         </p>
       </div>
 
       {/* Grid de destaques */}
       {!mostrarResultados && destaques.length > 0 && (
-        <div className="w-full max-w-xl grid grid-cols-3 gap-2 sm:gap-3">
+        <div className="w-full max-w-xl grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
           {destaques.slice(0, 9).map((ent, i) => (
             <motion.button
               key={ent.id}
@@ -121,10 +123,10 @@ export const EtapaDestaque: React.FC<EtapaDestaqueProps> = ({
                 </div>
               )}
               <div className="w-full">
-                <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wide text-[#f5f0e8] group-hover:text-[#d97757] transition-colors leading-snug line-clamp-2">
+                <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wide text-[#f5f0e8] group-hover:text-[#d97757] transition-colors leading-snug line-clamp-2">
                   {ent.nome}
                 </p>
-                <p className="text-[7px] text-[#7a6e64] uppercase tracking-widest mt-0.5 truncate">
+                <p className="text-[8px] text-[#7a6e64] uppercase tracking-widest mt-0.5 truncate">
                   {TIPO_LABEL[ent.tipo] ?? ent.tipo}
                 </p>
               </div>
@@ -134,7 +136,7 @@ export const EtapaDestaque: React.FC<EtapaDestaqueProps> = ({
       )}
 
       {!mostrarResultados && destaques.length === 0 && (
-        <p className="text-[10px] text-[#7a6e64] uppercase tracking-widest opacity-50">
+        <p className="text-xs text-[#7a6e64] uppercase tracking-widest opacity-50">
           Use a busca abaixo para encontrar
         </p>
       )}
@@ -173,7 +175,7 @@ export const EtapaDestaque: React.FC<EtapaDestaqueProps> = ({
       {mostrarResultados && (
         <div className="w-full max-w-xl flex flex-col gap-3 pb-4">
           <div className="flex items-center justify-between">
-            <p className="text-[9px] uppercase font-bold tracking-widest text-[#7a6e64]">
+            <p className="text-[11px] uppercase font-bold tracking-widest text-[#7a6e64]">
               {buscando ? 'Buscando…' : `${resultadosBusca.length} resultado${resultadosBusca.length !== 1 ? 's' : ''}`}
             </p>
             <button type="button" onClick={limparBusca} className="text-[9px] uppercase font-bold tracking-widest text-[#d97757] hover:opacity-70 transition-opacity">
@@ -182,7 +184,7 @@ export const EtapaDestaque: React.FC<EtapaDestaqueProps> = ({
           </div>
 
           {!buscando && resultadosBusca.length === 0 && (
-            <p className="text-center py-10 text-[10px] text-[#7a6e64] uppercase tracking-widest opacity-50">
+            <p className="text-center py-10 text-xs text-[#7a6e64] uppercase tracking-widest opacity-50">
               Nenhum resultado encontrado
             </p>
           )}
@@ -217,7 +219,16 @@ export const EtapaDestaque: React.FC<EtapaDestaqueProps> = ({
       )}
 
       {/* Voltar */}
-      <div className="mt-auto pb-8 flex flex-col items-center w-full">
+      <div className="mt-auto pb-8 flex flex-col items-center gap-4 w-full">
+        {onSugestao && (
+          <button
+            type="button"
+            onClick={onSugestao}
+            className="text-[9px] uppercase font-bold text-[#c8933a] tracking-[0.24em] hover:text-[#f5f0e8] transition-colors"
+          >
+            Não encontrei — sugerir cadastro
+          </button>
+        )}
         <button
           type="button"
           onClick={onBack}

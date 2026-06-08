@@ -140,11 +140,11 @@ export default function ManageCampanhas() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
           <h2 className="text-2xl md:text-3xl font-bold font-display uppercase tracking-widest text-text">
-            Gestão de Campanhas
+            Gestão de Ciclos
           </h2>
           <p className="text-[10px] text-text-muted uppercase mt-3 tracking-widest leading-relaxed">
             {total > 0
-              ? `${total} campanha${total > 1 ? 's' : ''} cadastrada${total > 1 ? 's' : ''} — Página ${page}/${totalPages}`
+              ? `${total} ciclo${total > 1 ? 's' : ''} cadastrado${total > 1 ? 's' : ''} — Página ${page}/${totalPages}`
               : 'Carregando...'}
           </p>
         </div>
@@ -157,7 +157,7 @@ export default function ManageCampanhas() {
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               className="flex-1 md:w-52 bg-white/5 border border-white/10 focus:border-primary/50 outline-none rounded-2xl px-5 py-3 text-xs text-white transition-all placeholder:text-white/20"
-              placeholder="Buscar campanha..."
+              placeholder="Buscar ciclo..."
             />
             <button
               type="submit"
@@ -184,12 +184,12 @@ export default function ManageCampanhas() {
           className="bg-surface-1 border border-border rounded-[2.5rem] p-8 md:p-10 flex flex-col gap-6 animate-in slide-in-from-top-2 duration-300"
         >
           <h3 className="text-xs font-bold uppercase tracking-widest text-text-muted">
-            Nova Campanha
+            Novo Ciclo
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="flex flex-col gap-2">
               <label className="text-[9px] uppercase font-bold tracking-widest text-text-muted opacity-60">
-                Nome da Campanha
+                Nome do Ciclo
               </label>
               <input
                 type="text"
@@ -199,7 +199,7 @@ export default function ManageCampanhas() {
                   setNewCampanha({ nome, slug: generateSlug(nome) });
                 }}
                 className="bg-white/5 border border-white/10 focus:border-primary/50 outline-none rounded-2xl px-5 py-4 text-xs text-white transition-all placeholder:text-white/20"
-                placeholder="Ex: Eleições Municipais 2024"
+                placeholder="Ex: Eleições MS 2026"
                 required
               />
             </div>
@@ -225,7 +225,7 @@ export default function ManageCampanhas() {
               disabled={creating}
               className="bg-primary text-white px-8 py-4 rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              {creating ? 'Criando...' : 'Criar Campanha'}
+              {creating ? 'Criando...' : 'Criar Ciclo'}
             </button>
           </div>
         </form>
@@ -233,33 +233,27 @@ export default function ManageCampanhas() {
 
       {/* Desktop Table */}
       <div className="hidden md:block bg-surface-1 border border-border rounded-[2.5rem] overflow-hidden">
-        <table className="w-full text-left">
+        <table className="w-full text-left table-fixed">
+          <colgroup>
+            <col className="w-[22%]" />
+            <col className="w-[11%]" />
+            <col className="w-[10%]" />
+            <col className="w-[11%]" />
+            <col className="w-[9%]" />
+            <col className="w-[10%]" />
+            <col className="w-[10%]" />
+            <col className="w-[17%]" />
+          </colgroup>
           <thead>
             <tr className="border-b border-border bg-surface-2/30">
-              <th className="px-8 py-6 text-[10px] uppercase font-bold text-text-muted tracking-widest">
-                Nome
-              </th>
-              <th className="px-8 py-6 text-[10px] uppercase font-bold text-text-muted tracking-widest">
-                Slug
-              </th>
-              <th className="px-8 py-6 text-[10px] uppercase font-bold text-text-muted tracking-widest">
-                Status
-              </th>
-              <th className="px-8 py-6 text-[10px] uppercase font-bold text-text-muted tracking-widest text-center">
-                Candidatos
-              </th>
-              <th className="px-8 py-6 text-[10px] uppercase font-bold text-text-muted tracking-widest text-center">
-                Atributos
-              </th>
-              <th className="px-8 py-6 text-[10px] uppercase font-bold text-text-muted tracking-widest text-center">
-                Total Votos
-              </th>
-              <th className="px-8 py-6 text-[10px] uppercase font-bold text-text-muted tracking-widest">
-                Início
-              </th>
-              <th className="px-8 py-6 text-[10px] uppercase font-bold text-text-muted tracking-widest">
-                Ações
-              </th>
+              <th className="px-4 py-4 text-[10px] uppercase font-bold text-text-muted tracking-widest">Nome</th>
+              <th className="px-3 py-4 text-[10px] uppercase font-bold text-text-muted tracking-widest">Slug</th>
+              <th className="px-3 py-4 text-[10px] uppercase font-bold text-text-muted tracking-widest">Status</th>
+              <th className="px-3 py-4 text-[10px] uppercase font-bold text-text-muted tracking-widest text-center">Políticos</th>
+              <th className="px-3 py-4 text-[10px] uppercase font-bold text-text-muted tracking-widest text-center">Atribs</th>
+              <th className="px-3 py-4 text-[10px] uppercase font-bold text-text-muted tracking-widest text-center">Votos</th>
+              <th className="px-3 py-4 text-[10px] uppercase font-bold text-text-muted tracking-widest">Início</th>
+              <th className="px-3 py-4 text-[10px] uppercase font-bold text-text-muted tracking-widest">Ações</th>
             </tr>
           </thead>
           <tbody>
@@ -270,59 +264,45 @@ export default function ManageCampanhas() {
                   key={camp.id}
                   className="border-b border-border/30 hover:bg-white/[0.01] transition-colors group"
                 >
-                  <td className="px-8 py-5 text-xs font-bold text-text">
-                    {camp.nome}
-                  </td>
-                  <td className="px-8 py-5 text-[10px] font-mono text-text-muted opacity-60">
-                    {camp.slug}
-                  </td>
-                  <td className="px-8 py-5">
-                    <span
-                      className={`inline-block px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest ${statusInfo.color} ${statusInfo.bg}`}
-                    >
+                  <td className="px-4 py-4 text-xs font-bold text-text truncate">{camp.nome}</td>
+                  <td className="px-3 py-4 text-[10px] font-mono text-text-muted opacity-60 truncate">{camp.slug}</td>
+                  <td className="px-3 py-4">
+                    <span className={`inline-block px-2 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest ${statusInfo.color} ${statusInfo.bg}`}>
                       {statusInfo.label}
                     </span>
                   </td>
-                  <td className="px-8 py-5 text-[11px] font-mono text-text-muted text-center">
-                    <div className="flex flex-col items-center gap-1">
+                  <td className="px-3 py-4 text-[11px] font-mono text-text-muted text-center">
+                    <div className="flex flex-col items-center gap-0.5">
                       <span>{camp._count.candidatos}</span>
                       <span className={camp.public_scope?.visivel ? 'text-positive text-[8px]' : 'text-text-muted/50 text-[8px]'}>
-                        {camp.public_scope?.candidatos_visiveis || 0} publicos
+                        {camp.public_scope?.candidatos_visiveis || 0} pub.
                       </span>
                     </div>
                   </td>
-                  <td className="px-8 py-5 text-[11px] font-mono text-text-muted text-center">
-                    {camp._count.atributos}
-                  </td>
-                  <td className="px-8 py-5 text-[11px] font-mono text-primary text-center font-bold">
+                  <td className="px-3 py-4 text-[11px] font-mono text-text-muted text-center">{camp._count.atributos}</td>
+                  <td className="px-3 py-4 text-[11px] font-mono text-primary text-center font-bold">
                     {camp.total_votos.toLocaleString('pt-BR')}
                   </td>
-                  <td className="px-8 py-5 text-[10px] font-mono text-text-muted opacity-60">
+                  <td className="px-3 py-4 text-[10px] font-mono text-text-muted opacity-60">
                     {new Date(camp.data_inicio).toLocaleDateString('pt-BR')}
                   </td>
-                  <td className="px-8 py-5">
-                    <div className="flex flex-col gap-2 items-start">
-                      <span className={`text-[8px] font-bold uppercase tracking-widest px-3 py-1 rounded-full ${
-                        camp.public_scope?.visivel
-                          ? 'text-positive bg-positive/10'
-                          : 'text-text-muted bg-white/5'
+                  <td className="px-3 py-4">
+                    <div className="flex flex-col gap-1.5 items-start">
+                      <span className={`text-[8px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full ${
+                        camp.public_scope?.visivel ? 'text-positive bg-positive/10' : 'text-text-muted bg-white/5'
                       }`}>
-                        {camp.public_scope?.visivel ? 'Publica' : 'Fora do publico'}
+                        {camp.public_scope?.visivel ? 'Pública' : 'Privada'}
                       </span>
                       <button
                         onClick={() => toggleStatus(camp)}
                         disabled={toggling === camp.id}
-                        className={`text-[9px] font-bold uppercase tracking-widest px-4 py-2 rounded-full border transition-all hover:brightness-110 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed ${
+                        className={`text-[9px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full border transition-all hover:brightness-110 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed ${
                           camp.status === 'ativo'
                             ? 'text-[#c8933a] border-[#c8933a]/20 bg-[#c8933a]/5 hover:bg-[#c8933a]/10'
                             : 'text-positive border-positive/20 bg-positive/5 hover:bg-positive/10'
                         }`}
                       >
-                        {toggling === camp.id
-                          ? '...'
-                          : camp.status === 'ativo'
-                          ? 'Pausar'
-                          : 'Ativar'}
+                        {toggling === camp.id ? '…' : camp.status === 'ativo' ? 'Pausar' : 'Ativar'}
                       </button>
                     </div>
                   </td>
@@ -333,14 +313,14 @@ export default function ManageCampanhas() {
         </table>
         {loading && (
           <div className="p-20 text-center text-text-muted animate-pulse font-display uppercase tracking-widest text-[10px]">
-            Sincronizando Campanhas...
+            Sincronizando Ciclos...
           </div>
         )}
         {!loading && campanhas.length === 0 && (
           <div className="p-20 text-center flex flex-col items-center gap-4">
             <span className="text-4xl opacity-20">📢</span>
             <p className="text-text-muted uppercase tracking-widest text-[10px]">
-              Nenhuma campanha encontrada
+              Nenhum ciclo encontrado
               {search ? ` para "${search}"` : ''}
             </p>
             {!search && (
@@ -348,7 +328,7 @@ export default function ManageCampanhas() {
                 onClick={() => setShowCreate(true)}
                 className="mt-4 bg-primary/10 border border-primary/20 text-primary px-6 py-3 rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:bg-primary/20 transition-all"
               >
-                + Criar Primeira Campanha
+                + Criar Primeiro Ciclo
               </button>
             )}
           </div>
@@ -384,13 +364,13 @@ export default function ManageCampanhas() {
               <div className="grid grid-cols-3 gap-3">
                 <div className="bg-white/[0.02] rounded-2xl p-3 text-center">
                   <p className="text-[8px] text-text-muted uppercase tracking-widest opacity-50">
-                    Candidatos
+                    Políticos
                   </p>
                   <p className="text-sm font-bold font-mono text-text mt-1">
                     {camp._count.candidatos}
                   </p>
                   <p className="text-[7px] uppercase tracking-widest text-text-muted mt-1">
-                    {camp.public_scope?.candidatos_visiveis || 0} publicos
+                    {camp.public_scope?.candidatos_visiveis || 0} públicos
                   </p>
                 </div>
                 <div className="bg-white/[0.02] rounded-2xl p-3 text-center">
@@ -444,13 +424,13 @@ export default function ManageCampanhas() {
           <div className="py-16 text-center flex flex-col items-center gap-4">
             <span className="text-4xl opacity-20">📢</span>
             <p className="text-text-muted uppercase tracking-widest text-[9px]">
-              Nenhuma campanha cadastrada
+              Nenhum ciclo cadastrado
             </p>
             <button
               onClick={() => setShowCreate(true)}
               className="mt-2 bg-primary/10 border border-primary/20 text-primary px-6 py-3 rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:bg-primary/20 transition-all"
             >
-              + Criar Primeira Campanha
+              + Criar Primeiro Ciclo
             </button>
           </div>
         )}

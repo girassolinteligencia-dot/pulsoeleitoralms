@@ -13,10 +13,11 @@ import { Etapa4 } from '@/components/etapas/Etapa4';
 import { EtapaDestaque, type EntidadeDestaque } from '@/components/etapas/EtapaDestaque';
 import { Etapa5 } from '@/components/etapas/Etapa5';
 import { EtapaCategoria, type Categoria } from '@/components/etapas/EtapaCategoria';
-import { EtapaAprovacao } from '@/components/etapas/EtapaAprovacao';
-import { EtapaExpectativa } from '@/components/etapas/EtapaExpectativa';
+import { EtapaFinal } from '@/components/etapas/EtapaFinal';
 import { Etapa6 } from '@/components/etapas/Etapa6';
+import { EtapaSugestao } from '@/components/etapas/EtapaSugestao';
 import { Fragmento } from '@/components/fragmento/Fragmento';
+import { PulsoEfeito } from '@/components/ui/PulsoEfeito';
 
 interface Atributo {
   id: string;
@@ -62,12 +63,14 @@ export default function AvaliarPage() {
   const [showSplash, setShowSplash] = useState(false);
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [loadingBusca, setLoadingBusca] = useState(false);
   const [config, setConfig] = useState<any>(null);
   
   const [userData, setUserData] = useState({
     ideologia: '',
     sexo: '',
     cor: '',
+    faixaEtaria: '',
     escolaridade: '',
     estadoCivil: '',
     faixaSalarial: '',
@@ -153,7 +156,7 @@ export default function AvaliarPage() {
     setStep(2);
     if (cat === 'orgao_publico') fetchOrgaos();
     else if (cat === 'servico_publico') fetchServicos();
-    else fetchCandidatos();
+    // políticos: não pré-carrega — usuário deve digitar e buscar
   };
 
   const goToAttributesAfterProfile = () => {
@@ -165,7 +168,7 @@ export default function AvaliarPage() {
   };
 
   const fetchCandidatos = async (query: string = '') => {
-    setLoading(true);
+    setLoadingBusca(true);
     try {
       const params = new URLSearchParams({ search: query });
       const res = await fetch(`/api/candidatos?${params.toString()}`);
@@ -175,12 +178,12 @@ export default function AvaliarPage() {
       console.error('Erro ao buscar candidatos:', error);
       setCandidatos([]);
     } finally {
-      setLoading(false);
+      setLoadingBusca(false);
     }
   };
 
   const fetchOrgaos = async (query: string = '') => {
-    setLoading(true);
+    setLoadingBusca(true);
     try {
       const params = new URLSearchParams({ search: query });
       const res = await fetch(`/api/orgaos?${params.toString()}`);
@@ -190,12 +193,12 @@ export default function AvaliarPage() {
       console.error('Erro ao buscar órgãos:', error);
       setOrgaos([]);
     } finally {
-      setLoading(false);
+      setLoadingBusca(false);
     }
   };
 
   const fetchServicos = async (query: string = '') => {
-    setLoading(true);
+    setLoadingBusca(true);
     try {
       const params = new URLSearchParams({ search: query });
       const res = await fetch(`/api/servicos?${params.toString()}`);
@@ -205,7 +208,7 @@ export default function AvaliarPage() {
       console.error('Erro ao buscar serviços:', error);
       setServicos([]);
     } finally {
-      setLoading(false);
+      setLoadingBusca(false);
     }
   };
 
@@ -234,6 +237,20 @@ export default function AvaliarPage() {
   const handleOrgaoSelect = async (org: OrgaoPublico) => {
     setLoading(true);
     try {
+      // Se veio do destaque (sem campanha/atributos), buscar dados completos
+      let orgaoCompleto: OrgaoPublico = org;
+      if (!org.campanha) {
+        const listaAtual = orgaos.find(o => o.id === org.id);
+        if (listaAtual) {
+          orgaoCompleto = listaAtual;
+        } else {
+          const res2 = await fetch(`/api/orgaos?search=`);
+          const lista: OrgaoPublico[] = await res2.json();
+          setOrgaos(lista);
+          orgaoCompleto = lista.find(o => o.id === org.id) ?? org;
+        }
+      }
+
       const res = await fetch('/api/avaliar/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -244,7 +261,7 @@ export default function AvaliarPage() {
       setSessionToken(data.token);
       setEvaluations([]);
       setCandidato(null); setServico(null);
-      setOrgao(org);
+      setOrgao(orgaoCompleto);
       setStep(3);
     } catch {
       alert('Não foi possível iniciar a avaliação. Tente novamente.');
@@ -256,6 +273,20 @@ export default function AvaliarPage() {
   const handleServicoSelect = async (svc: ServicoPublico) => {
     setLoading(true);
     try {
+      // Se veio do destaque (sem campanha/atributos), buscar dados completos
+      let servicoCompleto: ServicoPublico = svc;
+      if (!svc.campanha) {
+        const listaAtual = servicos.find(s => s.id === svc.id);
+        if (listaAtual) {
+          servicoCompleto = listaAtual;
+        } else {
+          const res2 = await fetch(`/api/servicos?search=`);
+          const lista: ServicoPublico[] = await res2.json();
+          setServicos(lista);
+          servicoCompleto = lista.find(s => s.id === svc.id) ?? svc;
+        }
+      }
+
       const res = await fetch('/api/avaliar/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -266,7 +297,7 @@ export default function AvaliarPage() {
       setSessionToken(data.token);
       setEvaluations([]);
       setCandidato(null); setOrgao(null);
-      setServico(svc);
+      setServico(servicoCompleto);
       setStep(3);
     } catch {
       alert('Não foi possível iniciar a avaliação. Tente novamente.');
@@ -354,16 +385,17 @@ export default function AvaliarPage() {
 
           const resAdvanced = await fetch(`${baseUrl}/percepcao`);
           const dataAdvanced = await resAdvanced.json();
-          setAdvancedResults(dataAdvanced);
+          // Só aceita se tiver a estrutura mínima esperada pelo PercepcaoDashboard
+          setAdvancedResults(dataAdvanced?.leitura && dataAdvanced?.resumo ? dataAdvanced : null);
         } catch {
           console.warn('Não foi possível carregar resultados');
           setResults([]);
         }
-        setStep(9);
+        setStep(8);
       } else {
         const errorData = await res.json().catch(() => ({}));
-        console.error('Erro ao enviar avaliação:', errorData);
-        alert('Ocorreu um erro ao enviar sua avaliação. Tente novamente.');
+        console.error('[submitEvaluation] erro da API:', res.status, errorData);
+        alert(`Ocorreu um erro ao enviar sua avaliação. Tente novamente.\n\n${errorData.error || res.status}`);
       }
     } catch (error) {
       console.error('Erro de conexão:', error);
@@ -410,12 +442,9 @@ export default function AvaliarPage() {
               exit={{ opacity: 0 }}
               className="w-full h-full flex flex-col items-center justify-center gap-8 px-6"
             >
-              <div className="relative w-32 h-32 flex items-center justify-center">
-                <div className="absolute inset-0 animate-pulse bg-[#d97757]/10 rounded-full blur-3xl scale-150" />
-                <Fragmento id="sync-frag" label="" type="positivo" />
-              </div>
+              <PulsoEfeito />
               <div className="flex flex-col items-center gap-2">
-                <span className="text-[#d97757] font-display uppercase tracking-[0.5em] text-[10px] font-bold shadow-sm">
+                <span className="text-[#d97757] font-display uppercase tracking-[0.5em] text-[11px] font-bold">
                   {isSubmitting ? 'Registrando seu Pulso...' : 'Sincronizando Dados...'}
                 </span>
                 <div className="flex gap-1">
@@ -450,6 +479,8 @@ export default function AvaliarPage() {
                   onBack={() => setStep(1)}
                   onEditRegion={() => setStep(5)}
                   onSearch={fetchCandidatos}
+                  onSugestao={() => setStep(9)}
+                  buscando={loadingBusca}
                   regionLabel={[userData.bairro, userData.cidade, userData.uf || 'MS'].filter(Boolean).join(' • ')}
                 />
               )}
@@ -459,10 +490,11 @@ export default function AvaliarPage() {
                   categoria="orgao_publico"
                   destaques={destaquesOrgaos}
                   resultadosBusca={orgaos.map(o => ({ id: o.id, nome: o.nome, tipo: o.tipo, cidade: o.cidade, foto_url: o.foto_url }))}
-                  buscando={loading}
+                  buscando={loadingBusca}
                   onSelect={(ent) => handleOrgaoSelect(orgaos.find(o => o.id === ent.id) ?? ent as OrgaoPublico)}
                   onSearch={fetchOrgaos}
                   onBack={() => setStep(1)}
+                  onSugestao={() => setStep(9)}
                 />
               )}
               {step === 2 && categoria === 'servico_publico' && (
@@ -471,10 +503,11 @@ export default function AvaliarPage() {
                   categoria="servico_publico"
                   destaques={destaquesServicos}
                   resultadosBusca={servicos.map(s => ({ id: s.id, nome: s.nome, tipo: s.tipo, cidade: s.cidade, foto_url: s.foto_url }))}
-                  buscando={loading}
+                  buscando={loadingBusca}
                   onSelect={(ent) => handleServicoSelect(servicos.find(s => s.id === ent.id) ?? ent as ServicoPublico)}
                   onSearch={fetchServicos}
                   onBack={() => setStep(1)}
+                  onSugestao={() => setStep(9)}
                 />
               )}
               {step === 3 && (
@@ -531,49 +564,85 @@ export default function AvaliarPage() {
                   config={config}
                 />
               )}
-              {step === 7 && (
-                <EtapaAprovacao
-                  onSelect={(val) => { setAprovacao(val); setStep(8); }}
+              {step === 7 && categoria === 'politico' && (
+                <EtapaFinal
+                  aprovacaoConfig={{
+                    titulo: String(config?.etapafinal_politico_aprov_titulo || 'Postura Pública'),
+                    pergunta: String(config?.etapafinal_politico_aprov_pergunta || 'DE FORMA GERAL, VOCÊ APROVA OU DESAPROVA A IMAGEM DESTE CANDIDATO?'),
+                    labelSim: String(config?.etapafinal_politico_aprov_sim || 'Aprovo'),
+                    labelNao: String(config?.etapafinal_politico_aprov_nao || 'Desaprovo'),
+                  }}
+                  expectativaConfig={{
+                    titulo: String(config?.etapafinal_politico_exp_titulo || 'Poder de Vitória'),
+                    pergunta: String(config?.etapafinal_politico_exp_pergunta || 'INDEPENDENTE DO SEU VOTO, VOCÊ ACREDITA QUE ESTE CANDIDATO TEM FORÇA PARA VENCER?'),
+                    labelSim: String(config?.etapafinal_politico_exp_sim || 'Tem Força'),
+                    subLabelSim: String(config?.etapafinal_politico_exp_sublabelsim || 'Percepção de Protagonismo'),
+                    labelNao: String(config?.etapafinal_politico_exp_nao || 'Sem Força'),
+                    subLabelNao: String(config?.etapafinal_politico_exp_sublabelnao || 'Percepção de Figurante'),
+                  }}
+                  onSubmit={(aprov, expect) => { setAprovacao(aprov); setExpectativaVitoria(expect); submitEvaluation(aprov, expect); }}
                   onBack={() => setStep(6)}
                 />
               )}
-              {step === 8 && categoria === 'orgao_publico' && (
-                <EtapaExpectativa
-                  onSelect={(val) => { setExpectativaVitoria(val); submitEvaluation(aprovacao!, val); }}
-                  onBack={() => setStep(7)}
-                  titulo="Confiança Institucional"
-                  pergunta="DE FORMA GERAL, VOCÊ CONFIA NO TRABALHO DESTE ÓRGÃO PÚBLICO?"
-                  labelSim="Confio"
-                  subLabelSim="Percepção de Credibilidade"
-                  labelNao="Não Confio"
-                  subLabelNao="Percepção de Descredito"
+              {step === 7 && categoria === 'orgao_publico' && (
+                <EtapaFinal
+                  aprovacaoConfig={{
+                    titulo: String(config?.etapafinal_orgao_aprov_titulo || 'Avaliação Geral'),
+                    pergunta: String(config?.etapafinal_orgao_aprov_pergunta || 'DE FORMA GERAL, VOCÊ AVALIA POSITIVA OU NEGATIVAMENTE A ATUAÇÃO DESTE ÓRGÃO?'),
+                    labelSim: String(config?.etapafinal_orgao_aprov_sim || 'Positiva'),
+                    labelNao: String(config?.etapafinal_orgao_aprov_nao || 'Negativa'),
+                  }}
+                  expectativaConfig={{
+                    titulo: String(config?.etapafinal_orgao_exp_titulo || 'Confiança Institucional'),
+                    pergunta: String(config?.etapafinal_orgao_exp_pergunta || 'DE FORMA GERAL, VOCÊ CONFIA NO TRABALHO DESTE ÓRGÃO PÚBLICO?'),
+                    labelSim: String(config?.etapafinal_orgao_exp_sim || 'Confio'),
+                    subLabelSim: String(config?.etapafinal_orgao_exp_sublabelsim || 'Percepção de Credibilidade'),
+                    labelNao: String(config?.etapafinal_orgao_exp_nao || 'Não Confio'),
+                    subLabelNao: String(config?.etapafinal_orgao_exp_sublabelnao || 'Percepção de Descredito'),
+                  }}
+                  onSubmit={(aprov, expect) => { setAprovacao(aprov); setExpectativaVitoria(expect); submitEvaluation(aprov, expect); }}
+                  onBack={() => setStep(6)}
                 />
               )}
-              {step === 8 && categoria === 'servico_publico' && (
-                <EtapaExpectativa
-                  onSelect={(val) => { setExpectativaVitoria(val); submitEvaluation(aprovacao!, val); }}
-                  onBack={() => setStep(7)}
-                  titulo="Satisfação com o Serviço"
-                  pergunta="DE FORMA GERAL, VOCÊ ESTÁ SATISFEITO COM ESTE SERVIÇO PÚBLICO?"
-                  labelSim="Satisfeito"
-                  subLabelSim="Percepção de Qualidade"
-                  labelNao="Insatisfeito"
-                  subLabelNao="Percepção de Falha"
+              {step === 7 && categoria === 'servico_publico' && (
+                <EtapaFinal
+                  aprovacaoConfig={{
+                    titulo: String(config?.etapafinal_servico_aprov_titulo || 'Avaliação Geral'),
+                    pergunta: String(config?.etapafinal_servico_aprov_pergunta || 'DE FORMA GERAL, VOCÊ AVALIA POSITIVA OU NEGATIVAMENTE ESTE SERVIÇO PÚBLICO?'),
+                    labelSim: String(config?.etapafinal_servico_aprov_sim || 'Positiva'),
+                    labelNao: String(config?.etapafinal_servico_aprov_nao || 'Negativa'),
+                  }}
+                  expectativaConfig={{
+                    titulo: String(config?.etapafinal_servico_exp_titulo || 'Satisfação com o Serviço'),
+                    pergunta: String(config?.etapafinal_servico_exp_pergunta || 'DE FORMA GERAL, VOCÊ ESTÁ SATISFEITO COM ESTE SERVIÇO PÚBLICO?'),
+                    labelSim: String(config?.etapafinal_servico_exp_sim || 'Satisfeito'),
+                    subLabelSim: String(config?.etapafinal_servico_exp_sublabelsim || 'Percepção de Qualidade'),
+                    labelNao: String(config?.etapafinal_servico_exp_nao || 'Insatisfeito'),
+                    subLabelNao: String(config?.etapafinal_servico_exp_sublabelnao || 'Percepção de Falha'),
+                  }}
+                  onSubmit={(aprov, expect) => { setAprovacao(aprov); setExpectativaVitoria(expect); submitEvaluation(aprov, expect); }}
+                  onBack={() => setStep(6)}
                 />
               )}
-              {step === 8 && categoria === 'politico' && (
-                <EtapaExpectativa
-                  onSelect={(val) => { setExpectativaVitoria(val); submitEvaluation(aprovacao!, val); }}
-                  onBack={() => setStep(7)}
-                />
-              )}
-              {step === 9 && (
+              {step === 8 && (
                 <Etapa6
                   results={results}
                   advancedResults={advancedResults}
-                  candidatoNome={candidato?.nomeExibido || candidato?.nome || ''}
-                  candidatoFotoUrl={candidato?.foto_url}
+                  userEvaluations={evaluations}
+                  candidatoNome={
+                    orgao?.nome || servico?.nome ||
+                    candidato?.nomeExibido || candidato?.nome || ''
+                  }
+                  candidatoFotoUrl={orgao?.foto_url || servico?.foto_url || candidato?.foto_url}
                   onReset={() => window.location.reload()}
+                  config={config}
+                />
+              )}
+              {step === 9 && (
+                <EtapaSugestao
+                  config={config}
+                  onBack={() => setStep(2)}
+                  onDone={() => window.location.reload()}
                 />
               )}
             </>

@@ -21,6 +21,8 @@ interface Etapa4Props {
   onBack: () => void;
   onEditRegion: () => void;
   onSearch: (query: string) => void;
+  onSugestao?: () => void;
+  buscando?: boolean;
   regionLabel?: string;
   tituloBusca?: string;
   subtituloBusca?: string;
@@ -33,15 +35,20 @@ export const Etapa4: React.FC<Etapa4Props> = ({
   onBack,
   onEditRegion,
   onSearch,
+  onSugestao,
+  buscando = false,
   regionLabel,
   tituloBusca = 'Busca',
   subtituloBusca = 'POLÍTICOS DISPONÍVEIS',
   placeholderBusca = 'Nome do político...',
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [hasSearched, setHasSearched] = useState(false);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!searchTerm.trim()) return;
+    setHasSearched(true);
     onSearch(searchTerm);
   };
 
@@ -57,7 +64,7 @@ export const Etapa4: React.FC<Etapa4Props> = ({
         <h1 className="text-2xl sm:text-3xl font-bold font-display uppercase tracking-tight text-[#f5f0e8] drop-shadow-[0_0_15px_rgba(245,240,232,0.3)]">
           {tituloBusca}
         </h1>
-        <p className="text-[9px] sm:text-[10px] text-[#b0aea5] uppercase tracking-[0.28em] sm:tracking-[0.4em] mt-2 font-bold leading-relaxed">
+        <p className="text-[11px] sm:text-xs text-[#b0aea5] uppercase tracking-[0.28em] sm:tracking-[0.4em] mt-2 font-bold leading-relaxed">
           {subtituloBusca}
         </p>
       </div>
@@ -66,7 +73,7 @@ export const Etapa4: React.FC<Etapa4Props> = ({
         <div className="w-full max-w-xl flex items-center justify-between gap-3 rounded-xl border border-[#3d3128] bg-[#1c1814]/45 px-4 py-3">
           <div className="min-w-0 flex items-center gap-2 text-[#8d8177]">
             <MapPin size={14} className="shrink-0 text-[#c8933a]" />
-            <span className="truncate text-[9px] font-bold uppercase tracking-[0.16em]">
+            <span className="truncate text-[11px] font-bold uppercase tracking-[0.16em]">
               {regionLabel}
             </span>
           </div>
@@ -101,7 +108,32 @@ export const Etapa4: React.FC<Etapa4Props> = ({
       </form>
 
       <div className="w-full max-w-xl flex flex-col gap-3 pb-10">
-        {candidatos.length > 0 ? (
+        {buscando ? (
+          <div className="text-center py-16 flex flex-col items-center gap-3">
+            <div className="flex gap-1">
+              {[0, 1, 2].map(i => (
+                <motion.div
+                  key={i}
+                  className="w-1.5 h-1.5 rounded-full bg-[#d97757]"
+                  animate={{ opacity: [0.2, 1, 0.2] }}
+                  transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.2 }}
+                />
+              ))}
+            </div>
+            <p className="text-[10px] uppercase tracking-[0.28em] text-[#7a6e64] font-bold">
+              buscando...
+            </p>
+          </div>
+        ) : !hasSearched ? (
+          <div className="text-center py-16 flex flex-col items-center gap-3">
+            <p className="text-[11px] uppercase font-bold tracking-[0.28em] text-[#7a6e64]">
+              Digite o nome
+            </p>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-[#3d3128] font-bold">
+              de quem você quer avaliar
+            </p>
+          </div>
+        ) : candidatos.length > 0 ? (
           candidatos.map((c) => (
             <motion.button
               type="button"
@@ -123,12 +155,21 @@ export const Etapa4: React.FC<Etapa4Props> = ({
           ))
         ) : (
           <div className="text-center py-20 opacity-30">
-            <p className="text-[10px] uppercase font-bold tracking-[0.3em]">Busque por um nome</p>
+            <p className="text-[11px] uppercase font-bold tracking-[0.3em]">Nenhum resultado encontrado</p>
           </div>
         )}
       </div>
 
       <div className="mt-auto pb-8 flex flex-col items-center gap-4 w-full">
+        {onSugestao && (
+          <button
+            type="button"
+            onClick={onSugestao}
+            className="text-[9px] uppercase font-bold text-[#c8933a] tracking-[0.24em] hover:text-[#f5f0e8] transition-colors"
+          >
+            Não encontrei — sugerir cadastro
+          </button>
+        )}
         <button
           type="button"
           onClick={onBack}

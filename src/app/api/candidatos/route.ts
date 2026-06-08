@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { buildPublicCandidateWhere, getPublicScopeConfig } from '@/lib/publicScope';
 import { getFotoUrl } from '@/lib/supabase';
+import { buildSearchOR } from '@/lib/normalize-search';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -13,34 +14,7 @@ export async function GET(req: NextRequest) {
     const scopeConfig = await getPublicScopeConfig();
     const candidatos = await prisma.candidato.findMany({
       where: buildPublicCandidateWhere(scopeConfig, {
-        ...(search && {
-          OR: [
-            {
-              nome: {
-                contains: search,
-                mode: 'insensitive'
-              }
-            },
-            {
-              cargo: {
-                contains: search,
-                mode: 'insensitive'
-              }
-            },
-            {
-              partido: {
-                contains: search,
-                mode: 'insensitive'
-              }
-            },
-            {
-              cidade: {
-                contains: search,
-                mode: 'insensitive'
-              }
-            }
-          ]
-        }),
+        ...(search && { OR: buildSearchOR(search, ['nome', 'cargo', 'partido', 'cidade']) }),
       }),
       orderBy: { nome: 'asc' },
       take: 50,

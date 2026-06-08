@@ -97,7 +97,7 @@ function BarChart({ data }: { data: AtividadeDia[] }) {
                 style={{ height: `${pct}%` }}
               />
             </div>
-            <span className={`text-[7px] uppercase font-bold tracking-widest ${isToday ? 'text-primary' : 'text-text-muted opacity-40'}`}>
+            <span className={`text-[8px] uppercase font-bold tracking-widest ${isToday ? 'text-primary' : 'text-text-muted opacity-40'}`}>
               {diaSemana}
             </span>
           </div>
@@ -195,8 +195,8 @@ export default function AdminDashboard() {
 
   const healthChecks = [
     { label: 'Banco', status: health?.checks?.database || 'unknown', detail: `${health?.metrics?.databaseMs ?? '-'} ms` },
-    { label: 'Campanhas', status: health?.checks?.activeCampaigns || 'unknown', detail: `${health?.metrics?.activeCampaigns ?? 0} ativas` },
-    { label: 'Candidatos', status: health?.checks?.publicCandidates || 'unknown', detail: `${health?.metrics?.publicCandidates ?? 0}` },
+    { label: 'Ciclos', status: health?.checks?.activeCampaigns || 'unknown', detail: `${health?.metrics?.activeCampaigns ?? 0} ativos` },
+    { label: 'Políticos', status: health?.checks?.publicCandidates || 'unknown', detail: `${health?.metrics?.publicCandidates ?? 0}` },
     { label: 'CEPs MS', status: health?.checks?.cepsMs || 'unknown', detail: `${health?.metrics?.cepsMs ?? 0}` },
     { label: 'Rodadas', status: health?.checks?.rodadasAtivas || 'unknown', detail: `${health?.metrics?.activeRodadas ?? 0}` },
     { label: 'Tráfego 24h', status: health?.checks?.recentTraffic || 'unknown', detail: `${health?.metrics?.manifestacoes24h ?? 0} manif.` },
@@ -226,7 +226,7 @@ export default function AdminDashboard() {
             Exportar CSV
           </button>
           <div className={`border rounded-2xl px-5 py-3 text-center ${statusStyle}`}>
-            <p className="text-[7px] uppercase font-bold tracking-widest opacity-70">Saúde</p>
+            <p className="text-[8px] uppercase font-bold tracking-widest opacity-70">Saúde</p>
             <p className="text-sm font-bold mt-0.5">{health?.status?.toUpperCase() || '—'}</p>
           </div>
         </div>
@@ -241,11 +241,11 @@ export default function AdminDashboard() {
           { label: 'Órgãos Públicos', value: (stats?.totalOrgaos ?? 0).toLocaleString('pt-BR'), accent: false },
           { label: 'Serviços Públicos', value: (stats?.totalServicos ?? 0).toLocaleString('pt-BR'), accent: false },
           { label: 'Atributos Visíveis', value: (stats?.totalAtributos ?? 0).toLocaleString('pt-BR'), accent: false },
-          { label: 'Campanhas', value: (stats?.totalCampanhas ?? 0).toLocaleString('pt-BR'), accent: false },
+          { label: 'Ciclos', value: (stats?.totalCampanhas ?? 0).toLocaleString('pt-BR'), accent: false },
           { label: 'Bloqueios Ativos', value: (stats?.bloqueiosAtivos ?? 0).toLocaleString('pt-BR'), accent: false },
         ].map((kpi, i) => (
           <div key={i} className={`rounded-2xl p-4 border flex flex-col gap-1 ${kpi.accent ? 'bg-primary/10 border-primary/20' : 'bg-white/[0.02] border-white/5'}`}>
-            <p className="text-[7px] uppercase font-bold tracking-widest text-text-muted opacity-60 leading-tight">{kpi.label}</p>
+            <p className="text-[8px] uppercase font-bold tracking-widest text-text-muted opacity-60 leading-tight">{kpi.label}</p>
             <p className={`text-xl font-bold ${kpi.accent ? 'text-primary' : 'text-text'}`}>{kpi.value}</p>
           </div>
         ))}
@@ -309,12 +309,12 @@ export default function AdminDashboard() {
                     <span className="text-[8px] font-bold text-primary opacity-60 mt-0.5 shrink-0">#{i + 1}</span>
                     <div className="min-w-0">
                       <p className="text-[10px] font-bold uppercase tracking-wider text-text truncate">{c.nome}</p>
-                      <p className="text-[7px] text-text-muted opacity-50 uppercase tracking-widest truncate">{c.cargo} · {c.cidade}</p>
+                      <p className="text-[8px] text-text-muted opacity-50 uppercase tracking-widest truncate">{c.cargo} · {c.cidade}</p>
                     </div>
                   </div>
                   <div className="shrink-0 text-right">
                     <p className="text-[10px] font-bold text-primary">{c.total.toLocaleString('pt-BR')}</p>
-                    <p className={`text-[7px] font-bold ${c.liquidScore >= 0 ? 'text-positive' : 'text-negative'}`}>
+                    <p className={`text-[8px] font-bold ${c.liquidScore >= 0 ? 'text-positive' : 'text-negative'}`}>
                       {c.liquidScore >= 0 ? '+' : ''}{c.liquidScore}
                     </p>
                   </div>
@@ -347,7 +347,7 @@ export default function AdminDashboard() {
                       <p className="text-[10px] font-bold uppercase tracking-wider text-text truncate">{a.nome}</p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      <span className={`text-[7px] font-bold uppercase ${a.polaridade === 1 ? 'text-positive' : 'text-negative'}`}>
+                      <span className={`text-[8px] font-bold uppercase ${a.polaridade === 1 ? 'text-positive' : 'text-negative'}`}>
                         {a.polaridade === 1 ? 'Virtude' : 'Negativo'}
                       </span>
                       <span className="text-[10px] font-bold text-primary">{a.total.toLocaleString('pt-BR')}</span>
@@ -369,7 +369,7 @@ export default function AdminDashboard() {
         <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-6">
           <div className="flex justify-between items-center mb-5">
             <h3 className="text-[11px] font-bold uppercase tracking-widest">Últimas Interações</h3>
-            <span className="px-2 py-1 bg-positive/10 text-positive text-[7px] font-bold uppercase rounded-full animate-pulse tracking-widest">Live</span>
+            <span className="px-2 py-1 bg-positive/10 text-positive text-[8px] font-bold uppercase rounded-full animate-pulse tracking-widest">Live</span>
           </div>
           <div className="flex flex-col gap-2">
             {recentEvaluations.map(ev => (
@@ -380,7 +380,7 @@ export default function AdminDashboard() {
                   </div>
                   <div className="min-w-0">
                     <p className="text-[9px] font-bold uppercase tracking-wider truncate">{ev.candidato.nome}</p>
-                    <p className="text-[7px] text-text-muted opacity-50 uppercase tracking-widest truncate">{ev.atributo.nome}</p>
+                    <p className="text-[8px] text-text-muted opacity-50 uppercase tracking-widest truncate">{ev.atributo.nome}</p>
                   </div>
                 </div>
                 <p className="text-[8px] text-text-muted font-mono opacity-30 shrink-0 ml-2">{new Date(ev.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
@@ -414,12 +414,12 @@ export default function AdminDashboard() {
                       <span className="text-[8px] font-bold text-primary opacity-60 mt-0.5 shrink-0">#{i + 1}</span>
                       <div className="min-w-0">
                         <p className="text-[10px] font-bold uppercase tracking-wider text-text truncate">{o.nome}</p>
-                        <p className="text-[7px] text-text-muted opacity-50 uppercase tracking-widest truncate">{o.tipo} · {o.cidade}</p>
+                        <p className="text-[8px] text-text-muted opacity-50 uppercase tracking-widest truncate">{o.tipo} · {o.cidade}</p>
                       </div>
                     </div>
                     <div className="shrink-0 text-right">
                       <p className="text-[10px] font-bold text-primary">{o.total.toLocaleString('pt-BR')}</p>
-                      <p className={`text-[7px] font-bold ${o.liquidScore >= 0 ? 'text-positive' : 'text-negative'}`}>
+                      <p className={`text-[8px] font-bold ${o.liquidScore >= 0 ? 'text-positive' : 'text-negative'}`}>
                         {o.liquidScore >= 0 ? '+' : ''}{o.liquidScore}
                       </p>
                     </div>
@@ -450,12 +450,12 @@ export default function AdminDashboard() {
                       <span className="text-[8px] font-bold text-primary opacity-60 mt-0.5 shrink-0">#{i + 1}</span>
                       <div className="min-w-0">
                         <p className="text-[10px] font-bold uppercase tracking-wider text-text truncate">{s.nome}</p>
-                        <p className="text-[7px] text-text-muted opacity-50 uppercase tracking-widest truncate">{s.tipo} · {s.cidade}</p>
+                        <p className="text-[8px] text-text-muted opacity-50 uppercase tracking-widest truncate">{s.tipo} · {s.cidade}</p>
                       </div>
                     </div>
                     <div className="shrink-0 text-right">
                       <p className="text-[10px] font-bold text-primary">{s.total.toLocaleString('pt-BR')}</p>
-                      <p className={`text-[7px] font-bold ${s.liquidScore >= 0 ? 'text-positive' : 'text-negative'}`}>
+                      <p className={`text-[8px] font-bold ${s.liquidScore >= 0 ? 'text-positive' : 'text-negative'}`}>
                         {s.liquidScore >= 0 ? '+' : ''}{s.liquidScore}
                       </p>
                     </div>

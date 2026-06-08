@@ -48,7 +48,7 @@ export const Etapa0: React.FC<Etapa0Props> = ({ onNext }) => {
           Como funciona
         </motion.h1>
         <motion.p
-          className="text-[10px] text-[#b0aea5] uppercase tracking-[0.4em] mt-3 font-bold"
+          className="text-sm text-[#b0aea5] uppercase tracking-[0.3em] mt-3 font-bold"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.25 }}
@@ -75,11 +75,11 @@ export const Etapa0: React.FC<Etapa0Props> = ({ onNext }) => {
             {/* Texto */}
             <div className="flex flex-col gap-1 min-w-0">
               <div className="flex items-center gap-2">
-                <span className="text-[11px] font-bold font-display uppercase tracking-[0.1em] text-[#f5f0e8]">
+                <span className="text-sm font-bold font-display uppercase tracking-[0.1em] text-[#f5f0e8]">
                   {passo.titulo}
                 </span>
               </div>
-              <p className="text-[10px] text-[#7a6e64] leading-relaxed">
+              <p className="text-sm text-[#7a6e64] leading-relaxed">
                 {passo.descricao}
               </p>
             </div>
@@ -97,7 +97,7 @@ export const Etapa0: React.FC<Etapa0Props> = ({ onNext }) => {
 
       {/* Reforço de privacidade */}
       <motion.div
-        className="flex flex-wrap items-center justify-center gap-4 text-[#7a6e64] text-[8px] sm:text-[9px] uppercase tracking-widest font-bold shrink-0"
+        className="flex flex-wrap items-center justify-center gap-4 text-[#7a6e64] text-[10px] sm:text-[11px] uppercase tracking-widest font-bold shrink-0"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.6, delay: 0.75 }}

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAdminIdentity, requireAdmin } from '@/lib/adminAuth';
 import { recordAuditLog } from '@/lib/auditLog';
+import { buildSearchOR } from '@/lib/normalize-search';
 
 export async function GET(req: NextRequest) {
   const authError = await requireAdmin(req);
@@ -15,13 +16,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const where = {
-      ...(search && {
-        OR: [
-          { nome: { contains: search, mode: 'insensitive' as const } },
-          { tipo: { contains: search, mode: 'insensitive' as const } },
-          { cidade: { contains: search, mode: 'insensitive' as const } },
-        ],
-      }),
+      ...(search && { OR: buildSearchOR(search, ['nome', 'tipo', 'cidade']) }),
     };
 
     const [orgaos, total] = await Promise.all([

@@ -25,6 +25,34 @@ function countPerfil(manifestacoes: { perfil: unknown }[], key: string, limit = 
     .slice(0, limit);
 }
 
+function countPerfilComSaldo(
+  manifestacoes: { perfil: unknown; aprovacao: boolean | null }[],
+  key: string,
+  limit = 5
+) {
+  const map = new Map<string, { total: number; aprovam: number; desaprovam: number }>();
+  manifestacoes.forEach((m) => {
+    const value = getPerfilString(m.perfil, key);
+    if (!value) return;
+    const cur = map.get(value) || { total: 0, aprovam: 0, desaprovam: 0 };
+    cur.total += 1;
+    if (m.aprovacao === true) cur.aprovam += 1;
+    if (m.aprovacao === false) cur.desaprovam += 1;
+    map.set(value, cur);
+  });
+  const totalGeral = manifestacoes.length;
+  return Array.from(map.entries())
+    .map(([nome, v]) => ({
+      nome,
+      total: v.total,
+      pct: percent(v.total, totalGeral),
+      saldo: v.aprovam - v.desaprovam,
+      aprovamPct: percent(v.aprovam, v.total),
+    }))
+    .sort((a, b) => b.total - a.total)
+    .slice(0, limit);
+}
+
 function leituraRapida(total: number, saldo: number) {
   if (total < 5) return { titulo: 'Baixo volume de dados', descricao: 'Ainda há poucas manifestações para uma leitura coletiva consistente.', tom: 'neutro' };
   if (saldo >= 25) return { titulo: 'Avaliação positiva predominante', descricao: 'Entre as vozes registradas, a aprovação supera a desaprovação com folga.', tom: 'positivo' };
@@ -110,8 +138,8 @@ export async function GET(
       ocupacao: countPerfil(manifestacoes, 'ocupacao', 4),
     };
     const origem = {
-      cidades: countPerfil(manifestacoes, 'cidade', 5),
-      bairros: [] as { nome: string; total: number; pct: number }[],
+      cidades: countPerfilComSaldo(manifestacoes, 'cidade', 5),
+      bairros: countPerfilComSaldo(manifestacoes, 'bairro', 5),
     };
 
     return NextResponse.json({

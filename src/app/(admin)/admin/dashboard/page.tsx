@@ -215,7 +215,7 @@ export default function AdminDashboard() {
       <header className="flex flex-col sm:flex-row justify-between items-start gap-4">
         <div>
           <h2 className="text-2xl md:text-3xl font-bold font-display uppercase tracking-widest text-text">Visão Geral</h2>
-          <p className="text-[10px] text-text-muted uppercase mt-2 tracking-[0.2em]">Monitoramento em tempo real — MS 2026</p>
+          <p className="text-[10px] text-text-muted uppercase mt-2 tracking-[0.2em]">Monitoramento em tempo real — Mato Grosso do Sul</p>
         </div>
         <div className="flex gap-3 flex-wrap">
           <button

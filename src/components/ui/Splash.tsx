@@ -85,7 +85,7 @@ export const Splash: React.FC<SplashProps> = ({ onComplete }) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1.0, ease: 'easeOut', delay: 1.1 }}
         >
-          Inteligência Eleitoral · MS 2026
+          Inteligência Pública · Mato Grosso do Sul
         </motion.p>
 
         {/* Fade-out overlay — começa a cobrir antes do onComplete */}

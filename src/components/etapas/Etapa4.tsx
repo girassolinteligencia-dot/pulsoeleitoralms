@@ -39,8 +39,8 @@ export const Etapa4: React.FC<Etapa4Props> = ({
   buscando = false,
   regionLabel,
   tituloBusca = 'Busca',
-  subtituloBusca = 'POLÍTICOS DISPONÍVEIS',
-  placeholderBusca = 'Nome do político...',
+  subtituloBusca = 'RESULTADOS DA BUSCA',
+  placeholderBusca = 'Nome para buscar...',
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [hasSearched, setHasSearched] = useState(false);
@@ -99,7 +99,7 @@ export const Etapa4: React.FC<Etapa4Props> = ({
           />
           <button 
             type="submit"
-            aria-label="Buscar político"
+            aria-label="Buscar"
             className="absolute right-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-lg text-[#d97757] hover:bg-[#d97757]/10 transition-colors flex items-center justify-center"
           >
             <Search size={18} />

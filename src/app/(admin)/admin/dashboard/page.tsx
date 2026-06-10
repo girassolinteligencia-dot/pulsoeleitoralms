@@ -153,6 +153,9 @@ export default function AdminDashboard() {
   }, []);
 
   useEffect(() => {
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
     const init = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -160,18 +163,27 @@ export default function AdminDashboard() {
 
         await fetchData();
 
-        const channel = supabase
-          .channel('avaliacoes_realtime')
-          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'avaliacoes' }, fetchData)
-          .subscribe();
+        const handleInsert = () => {
+          if (debounceTimer) clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(fetchData, 2000);
+        };
 
-        return () => { supabase.removeChannel(channel); };
+        channel = supabase
+          .channel('avaliacoes_realtime')
+          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'avaliacoes' }, handleInsert)
+          .subscribe();
       } catch {
         setError('Erro na verificação de autenticação');
         setLoading(false);
       }
     };
+
     init();
+
+    return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      if (channel) supabase.removeChannel(channel);
+    };
   }, [router, fetchData]);
 
   if (loading) return (

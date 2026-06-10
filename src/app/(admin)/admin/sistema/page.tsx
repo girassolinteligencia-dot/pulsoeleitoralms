@@ -403,7 +403,7 @@ function UploadImagem({
       const res = await adminFetch('/api/admin/identidade/upload', { method: 'POST', body: fd });
       const d = await res.json();
       if (!res.ok) { setErro(d.error || 'Erro no upload.'); return; }
-      setPreview(d.url);
+      setPreview(`${d.url}?t=${Date.now()}`);
       onSaved();
     } finally {
       setUploading(false);

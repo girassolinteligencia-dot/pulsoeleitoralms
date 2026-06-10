@@ -110,11 +110,13 @@ export const EtapaDestaque: React.FC<EtapaDestaqueProps> = ({
               className="flex flex-col items-center justify-center gap-2 bg-[#1c1814]/60 border border-[#3d3128] rounded-2xl px-2 py-4 sm:py-5 text-center hover:border-[#d97757]/60 hover:bg-[#1c1814] active:scale-95 transition-all group"
             >
               {ent.foto_url ? (
-                <img
-                  src={ent.foto_url}
-                  alt={ent.nome}
-                  className="w-10 h-10 rounded-full object-cover border border-[#3d3128] shrink-0"
-                />
+                <div className="w-10 h-10 rounded-full bg-[#1c1814] border border-[#3d3128] flex items-center justify-center shrink-0 overflow-hidden p-1">
+                  <img
+                    src={ent.foto_url}
+                    alt={ent.nome}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
               ) : (
                 <div className="w-10 h-10 rounded-full bg-[#d97757]/10 border border-[#d97757]/20 flex items-center justify-center shrink-0">
                   <span className="text-[#d97757] text-xs font-bold">
@@ -198,7 +200,9 @@ export const EtapaDestaque: React.FC<EtapaDestaqueProps> = ({
               className="w-full bg-[#1c1814]/50 border border-[#3d3128] rounded-xl p-3.5 flex items-center gap-3 group transition-all text-left hover:border-[#d97757]/40"
             >
               {ent.foto_url ? (
-                <img src={ent.foto_url} alt={ent.nome} className="w-10 h-10 rounded-full object-cover border border-[#3d3128] shrink-0" />
+                <div className="w-10 h-10 rounded-full bg-[#1c1814] border border-[#3d3128] flex items-center justify-center shrink-0 overflow-hidden p-1">
+                  <img src={ent.foto_url} alt={ent.nome} className="w-full h-full object-contain" />
+                </div>
               ) : (
                 <div className="w-10 h-10 rounded-full bg-[#d97757]/10 border border-[#d97757]/20 flex items-center justify-center shrink-0">
                   <span className="text-[#d97757] text-xs font-bold">{ent.nome.charAt(0)}</span>

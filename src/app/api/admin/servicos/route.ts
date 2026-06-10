@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAdminIdentity, requireAdmin } from '@/lib/adminAuth';
 import { recordAuditLog } from '@/lib/auditLog';
+import { getFotoUrl } from '@/lib/supabase';
 import { buildSearchOR } from '@/lib/normalize-search';
 
 export async function GET(req: NextRequest) {
@@ -30,7 +31,7 @@ export async function GET(req: NextRequest) {
       prisma.servicoPublico.count({ where }),
     ]);
 
-    return NextResponse.json({ data: servicos, total, page, totalPages: Math.ceil(total / limit) });
+    return NextResponse.json({ data: servicos.map(s => ({ ...s, foto_url: getFotoUrl(s.foto_url) })), total, page, totalPages: Math.ceil(total / limit) });
   } catch (error) {
     console.error('Erro ao buscar serviços admin:', error);
     return NextResponse.json({ data: [], total: 0, page: 1, totalPages: 0 }, { status: 200 });

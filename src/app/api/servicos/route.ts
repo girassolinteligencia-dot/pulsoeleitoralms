@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getFotoUrl } from '@/lib/supabase';
 import { buildSearchOR } from '@/lib/normalize-search';
 
 export async function GET(req: NextRequest) {
@@ -41,8 +42,9 @@ export async function GET(req: NextRequest) {
     const fallback = atributosGlobais.map(a => ({ atributo: a }));
     const result = servicos.map(s => {
       const temAtributos = (s.campanha?.atributos?.length ?? 0) > 0;
-      if (temAtributos) return s;
-      return { ...s, campanha: { atributos: fallback } };
+      const base = { ...s, foto_url: getFotoUrl(s.foto_url) };
+      if (temAtributos) return base;
+      return { ...base, campanha: { atributos: fallback } };
     });
 
     return NextResponse.json(result);

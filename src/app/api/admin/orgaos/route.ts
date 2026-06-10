@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAdminIdentity, requireAdmin } from '@/lib/adminAuth';
 import { recordAuditLog } from '@/lib/auditLog';
+import { getFotoUrl } from '@/lib/supabase';
 import { buildSearchOR } from '@/lib/normalize-search';
 
 export async function GET(req: NextRequest) {
@@ -31,7 +32,7 @@ export async function GET(req: NextRequest) {
     ]);
 
     return NextResponse.json({
-      data: orgaos,
+      data: orgaos.map(o => ({ ...o, foto_url: getFotoUrl(o.foto_url) })),
       total,
       page,
       totalPages: Math.ceil(total / limit),

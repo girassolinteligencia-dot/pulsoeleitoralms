@@ -3,7 +3,8 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET() {
   try {
-    const parametros = await prisma.parametroPlataforma.findMany({
+    const [parametros, totalPulsos] = await Promise.all([
+      prisma.parametroPlataforma.findMany({
       where: {
         OR: [
           { chave: { startsWith: 'geral_' } },
@@ -16,15 +17,16 @@ export async function GET() {
           { chave: { startsWith: 'sugestao_' } },
         ],
       },
-    });
-    
-    // Transformar array em objeto chave-valor para facilitar o uso no frontend
+    }),
+      prisma.manifestacao.count({ where: { is_valid: true } }),
+    ]);
+
     const config = parametros.reduce((acc, curr) => {
       acc[curr.chave] = curr.valor;
       return acc;
     }, {} as Record<string, unknown>);
 
-    return NextResponse.json(config);
+    return NextResponse.json({ ...config, _total_pulsos: totalPulsos });
   } catch {
     return NextResponse.json({ error: 'Erro ao buscar configurações' }, { status: 500 });
   }

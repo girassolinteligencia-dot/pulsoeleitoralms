@@ -10,11 +10,16 @@ const TIPO_LABEL: Record<string, string> = {
   servico_publico: 'Serviço',
 };
 
-interface Avaliacao {
+interface AvaliacaoItem {
   id: string;
-  entidade: { nome: string; tipo: string };
   atributo: { nome: string };
   valor: number;
+}
+
+interface Manifestacao {
+  id: string;
+  entidade: { nome: string; tipo: string };
+  avaliacoes: AvaliacaoItem[];
   is_valid: boolean;
   fingerprint_hash: string;
   ip_hash: string;
@@ -26,47 +31,51 @@ interface Avaliacao {
 interface GrupoEntidade {
   nome: string;
   tipo: string;
-  avaliacoes: Avaliacao[];
+  manifestacoes: Manifestacao[];
   total: number;
   suspeitas: number;
   bots: number;
   ultimaData: string;
 }
 
-function agruparPorEntidade(avaliacoes: Avaliacao[]): GrupoEntidade[] {
-  const mapa = new Map<string, Avaliacao[]>();
-  for (const av of avaliacoes) {
-    const chave = `${av.entidade.tipo}::${av.entidade.nome}`;
+function agruparPorEntidade(manifestacoes: Manifestacao[]): GrupoEntidade[] {
+  const mapa = new Map<string, Manifestacao[]>();
+  for (const m of manifestacoes) {
+    const chave = `${m.entidade.tipo}::${m.entidade.nome}`;
     if (!mapa.has(chave)) mapa.set(chave, []);
-    mapa.get(chave)!.push(av);
+    mapa.get(chave)!.push(m);
   }
-  return Array.from(mapa.entries()).map(([chave, avs]) => {
+  return Array.from(mapa.entries()).map(([chave, ms]) => {
     const [tipo, nome] = chave.split('::');
     return {
       nome,
       tipo,
-      avaliacoes: avs,
-      total: avs.length,
-      suspeitas: avs.filter(a => (a.duration_ms !== null && a.duration_ms < 8000) || a.honeypot_triggered).length,
-      bots: avs.filter(a => a.honeypot_triggered).length,
-      ultimaData: avs[0]?.criado_em ?? '',
+      manifestacoes: ms,
+      total: ms.length,
+      suspeitas: ms.filter(m => (m.duration_ms !== null && m.duration_ms < 8000) || m.honeypot_triggered).length,
+      bots: ms.filter(m => m.honeypot_triggered).length,
+      ultimaData: ms[0]?.criado_em ?? '',
     };
   });
 }
 
 export default function ModeracaoAdmin() {
-  const [avaliacoes, setAvaliacoes] = useState<Avaliacao[]>([]);
+  const [manifestacoes, setManifestacoes] = useState<Manifestacao[]>([]);
   const [stats, setStats] = useState({ total: 0, suspicious: 0, bots: 0 });
   const [abertos, setAbertos] = useState<Set<string>>(new Set());
+  const [abertosManif, setAbertosManif] = useState<Set<string>>(new Set());
 
-  const toggleAberto = (nome: string) =>
-    setAbertos(prev => { const n = new Set(prev); n.has(nome) ? n.delete(nome) : n.add(nome); return n; });
+  const toggleAberto = (chave: string) =>
+    setAbertos(prev => { const n = new Set(prev); n.has(chave) ? n.delete(chave) : n.add(chave); return n; });
+
+  const toggleManif = (id: string) =>
+    setAbertosManif(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
 
   const fetchData = async () => {
     try {
       const res = await adminFetch('/api/admin/moderacao');
       const data = await res.json();
-      setAvaliacoes(data.avaliacoes);
+      setManifestacoes(data.manifestacoes);
       setStats(data.stats);
     } catch (error) {
       console.error(error);
@@ -88,7 +97,7 @@ export default function ModeracaoAdmin() {
     }
   };
 
-  const grupos = useMemo(() => agruparPorEntidade(avaliacoes), [avaliacoes]);
+  const grupos = useMemo(() => agruparPorEntidade(manifestacoes), [manifestacoes]);
 
   return (
     <div className="max-w-7xl mx-auto flex flex-col gap-10">
@@ -113,21 +122,22 @@ export default function ModeracaoAdmin() {
         ))}
       </div>
 
-      {/* Acordeão por candidato */}
+      {/* Acordeão por entidade */}
       <div className="flex flex-col gap-2">
         <p className="text-[9px] text-[#7a6e64] uppercase tracking-widest font-bold mb-2">
           {grupos.length} entidade(s) nas últimas 50 avaliações — clique para expandir
         </p>
 
         {grupos.map(grupo => {
-          const aberto = abertos.has(`${grupo.tipo}::${grupo.nome}`);
+          const chaveGrupo = `${grupo.tipo}::${grupo.nome}`;
+          const aberto = abertos.has(chaveGrupo);
           return (
-            <div key={`${grupo.tipo}::${grupo.nome}`} className="bg-[#1c1814] border border-[#3d3128] rounded-2xl overflow-hidden">
+            <div key={chaveGrupo} className="bg-[#1c1814] border border-[#3d3128] rounded-2xl overflow-hidden">
 
               {/* Linha da entidade */}
               <button
                 type="button"
-                onClick={() => toggleAberto(`${grupo.tipo}::${grupo.nome}`)}
+                onClick={() => toggleAberto(chaveGrupo)}
                 className="w-full flex items-center justify-between gap-4 px-6 py-4 hover:bg-[#241e18] transition-colors group"
               >
                 <div className="flex items-center gap-4 min-w-0">
@@ -164,7 +174,7 @@ export default function ModeracaoAdmin() {
                 </div>
               </button>
 
-              {/* Painel expansível */}
+              {/* Lista de manifestações (ciclos completos) */}
               <AnimatePresence initial={false}>
                 {aberto && (
                   <motion.div
@@ -175,60 +185,86 @@ export default function ModeracaoAdmin() {
                     transition={{ duration: 0.22 }}
                     className="overflow-hidden"
                   >
-                    <div className="border-t border-[#3d3128] overflow-x-auto">
-                      <table className="w-full text-left min-w-[600px]">
-                        <thead>
-                          <tr className="bg-[#141413]">
-                            <th className="px-6 py-3 text-[8px] uppercase font-bold text-[#7a6e64] tracking-widest">Data/Hora</th>
-                            <th className="px-6 py-3 text-[8px] uppercase font-bold text-[#7a6e64] tracking-widest">Atributo</th>
-                            <th className="px-6 py-3 text-[8px] uppercase font-bold text-[#7a6e64] tracking-widest">Duração</th>
-                            <th className="px-6 py-3 text-[8px] uppercase font-bold text-[#7a6e64] tracking-widest">Status</th>
-                            <th className="px-6 py-3 text-[8px] uppercase font-bold text-[#7a6e64] tracking-widest">Ação</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-[#3d3128]/60">
-                          {grupo.avaliacoes.map(av => (
-                            <tr
-                              key={av.id}
-                              className={`hover:bg-[#241e18] transition-colors ${!av.is_valid ? 'opacity-40' : ''}`}
+                    <div className="border-t border-[#3d3128] flex flex-col divide-y divide-[#3d3128]/60">
+                      {grupo.manifestacoes.map((m, idx) => {
+                        const manifAberta = abertosManif.has(m.id);
+                        const suspeita = (m.duration_ms !== null && m.duration_ms < 8000) || m.honeypot_triggered;
+                        return (
+                          <div key={m.id} className={`${!m.is_valid ? 'opacity-40' : ''}`}>
+                            {/* Linha da manifestação */}
+                            <button
+                              type="button"
+                              onClick={() => toggleManif(m.id)}
+                              className="w-full flex items-center justify-between gap-3 px-6 py-3 hover:bg-[#241e18] transition-colors text-left"
                             >
-                              <td className="px-6 py-3 text-[9px] text-[#7a6e64]">
-                                {new Date(av.criado_em).toLocaleString('pt-BR')}
-                              </td>
-                              <td className="px-6 py-3 text-[10px] font-bold uppercase text-[#f5f0e8]">
-                                {av.atributo.nome}
-                              </td>
-                              <td className="px-6 py-3 text-[10px]">
-                                <span className={av.duration_ms !== null && av.duration_ms < 8000 ? 'text-red-400 font-bold' : 'text-[#7a6e64]'}>
-                                  {av.duration_ms ? (av.duration_ms / 1000).toFixed(1) + 's' : 'N/A'}
-                                  {av.duration_ms !== null && av.duration_ms < 8000 && ' ⚠'}
+                              <div className="flex items-center gap-3 min-w-0">
+                                <motion.span
+                                  animate={{ rotate: manifAberta ? 90 : 0 }}
+                                  transition={{ duration: 0.15 }}
+                                  className="text-[#7a6e64] text-[8px] shrink-0"
+                                >
+                                  ▶
+                                </motion.span>
+                                <span className="text-[9px] font-bold text-[#f5f0e8] tabular-nums">
+                                  #{idx + 1}
                                 </span>
-                              </td>
-                              <td className="px-6 py-3">
-                                <div className="flex flex-col gap-1">
-                                  <span className={`text-[8px] font-bold uppercase tracking-widest ${av.is_valid ? 'text-green-500' : 'text-red-500'}`}>
-                                    {av.is_valid ? '✓ Válido' : '✗ Inválido'}
-                                  </span>
-                                  {av.honeypot_triggered && (
-                                    <span className="text-[7px] text-red-400 font-bold uppercase bg-red-400/10 px-2 py-0.5 rounded-full inline-block">
-                                      BOT
-                                    </span>
-                                  )}
-                                </div>
-                              </td>
-                              <td className="px-6 py-3">
+                                <span className="text-[9px] text-[#7a6e64]">
+                                  {new Date(m.criado_em).toLocaleString('pt-BR')}
+                                </span>
+                                <span className="text-[9px] text-[#7a6e64] hidden sm:block">
+                                  {m.avaliacoes.length} atributo{m.avaliacoes.length !== 1 ? 's' : ''}
+                                </span>
+                                {suspeita && (
+                                  <span className="text-[7px] font-bold text-yellow-400 bg-yellow-400/10 px-1.5 py-0.5 rounded-full">⚠ suspeito</span>
+                                )}
+                                {m.honeypot_triggered && (
+                                  <span className="text-[7px] font-bold text-red-400 bg-red-400/10 px-1.5 py-0.5 rounded-full">BOT</span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-3 shrink-0">
+                                <span className={`text-[8px] font-bold uppercase tracking-widest ${m.is_valid ? 'text-green-500' : 'text-red-500'}`}>
+                                  {m.is_valid ? '✓ Válido' : '✗ Inválido'}
+                                </span>
                                 <button
                                   type="button"
-                                  onClick={() => toggleValidity(av.id, av.is_valid)}
-                                  className={`text-[9px] font-bold uppercase tracking-widest underline decoration-dotted transition-colors ${av.is_valid ? 'text-[#7a6e64] hover:text-red-400' : 'text-[#7a6e64] hover:text-green-400'}`}
+                                  onClick={e => { e.stopPropagation(); toggleValidity(m.id, m.is_valid); }}
+                                  className={`text-[9px] font-bold uppercase tracking-widest underline decoration-dotted transition-colors ${m.is_valid ? 'text-[#7a6e64] hover:text-red-400' : 'text-[#7a6e64] hover:text-green-400'}`}
                                 >
-                                  {av.is_valid ? 'Invalidar' : 'Validar'}
+                                  {m.is_valid ? 'Invalidar' : 'Validar'}
                                 </button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                              </div>
+                            </button>
+
+                            {/* Atributos da manifestação */}
+                            <AnimatePresence initial={false}>
+                              {manifAberta && (
+                                <motion.div
+                                  key="atribs"
+                                  initial={{ height: 0, opacity: 0 }}
+                                  animate={{ height: 'auto', opacity: 1 }}
+                                  exit={{ height: 0, opacity: 0 }}
+                                  transition={{ duration: 0.18 }}
+                                  className="overflow-hidden"
+                                >
+                                  <div className="px-10 pb-3 flex flex-wrap gap-2">
+                                    {m.avaliacoes.map(av => (
+                                      <span
+                                        key={av.id}
+                                        className={`text-[8px] font-bold uppercase tracking-widest px-2 py-1 rounded-full border ${av.valor > 0 ? 'border-green-500/30 text-green-400 bg-green-400/5' : 'border-red-500/30 text-red-400 bg-red-400/5'}`}
+                                      >
+                                        {av.valor > 0 ? '+' : '−'} {av.atributo.nome}
+                                      </span>
+                                    ))}
+                                    {m.avaliacoes.length === 0 && (
+                                      <span className="text-[8px] text-[#7a6e64] italic">sem atributos registrados</span>
+                                    )}
+                                  </div>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
+                        );
+                      })}
                     </div>
                   </motion.div>
                 )}

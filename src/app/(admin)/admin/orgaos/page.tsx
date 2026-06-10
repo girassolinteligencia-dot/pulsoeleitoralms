@@ -50,7 +50,7 @@ const TIPOS_ORGAO = [
 
 const novoVazio = () => ({ nome: '', tipo: '', cidade: '', uf: 'MS', descricao: '', campanha_id: '' });
 
-const inputClass = 'w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white focus:border-primary outline-none transition-all placeholder:text-white/20';
+const inputClass = 'w-full bg-[#1c1c1c] border border-white/10 rounded-2xl px-5 py-4 text-sm text-white focus:border-primary outline-none transition-all placeholder:text-white/20 appearance-none';
 const labelClass = 'text-[10px] uppercase font-bold text-primary tracking-widest ml-1';
 
 /** Seletor de imagem com conversão automática para webp via canvas.

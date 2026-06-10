@@ -28,7 +28,17 @@ const config: Config = {
       fontFamily: {
         display: ['var(--font-outfit)', 'sans-serif'],
         body: ['var(--font-roboto)', 'sans-serif'],
-      }
+      },
+      keyframes: {
+        shimmer: {
+          '0%':   { transform: 'translateX(-100%)' },
+          '60%':  { transform: 'translateX(100%)' },
+          '100%': { transform: 'translateX(100%)' },
+        },
+      },
+      animation: {
+        shimmer: 'shimmer 3s ease-in-out infinite',
+      },
     },
   },
   plugins: [],

@@ -766,7 +766,7 @@ function AbaConfiguracoes() {
             <UploadImagem
               chave="geral_patrocinio_imagem_url"
               label="Logo do patrocinador"
-              dica="Recomendado fundo transparente (PNG/WebP). Será convertido para .webp — máx. 512 KB"
+              dica="Dimensão recomendada: 320×80px (proporção 4:1). Fundo transparente (PNG/WebP). Será convertido para .webp — máx. 512 KB"
               currentUrl={String(get('geral_patrocinio_imagem_url') || '')}
               previewSize="lg"
               onSaved={fetchP}

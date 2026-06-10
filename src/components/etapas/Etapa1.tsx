@@ -248,19 +248,21 @@ export const Etapa1: React.FC<Etapa1Props> = ({ userData, setUserData, onNext, c
               href={String(config.geral_patrocinio_link)}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex flex-col items-center gap-2 px-4 py-3 bg-[#1c1814]/60 border border-[#3d3128] rounded-2xl hover:border-[#7a6e64]/50 transition-colors"
+              className="relative flex flex-col items-center gap-2 px-4 py-3 bg-[#1c1814]/60 border border-[#3d3128] rounded-2xl hover:border-[#7a6e64]/50 transition-colors overflow-hidden group"
             >
+              <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/5 to-transparent transition-transform duration-[1200ms] ease-in-out pointer-events-none" />
               <span className="text-[8px] uppercase tracking-[0.22em] text-[#7a6e64] font-bold">
                 {config?.geral_patrocinio_label || 'Realizado com apoio de'}
               </span>
               <img
                 src={String(config.geral_patrocinio_imagem_url)}
                 alt="Patrocinador"
-                className="h-8 max-w-[160px] object-contain opacity-80"
+                className="h-8 max-w-[160px] object-contain opacity-80 group-hover:opacity-100 transition-opacity duration-300"
               />
             </a>
           ) : (
-            <div className="flex flex-col items-center gap-2 px-4 py-3 bg-[#1c1814]/60 border border-[#3d3128] rounded-2xl">
+            <div className="relative flex flex-col items-center gap-2 px-4 py-3 bg-[#1c1814]/60 border border-[#3d3128] rounded-2xl overflow-hidden">
+              <div className="absolute inset-0 animate-[shimmer_3s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-white/4 to-transparent pointer-events-none" />
               <span className="text-[8px] uppercase tracking-[0.22em] text-[#7a6e64] font-bold">
                 {config?.geral_patrocinio_label || 'Realizado com apoio de'}
               </span>

@@ -486,15 +486,17 @@ export const PercepcaoDashboard: React.FC<PercepcaoDashboardProps> = ({ data, bl
             href={patrocinio.link}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex flex-col items-center gap-2 px-4 py-3 bg-[#1c1814] border border-[#3d3128] rounded-xl hover:border-[#7a6e64]/50 transition-colors"
+            className="relative flex flex-col items-center gap-2 px-4 py-3 bg-[#1c1814] border border-[#3d3128] rounded-xl hover:border-[#7a6e64]/50 transition-colors overflow-hidden group"
           >
+            <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/5 to-transparent transition-transform duration-[1200ms] ease-in-out pointer-events-none" />
             <span className="text-[8px] uppercase tracking-[0.22em] text-[#7a6e64] font-bold">
               {patrocinio.label || 'Realizado com apoio de'}
             </span>
-            <img src={patrocinio.imagemUrl} alt="Patrocinador" className="h-8 max-w-[160px] object-contain opacity-80" />
+            <img src={patrocinio.imagemUrl} alt="Patrocinador" className="h-8 max-w-[160px] object-contain opacity-80 group-hover:opacity-100 transition-opacity duration-300" />
           </a>
         ) : (
-          <div className="flex flex-col items-center gap-2 px-4 py-3 bg-[#1c1814] border border-[#3d3128] rounded-xl">
+          <div className="relative flex flex-col items-center gap-2 px-4 py-3 bg-[#1c1814] border border-[#3d3128] rounded-xl overflow-hidden">
+            <div className="absolute inset-0 animate-[shimmer_3s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-white/4 to-transparent pointer-events-none" />
             <span className="text-[8px] uppercase tracking-[0.22em] text-[#7a6e64] font-bold">
               {patrocinio.label || 'Realizado com apoio de'}
             </span>

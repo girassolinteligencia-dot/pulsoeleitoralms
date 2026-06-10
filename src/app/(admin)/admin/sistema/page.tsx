@@ -443,6 +443,146 @@ function UploadImagem({
   );
 }
 
+function UploadBanner({
+  chave,
+  currentUrl,
+  onSaved,
+}: {
+  chave: string;
+  currentUrl: string;
+  onSaved: () => void;
+}) {
+  const [preview, setPreview] = useState<string>(currentUrl);
+  const [uploading, setUploading] = useState(false);
+  const [erro, setErro] = useState('');
+  const [saved, setSaved] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  const [pos, setPos] = useState({ x: 50, y: 50 });
+  const [dragging, setDragging] = useState(false);
+  const dragStart = React.useRef<{ mx: number; my: number; px: number; py: number } | null>(null);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => { setPreview(currentUrl); }, [currentUrl]);
+
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setErro('');
+    setUploading(true);
+    setSaved(false);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('chave', chave);
+      const res = await adminFetch('/api/admin/identidade/upload', { method: 'POST', body: fd });
+      const d = await res.json();
+      if (!res.ok) { setErro(d.error || 'Erro no upload.'); return; }
+      setPreview(`${d.url}?t=${Date.now()}`);
+      setZoom(1);
+      setPos({ x: 50, y: 50 });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+      onSaved();
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
+  };
+
+  const autoCenter = () => {
+    setZoom(1);
+    setPos({ x: 50, y: 50 });
+  };
+
+  const onMouseDown = (e: React.MouseEvent) => {
+    setDragging(true);
+    dragStart.current = { mx: e.clientX, my: e.clientY, px: pos.x, py: pos.y };
+  };
+
+  const onMouseMove = (e: React.MouseEvent) => {
+    if (!dragging || !dragStart.current || !containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const dx = ((e.clientX - dragStart.current.mx) / rect.width) * 100;
+    const dy = ((e.clientY - dragStart.current.my) / rect.height) * 100;
+    setPos({
+      x: Math.max(0, Math.min(100, dragStart.current.px + dx)),
+      y: Math.max(0, Math.min(100, dragStart.current.py + dy)),
+    });
+  };
+
+  const stopDrag = () => { setDragging(false); dragStart.current = null; };
+
+  return (
+    <div className="flex flex-col gap-3">
+      <label className="text-[10px] uppercase font-bold text-primary tracking-widest ml-1">Logo do patrocinador</label>
+
+      {preview && (
+        <div
+          ref={containerRef}
+          className="relative w-full h-[100px] rounded-2xl bg-[#0a0a08] border border-border overflow-hidden select-none"
+          style={{ cursor: dragging ? 'grabbing' : 'grab' }}
+          onMouseDown={onMouseDown}
+          onMouseMove={onMouseMove}
+          onMouseUp={stopDrag}
+          onMouseLeave={stopDrag}
+        >
+          <img
+            src={preview}
+            alt="Banner patrocinador"
+            draggable={false}
+            style={{
+              position: 'absolute',
+              left: `${pos.x}%`,
+              top: `${pos.y}%`,
+              transform: `translate(-50%, -50%) scale(${zoom})`,
+              maxWidth: 'none',
+              maxHeight: 'none',
+              height: '60px',
+              objectFit: 'contain',
+              transformOrigin: 'center',
+              userSelect: 'none',
+            }}
+            onError={() => setPreview('')}
+          />
+          <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-black/60 rounded-xl px-2 py-1">
+            <button type="button" onMouseDown={e => { e.stopPropagation(); setZoom(z => Math.max(0.3, parseFloat((z - 0.1).toFixed(1)))); }}
+              className="w-6 h-6 flex items-center justify-center text-white/70 hover:text-white text-sm font-bold">−</button>
+            <span className="text-[9px] font-bold text-white/60 tabular-nums w-8 text-center">{Math.round(zoom * 100)}%</span>
+            <button type="button" onMouseDown={e => { e.stopPropagation(); setZoom(z => Math.min(3, parseFloat((z + 0.1).toFixed(1)))); }}
+              className="w-6 h-6 flex items-center justify-center text-white/70 hover:text-white text-sm font-bold">+</button>
+          </div>
+          <button
+            type="button"
+            onMouseDown={e => { e.stopPropagation(); autoCenter(); }}
+            title="Centralizar automaticamente"
+            className="absolute bottom-2 left-2 bg-black/60 rounded-xl px-2 py-1 text-[9px] font-bold text-white/60 hover:text-white uppercase tracking-widest"
+          >
+            ⊙ Centro
+          </button>
+        </div>
+      )}
+
+      <div className="flex items-center gap-3">
+        <label className={`flex-1 flex items-center gap-3 px-5 py-3 rounded-2xl border border-dashed cursor-pointer transition-all ${uploading ? 'border-primary/30 bg-primary/5 opacity-60' : 'border-border hover:border-primary/40 hover:bg-primary/5'}`}>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-text-muted">
+            {uploading ? 'Enviando…' : preview ? 'Trocar arquivo' : 'Selecionar arquivo'}
+          </span>
+          <input type="file" accept="image/webp,image/png,image/jpeg,image/svg+xml" onChange={handleFile} disabled={uploading} className="sr-only" />
+        </label>
+        {saved && (
+          <span className="text-[9px] font-bold text-positive uppercase tracking-widest shrink-0 animate-pulse">✓ Salvo</span>
+        )}
+      </div>
+
+      {erro && <p className="text-[9px] text-negative font-bold ml-1">{erro}</p>}
+      <p className="text-[9px] text-text-muted tracking-widest ml-1">
+        Dimensão recomendada: 320×80px (proporção 4:1). Fundo transparente (PNG/WebP). Será convertido para .webp — máx. 512 KB.
+        Arraste a imagem para reposicionar. Use +/− para zoom.
+      </p>
+    </div>
+  );
+}
+
 function AbaConfiguracoes() {
   const [parametros, setParametros] = useState<Parametro[]>([]);
   const [campanhas, setCampanhas] = useState<CampanhaOption[]>([]);
@@ -763,12 +903,9 @@ function AbaConfiguracoes() {
             Deixe a URL de destino em branco para desativar o banner.
           </p>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <UploadImagem
+            <UploadBanner
               chave="geral_patrocinio_imagem_url"
-              label="Logo do patrocinador"
-              dica="Dimensão recomendada: 320×80px (proporção 4:1). Fundo transparente (PNG/WebP). Será convertido para .webp — máx. 512 KB"
               currentUrl={String(get('geral_patrocinio_imagem_url') || '')}
-              previewSize="lg"
               onSaved={fetchP}
             />
             <div className="flex flex-col gap-4">

@@ -20,7 +20,6 @@ interface LandingTextos {
   landing_titulo_linha2: string;
   landing_subtitulo: string;
   landing_cta_principal: string;
-  landing_cta_secundario: string;
 }
 
 export default function LandingClient({ textos }: { textos: LandingTextos }) {
@@ -102,7 +101,6 @@ export default function LandingClient({ textos }: { textos: LandingTextos }) {
               {[
                 { href: '/privacidade', label: 'Privacidade' },
                 { href: '/termos', label: 'Termos' },
-                { href: '/admin/dashboard', label: textos.landing_cta_secundario },
               ].map((item) => (
                 <Link key={item.href} href={item.href} className="flex items-center gap-1.5 hover:text-[#d97757] transition-colors">
                   <motion.div

@@ -6,7 +6,6 @@ const DEFAULTS = {
   landing_titulo_linha2: 'É o futuro de MS.',
   landing_subtitulo: 'PULSOMS.IA é a plataforma de inteligência e percepção pública de Mato Grosso do Sul. Avalie políticos, órgãos e serviços públicos — sua voz conta.',
   landing_cta_principal: 'Expressar Minha Visão',
-  landing_cta_secundario: 'Acesso Restrito',
 };
 
 export default async function LandingPage() {

@@ -238,11 +238,6 @@ export const Etapa6: React.FC<Etapa6Props> = ({
           </motion.div>
         </Link>
 
-        <div className="opacity-40 pt-2">
-          <p className="text-[8px] uppercase font-bold tracking-[0.5em] text-[#7a6e64]">
-            Girassol Inteligência
-          </p>
-        </div>
       </div>
     </motion.div>
   );

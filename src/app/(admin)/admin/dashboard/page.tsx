@@ -162,7 +162,14 @@ export default function AdminDashboard() {
         if (!session) { router.push('/admin/login'); return; }
 
         await fetchData();
+      } catch (err) {
+        console.error('Dashboard auth check error:', err);
+        setError('Erro na verificação de autenticação');
+        setLoading(false);
+        return;
+      }
 
+      try {
         const handleInsert = () => {
           if (debounceTimer) clearTimeout(debounceTimer);
           debounceTimer = setTimeout(fetchData, 2000);
@@ -172,9 +179,8 @@ export default function AdminDashboard() {
           .channel('avaliacoes_realtime')
           .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'avaliacoes' }, handleInsert)
           .subscribe();
-      } catch {
-        setError('Erro na verificação de autenticação');
-        setLoading(false);
+      } catch (err) {
+        console.warn('Dashboard realtime disabled:', err);
       }
     };
 

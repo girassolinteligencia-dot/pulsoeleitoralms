@@ -120,42 +120,64 @@ function Empty({ text }: { text: string }) {
   return <p className="text-[10px] text-[#7a6e64] leading-relaxed italic">{text}</p>;
 }
 
-// ── 1. Termômetro de Aprovação ────────────────────────────────────
+// ── 1. Resumo da percepção popular ────────────────────────────────
 
 function Termometro({ resumo }: { resumo: PercepcaoData['resumo'] }) {
-  const { aprovacaoPct, desaprovacaoPct, semRespostaAprovacao, vozesValidas, saldoPercepcao } = resumo;
-  const semPct = vozesValidas > 0 ? 100 - aprovacaoPct - desaprovacaoPct : 0;
-  const tomCor = saldoPercepcao >= 15 ? '#a8c47a' : saldoPercepcao <= -15 ? '#d97757' : '#c8933a';
+  const { aprovacoes, desaprovacoes, aprovacaoPct, desaprovacaoPct, semRespostaAprovacao, vozesValidas } = resumo;
+  const semPct = vozesValidas > 0 ? Math.max(0, 100 - aprovacaoPct - desaprovacaoPct) : 0;
+  const leitura =
+    vozesValidas === 0
+      ? 'Ainda não há vozes válidas para resumir a percepção.'
+      : aprovacaoPct > desaprovacaoPct
+        ? 'Neste momento, predominam avaliações positivas.'
+        : desaprovacaoPct > aprovacaoPct
+          ? 'Neste momento, predominam avaliações negativas.'
+          : 'Neste momento, aprovação e desaprovação aparecem equilibradas.';
 
   return (
     <Card>
-      <SectionTitle>Termômetro de Aprovação</SectionTitle>
-      <div className="flex flex-col gap-2">
-        {/* Barra dividida */}
-        <div className="flex h-3 w-full rounded-full overflow-hidden gap-px">
-          <div className="bg-[#a8c47a] transition-all duration-700" style={{ width: `${aprovacaoPct}%` }} />
-          <div className="bg-[#3d3128] transition-all duration-700" style={{ width: `${semPct}%` }} />
-          <div className="bg-[#d97757] transition-all duration-700" style={{ width: `${desaprovacaoPct}%` }} />
-        </div>
-        <div className="flex justify-between items-center">
-          <div className="flex flex-col items-start">
-            <span className="text-[#a8c47a] text-base font-bold tabular-nums">{aprovacaoPct}%</span>
-            <span className="text-[8px] text-[#7a6e64] uppercase tracking-widest">Aprovam</span>
+      <SectionTitle>Resumo da percepção popular</SectionTitle>
+      <div className="flex flex-col gap-4">
+        <p className="text-[12px] text-[#d8d0c6] leading-relaxed">{leitura}</p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <div className="rounded-lg border border-[#3d3128] bg-[#211c17] px-3 py-3">
+            <span className="block text-[8px] text-[#7a6e64] uppercase tracking-widest">Aprovam</span>
+            <span className="mt-1 block text-2xl font-bold text-[#a8c47a] tabular-nums">{aprovacaoPct}%</span>
+            <span className="block text-[10px] text-[#b0aea5]">{aprovacoes} de {vozesValidas} vozes</span>
           </div>
-          <div className="flex flex-col items-center">
-            <span className="text-sm font-bold tabular-nums" style={{ color: tomCor }}>
-              {saldoPercepcao >= 0 ? '+' : ''}{saldoPercepcao}
-            </span>
-            <span className="text-[8px] text-[#7a6e64] uppercase tracking-widest">Saldo</span>
+          <div className="rounded-lg border border-[#3d3128] bg-[#211c17] px-3 py-3">
+            <span className="block text-[8px] text-[#7a6e64] uppercase tracking-widest">Desaprovam</span>
+            <span className="mt-1 block text-2xl font-bold text-[#d97757] tabular-nums">{desaprovacaoPct}%</span>
+            <span className="block text-[10px] text-[#b0aea5]">{desaprovacoes} de {vozesValidas} vozes</span>
           </div>
-          <div className="flex flex-col items-end">
-            <span className="text-[#d97757] text-base font-bold tabular-nums">{desaprovacaoPct}%</span>
-            <span className="text-[8px] text-[#7a6e64] uppercase tracking-widest">Desaprovam</span>
+          <div className="rounded-lg border border-[#3d3128] bg-[#211c17] px-3 py-3">
+            <span className="block text-[8px] text-[#7a6e64] uppercase tracking-widest">Vozes válidas</span>
+            <span className="mt-1 block text-2xl font-bold text-[#f5f0e8] tabular-nums">{vozesValidas}</span>
+            <span className="block text-[10px] text-[#b0aea5]">base deste resumo</span>
           </div>
         </div>
+
+        <div className="flex flex-col gap-1.5">
+          <div className="flex h-3 w-full rounded-full overflow-hidden bg-[#2a241f]">
+            <div className="bg-[#a8c47a] transition-all duration-700" style={{ width: `${aprovacaoPct}%` }} />
+            <div className="bg-[#3d3128] transition-all duration-700" style={{ width: `${semPct}%` }} />
+            <div className="bg-[#d97757] transition-all duration-700" style={{ width: `${desaprovacaoPct}%` }} />
+          </div>
+          <div className="flex justify-between gap-3 text-[9px] text-[#8d8176] uppercase tracking-wider">
+            <span>Positivas</span>
+            <span>Negativas</span>
+          </div>
+        </div>
+
         {semRespostaAprovacao > 0 && (
-          <p className="text-[8px] text-[#7a6e64] text-center">
-            {semPct}% não responderam à aprovação
+          <p className="text-[10px] text-[#8d8176] leading-relaxed">
+            {semRespostaAprovacao} voz{semRespostaAprovacao === 1 ? '' : 'es'} não informou aprovação ou desaprovação.
+          </p>
+        )}
+        {vozesValidas > 0 && vozesValidas < 10 && (
+          <p className="text-[10px] text-[#c8933a] leading-relaxed bg-[#c8933a]/10 border border-[#c8933a]/20 rounded-lg px-3 py-2">
+            Ainda há poucas vozes registradas. Este painel mostra apenas as manifestações recebidas até agora.
           </p>
         )}
       </div>

@@ -52,3 +52,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Erro interno no upload.' }, { status: 500 });
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  const auth = await getAdminIdentity(req);
+  if ('error' in auth) return auth.error;
+
+  const { searchParams } = new URL(req.url);
+  const orgaoId = searchParams.get('orgaoId');
+  if (!orgaoId) return NextResponse.json({ error: 'orgaoId obrigatório.' }, { status: 400 });
+
+  try {
+    const supabaseAdmin = getSupabaseAdmin();
+    await supabaseAdmin.storage.from(BUCKET).remove([`${orgaoId}.webp`]);
+    await prisma.orgaoPublico.update({ where: { id: orgaoId }, data: { foto_url: null } });
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error('Erro ao remover foto de órgão:', error);
+    return NextResponse.json({ error: 'Erro interno.' }, { status: 500 });
+  }
+}

@@ -12,7 +12,7 @@ export function FooterGI() {
           height={22}
           className="rounded-full"
         />
-        <span className="text-[10px] text-[#6b6158] uppercase tracking-[0.22em] font-bold">
+        <span className="text-[8px] md:text-[9px] text-[#6b6158] uppercase tracking-[0.18em] font-bold">
           Desenvolvido por Girassol Inteligência 2026
         </span>
       </Link>

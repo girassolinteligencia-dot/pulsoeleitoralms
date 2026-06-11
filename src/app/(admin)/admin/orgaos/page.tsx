@@ -6,7 +6,7 @@ import { adminFetch } from '@/lib/adminClient';
 import { GestaoDestaques } from '@/components/admin/GestaoDestaques';
 import { GestaoAtributos } from '@/components/admin/GestaoAtributos';
 import { MUNICIPIOS_MS } from '@/lib/municipios-ms';
-import { convertToWebp } from '@/lib/convertToWebp';
+import { AvatarSelector } from '@/components/admin/AvatarSelector';
 
 type Aba = 'lista' | 'atributos';
 
@@ -52,93 +52,6 @@ const novoVazio = () => ({ nome: '', tipo: '', cidade: '', uf: 'MS', descricao: 
 
 const inputClass = 'w-full bg-[#1c1c1c] border border-white/10 rounded-2xl px-5 py-4 text-sm text-white focus:border-primary outline-none transition-all placeholder:text-white/20 appearance-none';
 const labelClass = 'text-[10px] uppercase font-bold text-primary tracking-widest ml-1';
-
-/** Seletor de imagem com conversão automática para webp via canvas.
- *  - onFile: chamado com o File webp convertido (ou null para limpar)
- *  - onUploaded: chamado quando faz upload imediato (só quando entityId está disponível) */
-function ImagemSelector({
-  currentUrl,
-  onFile,
-  onUploaded,
-  entityId,
-  endpoint,
-  fieldName,
-  placeholder = '🏛️',
-}: {
-  currentUrl?: string | null;
-  onFile?: (file: File | null) => void;
-  onUploaded?: (url: string) => void;
-  entityId?: string;
-  endpoint: string;
-  fieldName: string;
-  placeholder?: string;
-}) {
-  const [preview, setPreview] = useState<string | null>(currentUrl || null);
-  const [uploading, setUploading] = useState(false);
-  const [erro, setErro] = useState('');
-
-  const handleChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    setErro('');
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const result = await convertToWebp(file);
-    e.target.value = '';
-    if (!result.ok) { setErro(result.error); return; }
-
-    setPreview(result.preview);
-
-    if (entityId) {
-      // Upload imediato
-      setUploading(true);
-      try {
-        const fd = new FormData();
-        fd.append('foto', result.file);
-        fd.append(fieldName, entityId);
-        const res = await adminFetch(endpoint, { method: 'POST', body: fd });
-        if (!res.ok) {
-          const d = await res.json().catch(() => ({}));
-          setErro(d.error || 'Erro no upload.');
-          return;
-        }
-        const d = await res.json();
-        onUploaded?.(d.foto_url);
-      } finally {
-        setUploading(false);
-      }
-    } else {
-      // Sem id ainda — expõe o File para o pai fazer upload depois
-      onFile?.(result.file);
-    }
-  }, [entityId, endpoint, fieldName, onFile, onUploaded]);
-
-  return (
-    <div className="flex items-center gap-4">
-      <div className="w-14 h-14 rounded-xl overflow-hidden border border-white/10 bg-white/5 shrink-0 flex items-center justify-center">
-        {preview ? (
-          <Image src={preview} alt="Logo" width={56} height={56} className="object-cover w-full h-full" unoptimized />
-        ) : (
-          <span className="text-xl opacity-20">{placeholder}</span>
-        )}
-      </div>
-      <div className="flex flex-col gap-1.5 flex-1 min-w-0">
-        <input
-          type="file"
-          accept=".webp,.png,.jpg,.jpeg,image/webp,image/png,image/jpeg"
-          aria-label="Selecionar logo ou imagem"
-          title="Selecionar imagem (.webp, .png ou .jpg — máx. 300 KB)"
-          onChange={handleChange}
-          disabled={uploading}
-          className="w-full text-xs text-white/60 file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:uppercase file:tracking-widest file:bg-primary/20 file:text-primary hover:file:bg-primary/30 file:transition-all cursor-pointer disabled:opacity-40"
-        />
-        <p className="text-[10px] text-text-muted opacity-60">
-          {uploading ? 'Enviando...' : '.webp · .png · .jpg — máx. 300 KB — salvo como .webp'}
-        </p>
-        {erro && <p className="text-[10px] text-negative font-bold">{erro}</p>}
-      </div>
-    </div>
-  );
-}
 
 export default function ManageOrgaos() {
   const [aba, setAba] = useState<Aba>('lista');
@@ -452,7 +365,8 @@ export default function ManageOrgaos() {
                 </div>
                 <div className="flex flex-col gap-2 md:col-span-2">
                   <label className={labelClass}>Logomarca / Avatar</label>
-                  <ImagemSelector
+                  <AvatarSelector
+                    kind="orgao"
                     endpoint="/api/admin/orgaos/foto"
                     fieldName="orgaoId"
                     onFile={(file) => { novoFotoRef.current = file; }}
@@ -509,10 +423,12 @@ export default function ManageOrgaos() {
                 </div>
                 <div className="flex flex-col gap-2 md:col-span-2">
                   <label className={labelClass}>Logomarca / Avatar</label>
-                  <ImagemSelector
+                  <AvatarSelector
+                    kind="orgao"
                     currentUrl={editingOrgao.foto_url}
                     entityId={editingOrgao.id}
                     endpoint="/api/admin/orgaos/foto"
+                    deleteEndpoint="/api/admin/orgaos/foto"
                     fieldName="orgaoId"
                     onUploaded={(url) => setEditingOrgao(prev => prev ? { ...prev, foto_url: url } : prev)}
                     placeholder="🏛️"

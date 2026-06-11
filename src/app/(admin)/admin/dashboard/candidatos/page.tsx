@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { adminFetch } from '@/lib/adminClient';
 import { GestaoAtributos } from '@/components/admin/GestaoAtributos';
 import { MUNICIPIOS_MS } from '@/lib/municipios-ms';
-import { convertToWebp } from '@/lib/convertToWebp';
+import { AvatarSelector } from '@/components/admin/AvatarSelector';
 
 type Aba = 'lista' | 'atributos';
 
@@ -76,10 +76,8 @@ export default function ManageCandidatos() {
   const [novoErro, setNovoErro] = useState('');
   const [novoSucesso, setNovoSucesso] = useState('');
 
-  // Upload de foto
-  const [fotoFile, setFotoFile] = useState<File | null>(null);
-  const [fotoPreview, setFotoPreview] = useState<string | null>(null);
-  const [fotoErro, setFotoErro] = useState('');
+  // Upload de foto (novo candidato ainda sem id)
+  const novoFotoRef = useRef<File | null>(null);
 
   const fetchCandidatos = useCallback(async (pageNum: number, searchTerm: string) => {
     setLoading(true);
@@ -140,21 +138,8 @@ export default function ManageCandidatos() {
     setDuplicados([]);
     setNovoErro('');
     setNovoSucesso('');
-    setFotoFile(null);
-    setFotoPreview(null);
-    setFotoErro('');
+    novoFotoRef.current = null;
     setShowNovo(true);
-  };
-
-  const handleFotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFotoErro('');
-    const file = e.target.files?.[0] ?? null;
-    e.target.value = '';
-    if (!file) { setFotoFile(null); setFotoPreview(null); return; }
-    const result = await convertToWebp(file);
-    if (!result.ok) { setFotoErro(result.error); return; }
-    setFotoFile(result.file);
-    setFotoPreview(result.preview);
   };
 
   const handleCriar = async (e: React.FormEvent, forcar = false) => {
@@ -196,9 +181,9 @@ export default function ManageCandidatos() {
       const criado = await res.json();
 
       // Upload da foto se selecionada
-      if (fotoFile && criado?.id) {
+      if (novoFotoRef.current && criado?.id) {
         const fd = new FormData();
-        fd.append('foto', fotoFile);
+        fd.append('foto', novoFotoRef.current);
         fd.append('candidatoId', criado.id);
         const resF = await adminFetch('/api/admin/candidatos/foto', { method: 'POST', body: fd });
         if (resF.ok) {
@@ -209,12 +194,11 @@ export default function ManageCandidatos() {
             body: JSON.stringify({ id: criado.id, foto_url }),
           });
         }
+        novoFotoRef.current = null;
       }
 
       setNovoSucesso('Político cadastrado com sucesso!');
       setNovoCandidato({ ...novoVazio(), campanha_id: campanhaDefault });
-      setFotoFile(null);
-      setFotoPreview(null);
       setDuplicados([]);
       fetchCandidatos(page, search);
     } finally {
@@ -429,25 +413,13 @@ export default function ManageCandidatos() {
 
                 <div className="flex flex-col gap-2 md:col-span-2">
                   <label className={labelClass}>Foto do Político</label>
-                  <div className="flex items-start gap-4">
-                    {fotoPreview ? (
-                      <img src={fotoPreview} alt="Preview" className="w-16 h-16 rounded-xl object-cover border border-white/10 shrink-0" />
-                    ) : (
-                      <div className="w-16 h-16 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0 text-white/20 text-2xl">👤</div>
-                    )}
-                    <div className="flex flex-col gap-2 flex-1">
-                      <input
-                        type="file"
-                        accept=".webp,.png,.jpg,.jpeg,image/webp,image/png,image/jpeg"
-                        aria-label="Selecionar foto do político"
-                        title="Selecionar foto .webp, .png ou .jpg (máx. 300 KB)"
-                        onChange={handleFotoChange}
-                        className="w-full text-xs text-white/60 file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:uppercase file:tracking-widest file:bg-primary/20 file:text-primary hover:file:bg-primary/30 file:transition-all cursor-pointer"
-                      />
-                      <p className="text-[10px] text-text-muted opacity-60">.webp · .png · .jpg — máx. 300 KB — salvo como .webp</p>
-                      {fotoErro && <p className="text-[10px] text-negative font-bold">{fotoErro}</p>}
-                    </div>
-                  </div>
+                  <AvatarSelector
+                    kind="politico"
+                    endpoint="/api/admin/candidatos/foto"
+                    fieldName="candidatoId"
+                    onFile={(file) => { novoFotoRef.current = file; }}
+                    placeholder="👤"
+                  />
                 </div>
               </div>
 
@@ -514,6 +486,19 @@ export default function ManageCandidatos() {
                     <option value="">Selecione o município...</option>
                     {MUNICIPIOS_MS.map(m => <option key={m} value={m}>{m}</option>)}
                   </select>
+                </div>
+                <div className="flex flex-col gap-2 md:col-span-2">
+                  <label className={labelClass}>Foto do Político</label>
+                  <AvatarSelector
+                    kind="politico"
+                    currentUrl={(editingCandidato as any).foto_url}
+                    entityId={editingCandidato.id}
+                    endpoint="/api/admin/candidatos/foto"
+                    deleteEndpoint="/api/admin/candidatos/foto"
+                    fieldName="candidatoId"
+                    onUploaded={(url) => setEditingCandidato(prev => prev ? { ...prev, foto_url: url } as any : prev)}
+                    placeholder="👤"
+                  />
                 </div>
               </div>
 

@@ -64,63 +64,17 @@ export const Etapa1: React.FC<Etapa1Props> = ({ userData, setUserData, onNext, c
     setCepMessage('');
   };
 
-  const locateByGeo = () => {
-    if (!navigator.geolocation) {
-      setGeoStatus('error');
-      return;
-    }
-    setGeoStatus('loading');
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        try {
-          const { latitude, longitude } = pos.coords;
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&addressdetails=1`,
-            { headers: { 'Accept-Language': 'pt-BR' } }
-          );
-          const data = await res.json();
-          const postcode = data?.address?.postcode?.replace(/\D/g, '');
-          if (postcode && postcode.length >= 8) {
-            const digits = postcode.slice(0, 8);
-            const formatted = `${digits.slice(0, 5)}-${digits.slice(5)}`;
-            setCep(formatted);
-            setGeoStatus('idle');
-            setCepStatus('idle');
-            setCepMessage('');
-          } else {
-            setGeoStatus('error');
-          }
-        } catch {
-          setGeoStatus('error');
-        }
-      },
-      () => setGeoStatus('error'),
-      { timeout: 10000 }
-    );
-  };
-
-  const lookupCep = async () => {
-    if (!/^\d{8}$/.test(normalizedCep)) {
-      setCepStatus('error');
-      setCepMessage('Digite um CEP com 8 números.');
-      return;
-    }
-
+  const lookupCepDigits = React.useCallback(async (digits: string) => {
+    if (digits.length !== 8) return;
     setCepStatus('loading');
     setCepMessage('');
-
     try {
-      const res = await fetch(`/api/cep/${normalizedCep}`);
+      const res = await fetch(`/api/cep/${digits}`);
       const data = await res.json() as CepLookupResponse;
-
-      if (!res.ok) {
-        throw new Error(data.error || 'CEP não encontrado.');
-      }
-
+      if (!res.ok) throw new Error(data.error || 'CEP não encontrado.');
       const bairrosPossiveis = Array.isArray(data.bairrosPossiveis)
         ? data.bairrosPossiveis.filter((item) => item.bairro)
         : [];
-
       setUserData({
         ...userData,
         cidade: data.cidade || '',
@@ -153,6 +107,50 @@ export const Etapa1: React.FC<Etapa1Props> = ({ userData, setUserData, onNext, c
         `${error instanceof Error ? error.message : 'Não foi possível consultar o CEP.'} Você poderá informar cidade e bairro manualmente.`
       );
     }
+  }, [userData, setUserData]);
+
+  const locateByGeo = () => {
+    if (!navigator.geolocation) {
+      setGeoStatus('error');
+      return;
+    }
+    setGeoStatus('loading');
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const { latitude, longitude } = pos.coords;
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&addressdetails=1`,
+            { headers: { 'Accept-Language': 'pt-BR' } }
+          );
+          const data = await res.json();
+          const postcode = data?.address?.postcode?.replace(/\D/g, '');
+          if (postcode && postcode.length >= 8) {
+            const digits = postcode.slice(0, 8);
+            const formatted = `${digits.slice(0, 5)}-${digits.slice(5)}`;
+            setCep(formatted);
+            setGeoStatus('idle');
+            // Dispara lookup automático com o CEP obtido
+            await lookupCepDigits(digits);
+          } else {
+            setGeoStatus('error');
+          }
+        } catch {
+          setGeoStatus('error');
+        }
+      },
+      () => setGeoStatus('error'),
+      { timeout: 10000 }
+    );
+  };
+
+  const lookupCep = async () => {
+    if (!/^\d{8}$/.test(normalizedCep)) {
+      setCepStatus('error');
+      setCepMessage('Digite um CEP com 8 números.');
+      return;
+    }
+    await lookupCepDigits(normalizedCep);
   };
 
   return (

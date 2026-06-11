@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, Search } from 'lucide-react';
+import { MapPin, Search, LocateFixed } from 'lucide-react';
 import Link from 'next/link';
 
 interface BairroPossivel {
@@ -42,6 +42,7 @@ export const Etapa1: React.FC<Etapa1Props> = ({ userData, setUserData, onNext, c
   const [cep, setCep] = React.useState('');
   const [cepStatus, setCepStatus] = React.useState<'idle' | 'loading' | 'found' | 'error'>('idle');
   const [cepMessage, setCepMessage] = React.useState('');
+  const [geoStatus, setGeoStatus] = React.useState<'idle' | 'loading' | 'error'>('idle');
 
   const ideologias = [
     { id: 'esquerda', label: 'Progressista', color: '#a8c47a' },
@@ -61,6 +62,41 @@ export const Etapa1: React.FC<Etapa1Props> = ({ userData, setUserData, onNext, c
     setCep(formatted);
     setCepStatus('idle');
     setCepMessage('');
+  };
+
+  const locateByGeo = () => {
+    if (!navigator.geolocation) {
+      setGeoStatus('error');
+      return;
+    }
+    setGeoStatus('loading');
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const { latitude, longitude } = pos.coords;
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&addressdetails=1`,
+            { headers: { 'Accept-Language': 'pt-BR' } }
+          );
+          const data = await res.json();
+          const postcode = data?.address?.postcode?.replace(/\D/g, '');
+          if (postcode && postcode.length >= 8) {
+            const digits = postcode.slice(0, 8);
+            const formatted = `${digits.slice(0, 5)}-${digits.slice(5)}`;
+            setCep(formatted);
+            setGeoStatus('idle');
+            setCepStatus('idle');
+            setCepMessage('');
+          } else {
+            setGeoStatus('error');
+          }
+        } catch {
+          setGeoStatus('error');
+        }
+      },
+      () => setGeoStatus('error'),
+      { timeout: 10000 }
+    );
   };
 
   const lookupCep = async () => {
@@ -161,6 +197,16 @@ export const Etapa1: React.FC<Etapa1Props> = ({ userData, setUserData, onNext, c
             </button>
           </div>
 
+          <button
+            type="button"
+            onClick={locateByGeo}
+            disabled={geoStatus === 'loading'}
+            className="self-start flex items-center gap-1.5 text-[11px] text-[#7a6e64] hover:text-[#b0aea5] transition-colors disabled:opacity-40"
+          >
+            <LocateFixed size={13} className={geoStatus === 'loading' ? 'animate-spin' : ''} />
+            {geoStatus === 'loading' ? 'Localizando…' : geoStatus === 'error' ? 'Não foi possível obter localização' : 'Usar minha localização'}
+          </button>
+
           <p className="text-sm text-[#7a6e64] leading-relaxed">
             O CEP é usado apenas para localizar cidade e bairro. O CEP completo não será salvo na manifestação.
             {' '}
@@ -241,40 +287,52 @@ export const Etapa1: React.FC<Etapa1Props> = ({ userData, setUserData, onNext, c
         </div>
       </div>
 
-      {config?.geral_patrocinio_ativo === 'ativo' && config?.geral_patrocinio_imagem_url && (
-        <div className="w-full max-w-sm shrink-0">
-          {config?.geral_patrocinio_link ? (
-            <a
-              href={String(config.geral_patrocinio_link)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="relative flex flex-col items-center gap-2 px-4 py-3 bg-[#1c1814]/60 border border-[#3d3128] rounded-2xl hover:border-[#7a6e64]/50 transition-colors overflow-hidden group"
-            >
-              <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/5 to-transparent transition-transform duration-[1200ms] ease-in-out pointer-events-none" />
-              <span className="text-[8px] uppercase tracking-[0.22em] text-[#7a6e64] font-bold">
-                {config?.geral_patrocinio_label || 'Realizado com apoio de'}
-              </span>
-              <img
-                src={String(config.geral_patrocinio_imagem_url)}
-                alt="Patrocinador"
-                className="h-8 max-w-[160px] object-contain opacity-80 group-hover:opacity-100 transition-opacity duration-300"
-              />
-            </a>
-          ) : (
-            <div className="relative flex flex-col items-center gap-2 px-4 py-3 bg-[#1c1814]/60 border border-[#3d3128] rounded-2xl overflow-hidden">
-              <div className="absolute inset-0 animate-[shimmer_3s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-white/4 to-transparent pointer-events-none" />
-              <span className="text-[8px] uppercase tracking-[0.22em] text-[#7a6e64] font-bold">
-                {config?.geral_patrocinio_label || 'Realizado com apoio de'}
-              </span>
-              <img
-                src={String(config.geral_patrocinio_imagem_url)}
-                alt="Patrocinador"
-                className="h-8 max-w-[160px] object-contain opacity-80"
-              />
+      {config?.geral_patrocinio_ativo === 'ativo' && config?.geral_patrocinio_imagem_url && (() => {
+        const zoom = Number(config.geral_patrocinio_zoom ?? 1);
+        const posX = Number(config.geral_patrocinio_pos_x ?? 50);
+        const posY = Number(config.geral_patrocinio_pos_y ?? 50);
+        const imgStyle: React.CSSProperties = {
+          position: 'absolute',
+          left: `${posX}%`,
+          top: `${posY}%`,
+          transform: `translate(-50%, -50%) scale(${zoom})`,
+          height: '60px',
+          maxWidth: 'none',
+          maxHeight: 'none',
+          objectFit: 'contain',
+          transformOrigin: 'center',
+        };
+        const inner = (extraClass: string) => (
+          <>
+            <span className="text-[8px] uppercase tracking-[0.22em] text-[#7a6e64] font-bold relative z-10">
+              {config?.geral_patrocinio_label || 'Realizado com apoio de'}
+            </span>
+            <div className="relative w-full h-[60px] overflow-hidden">
+              <img src={String(config.geral_patrocinio_imagem_url)} alt="Patrocinador" draggable={false} style={imgStyle} />
             </div>
-          )}
-        </div>
-      )}
+          </>
+        );
+        return (
+          <div className="w-full max-w-sm shrink-0">
+            {config?.geral_patrocinio_link ? (
+              <a
+                href={String(config.geral_patrocinio_link)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="relative flex flex-col items-center gap-2 px-4 py-3 bg-[#1c1814]/60 border border-[#3d3128] rounded-2xl hover:border-[#7a6e64]/50 transition-colors overflow-hidden group"
+              >
+                <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/5 to-transparent transition-transform duration-[1200ms] ease-in-out pointer-events-none" />
+                {inner('opacity-80 group-hover:opacity-100 transition-opacity duration-300')}
+              </a>
+            ) : (
+              <div className="relative flex flex-col items-center gap-2 px-4 py-3 bg-[#1c1814]/60 border border-[#3d3128] rounded-2xl overflow-hidden">
+                <div className="absolute inset-0 animate-[shimmer_3s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-white/4 to-transparent pointer-events-none" />
+                {inner('')}
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       <div className="mt-auto pb-8">
         <button

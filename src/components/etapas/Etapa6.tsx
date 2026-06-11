@@ -214,6 +214,9 @@ export const Etapa6: React.FC<Etapa6Props> = ({
                   imagemUrl: String(config.geral_patrocinio_imagem_url),
                   link: config.geral_patrocinio_link ? String(config.geral_patrocinio_link) : undefined,
                   label: config.geral_patrocinio_label ? String(config.geral_patrocinio_label) : undefined,
+                  zoom: config.geral_patrocinio_zoom ? Number(config.geral_patrocinio_zoom) : undefined,
+                  posX: config.geral_patrocinio_pos_x ? Number(config.geral_patrocinio_pos_x) : undefined,
+                  posY: config.geral_patrocinio_pos_y ? Number(config.geral_patrocinio_pos_y) : undefined,
                 }
               : undefined
           }

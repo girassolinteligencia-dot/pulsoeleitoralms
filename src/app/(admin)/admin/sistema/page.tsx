@@ -446,23 +446,34 @@ function UploadImagem({
 function UploadBanner({
   chave,
   currentUrl,
+  currentZoom,
+  currentPosX,
+  currentPosY,
   onSaved,
+  onSaveAjuste,
 }: {
   chave: string;
   currentUrl: string;
+  currentZoom?: number;
+  currentPosX?: number;
+  currentPosY?: number;
   onSaved: () => void;
+  onSaveAjuste?: (zoom: number, posX: number, posY: number) => Promise<void>;
 }) {
   const [preview, setPreview] = useState<string>(currentUrl);
   const [uploading, setUploading] = useState(false);
   const [erro, setErro] = useState('');
   const [saved, setSaved] = useState(false);
-  const [zoom, setZoom] = useState(1);
-  const [pos, setPos] = useState({ x: 50, y: 50 });
+  const [savingAjuste, setSavingAjuste] = useState(false);
+  const [zoom, setZoom] = useState(currentZoom ?? 1);
+  const [pos, setPos] = useState({ x: currentPosX ?? 50, y: currentPosY ?? 50 });
   const [dragging, setDragging] = useState(false);
   const dragStart = React.useRef<{ mx: number; my: number; px: number; py: number } | null>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
 
   useEffect(() => { setPreview(currentUrl); }, [currentUrl]);
+  useEffect(() => { setZoom(currentZoom ?? 1); }, [currentZoom]);
+  useEffect(() => { setPos({ x: currentPosX ?? 50, y: currentPosY ?? 50 }); }, [currentPosX, currentPosY]);
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -559,6 +570,23 @@ function UploadBanner({
           >
             ⊙ Centro
           </button>
+          {onSaveAjuste && (
+            <button
+              type="button"
+              disabled={savingAjuste}
+              onMouseDown={async (e) => {
+                e.stopPropagation();
+                setSavingAjuste(true);
+                await onSaveAjuste(zoom, pos.x, pos.y);
+                setSavingAjuste(false);
+                setSaved(true);
+                setTimeout(() => setSaved(false), 3000);
+              }}
+              className="absolute top-2 right-2 bg-primary/80 hover:bg-primary rounded-xl px-2 py-1 text-[9px] font-bold text-white uppercase tracking-widest disabled:opacity-40 transition-colors"
+            >
+              {savingAjuste ? 'Salvando…' : '✓ Salvar ajuste'}
+            </button>
+          )}
         </div>
       )}
 
@@ -906,7 +934,17 @@ function AbaConfiguracoes() {
             <UploadBanner
               chave="geral_patrocinio_imagem_url"
               currentUrl={String(get('geral_patrocinio_imagem_url') || '')}
+              currentZoom={Number(get('geral_patrocinio_zoom') ?? 1)}
+              currentPosX={Number(get('geral_patrocinio_pos_x') ?? 50)}
+              currentPosY={Number(get('geral_patrocinio_pos_y') ?? 50)}
               onSaved={fetchP}
+              onSaveAjuste={async (zoom, posX, posY) => {
+                await Promise.all([
+                  update('geral_patrocinio_zoom', zoom, 'geral', 'Zoom do banner de patrocínio.'),
+                  update('geral_patrocinio_pos_x', posX, 'geral', 'Posição X do banner de patrocínio.'),
+                  update('geral_patrocinio_pos_y', posY, 'geral', 'Posição Y do banner de patrocínio.'),
+                ]);
+              }}
             />
             <div className="flex flex-col gap-4">
               <InputConfig

@@ -79,6 +79,9 @@ interface PatrocinioConfig {
   imagemUrl: string;
   link?: string;
   label?: string;
+  zoom?: number;
+  posX?: number;
+  posY?: number;
 }
 
 interface PercepcaoDashboardProps {
@@ -480,8 +483,27 @@ export const PercepcaoDashboard: React.FC<PercepcaoDashboardProps> = ({ data, bl
       )}
 
       {/* Banner de patrocínio — posição C (pós-resultado) */}
-      {patrocinio?.imagemUrl && (
-        patrocinio.link ? (
+      {patrocinio?.imagemUrl && (() => {
+        const zoom = patrocinio.zoom ?? 1;
+        const posX = patrocinio.posX ?? 50;
+        const posY = patrocinio.posY ?? 50;
+        const imgStyle: React.CSSProperties = {
+          position: 'absolute',
+          left: `${posX}%`,
+          top: `${posY}%`,
+          transform: `translate(-50%, -50%) scale(${zoom})`,
+          height: '60px',
+          maxWidth: 'none',
+          maxHeight: 'none',
+          objectFit: 'contain',
+          transformOrigin: 'center',
+        };
+        const imgBlock = (
+          <div className="relative w-full h-[60px] overflow-hidden">
+            <img src={patrocinio.imagemUrl} alt="Patrocinador" draggable={false} style={imgStyle} />
+          </div>
+        );
+        return patrocinio.link ? (
           <a
             href={patrocinio.link}
             target="_blank"
@@ -489,21 +511,21 @@ export const PercepcaoDashboard: React.FC<PercepcaoDashboardProps> = ({ data, bl
             className="relative flex flex-col items-center gap-2 px-4 py-3 bg-[#1c1814] border border-[#3d3128] rounded-xl hover:border-[#7a6e64]/50 transition-colors overflow-hidden group"
           >
             <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/5 to-transparent transition-transform duration-[1200ms] ease-in-out pointer-events-none" />
-            <span className="text-[8px] uppercase tracking-[0.22em] text-[#7a6e64] font-bold">
+            <span className="text-[8px] uppercase tracking-[0.22em] text-[#7a6e64] font-bold relative z-10">
               {patrocinio.label || 'Realizado com apoio de'}
             </span>
-            <img src={patrocinio.imagemUrl} alt="Patrocinador" className="h-8 max-w-[160px] object-contain opacity-80 group-hover:opacity-100 transition-opacity duration-300" />
+            {imgBlock}
           </a>
         ) : (
           <div className="relative flex flex-col items-center gap-2 px-4 py-3 bg-[#1c1814] border border-[#3d3128] rounded-xl overflow-hidden">
             <div className="absolute inset-0 animate-[shimmer_3s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-white/4 to-transparent pointer-events-none" />
-            <span className="text-[8px] uppercase tracking-[0.22em] text-[#7a6e64] font-bold">
+            <span className="text-[8px] uppercase tracking-[0.22em] text-[#7a6e64] font-bold relative z-10">
               {patrocinio.label || 'Realizado com apoio de'}
             </span>
-            <img src={patrocinio.imagemUrl} alt="Patrocinador" className="h-8 max-w-[160px] object-contain opacity-80" />
+            {imgBlock}
           </div>
-        )
-      )}
+        );
+      })()}
 
       {/* Aviso metodológico colapsável */}
       <div className="bg-[#141413] border border-[#3d3128]/70 rounded-xl overflow-hidden">

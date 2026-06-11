@@ -51,8 +51,12 @@ export const Etapa5: React.FC<Etapa5Props> = ({
 
   const [visibleAttributes] = React.useState<Atributo[]>(() => {
     const all = candidato.campanha?.atributos?.map(a => a.atributo) || [];
-    // Mostra todos os atributos selecionados para o candidato, embaralhados aleatoriamente
-    return [...all].sort(() => Math.random() - 0.5);
+    const arr = [...all];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
   });
 
   const totalVisivel = visibleAttributes.length;

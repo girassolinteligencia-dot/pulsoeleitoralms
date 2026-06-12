@@ -11,7 +11,7 @@ import { DemographicRadarChart } from '@/components/admin/charts/DemographicRada
 import { BairroTreeMap } from '@/components/admin/charts/BairroTreeMap';
 import { TopAtributosChart } from '@/components/admin/charts/TopAtributosChart';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, MapPin, ThumbsUp, TrendingUp, AlertCircle, PieChart as PieIcon, Download } from 'lucide-react';
+import { User, MapPin, ThumbsUp, TrendingUp, AlertCircle, PieChart as PieIcon, Download, Scale } from 'lucide-react';
 import { adminFetch, downloadAdminCsv } from '@/lib/adminClient';
 
 interface RodadaOption {
@@ -34,9 +34,23 @@ interface CandidatoAtributos {
   candidatoId: string;
   nome: string;
   cargo: string;
+  tipoEntidade?: 'politico' | 'orgao_publico' | 'servico_publico';
   totalVozes: number;
   liquidScore: number;
+  atributosTotal: number;
+  atributosPositivos: number;
+  atributosNegativos: number;
+  atributosPositivosPct: number;
+  atributosNegativosPct: number;
   atributos: AtributoCandidato[];
+}
+
+interface AtributosResumo {
+  total: number;
+  positivos: number;
+  negativos: number;
+  positivoPct: number;
+  negativoPct: number;
 }
 
 interface ReportData {
@@ -52,6 +66,7 @@ interface ReportData {
   polarizacao: { x: number; y: number; z: number; nome: string }[];
   demografia: { categoria: string; dados: { label: string; value: number }[] }[];
   topAtributos: { virtudes: { nome: string; count: number }[]; defeitos: { nome: string; count: number }[] };
+  atributosResumo?: AtributosResumo;
   atributosPorCandidato: CandidatoAtributos[];
   territorio?: {
     qualidade: {
@@ -119,7 +134,15 @@ export default function AdminRelatoriosPage() {
   const [abertos, setAbertos] = useState<Set<string>>(new Set());
 
   const toggleAberto = (id: string) =>
-    setAbertos(prev => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next; });
+    setAbertos(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -394,7 +417,84 @@ export default function AdminRelatoriosPage() {
         </section>
       )}
 
-      {/* Perfil de Atributos por Político */}
+      {data.atributosResumo && data.atributosResumo.total > 0 && (
+        <section className="flex flex-col gap-5">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-white/5 rounded-lg text-[#A8C47A]"><Scale size={14} /></div>
+            <div>
+              <h3 className="text-xs font-bold uppercase tracking-widest">Balanço dos atributos recebidos</h3>
+              <p className="text-[9px] text-text-muted uppercase tracking-widest opacity-60 mt-1">
+                Percentual das marcações positivas e negativas no escopo selecionado
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-white/[0.02] border border-white/5 rounded-[2rem] p-5 md:p-7">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[
+                { label: 'Atributos positivos', value: `${data.atributosResumo.positivoPct}%`, hint: data.atributosResumo.positivos, color: 'text-[#A8C47A]' },
+                { label: 'Atributos negativos', value: `${data.atributosResumo.negativoPct}%`, hint: data.atributosResumo.negativos, color: 'text-[#D97757]' },
+                { label: 'Total analisado', value: data.atributosResumo.total.toLocaleString('pt-BR'), hint: data.atributosResumo.total, color: 'text-primary' },
+              ].map((item) => (
+                <div key={item.label} className="bg-white/[0.03] border border-white/5 rounded-2xl p-5">
+                  <p className="text-[9px] text-text-muted uppercase tracking-widest">{item.label}</p>
+                  <p className={`text-3xl font-bold font-display mt-3 ${item.color}`}>{item.value}</p>
+                  <p className="text-[9px] text-text-muted mt-2">
+                    {item.hint.toLocaleString('pt-BR')} marcações
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-6">
+              <div className="h-3 w-full overflow-hidden rounded-full bg-white/5">
+                <div className="flex h-full w-full">
+                  <div
+                    className="h-full bg-[#A8C47A]"
+                    style={{ width: `${data.atributosResumo.positivoPct}%` }}
+                  />
+                  <div
+                    className="h-full bg-[#D97757]"
+                    style={{ width: `${data.atributosResumo.negativoPct}%` }}
+                  />
+                </div>
+              </div>
+              <div className="mt-3 flex items-center justify-between text-[9px] uppercase tracking-widest text-text-muted">
+                <span>Positivo</span>
+                <span>Negativo</span>
+              </div>
+            </div>
+
+            <div className="mt-7 flex flex-col gap-3">
+              {data.atributosPorCandidato
+                .filter((item) => item.atributosTotal > 0)
+                .slice(0, 6)
+                .map((item) => (
+                  <div key={item.candidatoId} className="grid grid-cols-1 gap-3 border-t border-white/5 pt-4 md:grid-cols-[minmax(0,1fr)_180px_96px] md:items-center">
+                    <div className="min-w-0">
+                      <p className="truncate text-[10px] font-bold uppercase tracking-widest text-text">{item.nome}</p>
+                      <p className="mt-1 truncate text-[9px] uppercase tracking-widest text-text-muted">
+                        {item.cargo || 'Sem categoria'} · {item.atributosTotal.toLocaleString('pt-BR')} marcações
+                      </p>
+                    </div>
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-white/5">
+                      <div className="flex h-full w-full">
+                        <div className="h-full bg-[#A8C47A]" style={{ width: `${item.atributosPositivosPct}%` }} />
+                        <div className="h-full bg-[#D97757]" style={{ width: `${item.atributosNegativosPct}%` }} />
+                      </div>
+                    </div>
+                    <div className="flex justify-between gap-3 text-[9px] font-bold tabular-nums md:justify-end">
+                      <span className="text-[#A8C47A]">{item.atributosPositivosPct}% +</span>
+                      <span className="text-[#D97757]">{item.atributosNegativosPct}% -</span>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Perfil de Atributos por Entidade */}
       {data.atributosPorCandidato?.length > 0 && (
         <section className="flex flex-col gap-4">
           <div className="flex items-center gap-3">
@@ -402,7 +502,7 @@ export default function AdminRelatoriosPage() {
             <div>
               <h3 className="text-xs font-bold uppercase tracking-widest">Perfil de Atributos por Entidade</h3>
               <p className="text-[9px] text-text-muted uppercase tracking-widest opacity-60 mt-1">
-                Clique em um nome para ver todos os atributos atribuídos
+                Detalhe dos atributos atribuídos por entidade
               </p>
             </div>
           </div>
@@ -425,9 +525,9 @@ export default function AdminRelatoriosPage() {
                     <div className="flex items-center gap-3 min-w-0">
                       <span className="text-[10px] font-bold uppercase tracking-widest text-text truncate">{cand.nome}</span>
                       <span className="text-[8px] uppercase text-text-muted tracking-widest shrink-0 hidden sm:block">{cand.cargo}</span>
-                      {(cand as any).tipoEntidade && (cand as any).tipoEntidade !== 'politico' && (
+                      {cand.tipoEntidade && cand.tipoEntidade !== 'politico' && (
                         <span className="text-[7px] font-bold uppercase tracking-widest text-[#c8933a] border border-[#c8933a]/40 rounded px-1.5 py-0.5 shrink-0 hidden sm:block">
-                          {(cand as any).tipoEntidade === 'orgao_publico' ? 'Órgão' : 'Serviço'}
+                          {cand.tipoEntidade === 'orgao_publico' ? 'Órgão' : 'Serviço'}
                         </span>
                       )}
                     </div>
@@ -437,7 +537,7 @@ export default function AdminRelatoriosPage() {
                         {cand.liquidScore >= 0 ? '+' : ''}{cand.liquidScore}
                       </span>
                       <span className="text-[9px] text-text-muted tabular-nums hidden sm:block">
-                        {cand.atributos.length} atrib.
+                        {cand.atributosTotal} atrib.
                       </span>
                       <motion.span
                         animate={{ rotate: aberto ? 90 : 0 }}

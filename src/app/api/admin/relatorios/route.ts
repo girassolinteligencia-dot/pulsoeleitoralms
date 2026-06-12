@@ -39,6 +39,24 @@ function pct(part: number, total: number) {
   return Math.round((part / total) * 100);
 }
 
+function summarizeAtributos(atributos: { count: number; polaridade: number }[]) {
+  const positivos = atributos
+    .filter((atributo) => atributo.polaridade === 1)
+    .reduce((sum, atributo) => sum + atributo.count, 0);
+  const negativos = atributos
+    .filter((atributo) => atributo.polaridade === -1)
+    .reduce((sum, atributo) => sum + atributo.count, 0);
+  const total = positivos + negativos;
+
+  return {
+    total,
+    positivos,
+    negativos,
+    positivoPct: pct(positivos, total),
+    negativoPct: pct(negativos, total),
+  };
+}
+
 function buildTerritorialStats(
   manifestacoes: {
     perfil: unknown;
@@ -373,6 +391,13 @@ export async function GET(req: NextRequest) {
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
 
+    const atributosResumo = summarizeAtributos(
+      avAtributosRaw.map(av => {
+        const attr = atributosData.find(a => a.id === av.atributo_id);
+        return { count: av._count._all, polaridade: attr?.polaridade ?? 0 };
+      })
+    );
+
     // 9. Atributos por entidade (acordeão) — todas as categorias
     const [avPorCandAtrib, avPorOrgAtrib, avPorSvcAtrib] = await Promise.all([
       prisma.avaliacao.groupBy({ by: ['candidato_id', 'atributo_id'], _count: { _all: true }, where: { ...avaliacaoWhere, candidato_id: { not: null } } }),
@@ -387,15 +412,15 @@ export async function GET(req: NextRequest) {
       }).sort((a, b) => b.count - a.count);
 
     const atributosPorCandidato = ranking.map(r => {
-      let entityId: string | undefined;
       let cargo = '';
-      let tipoEntidade = r.tipo;
+      const tipoEntidade = r.tipo;
 
       if (r.tipo === 'politico') {
         const cand = candidatos.find(c => c.nome === r.nome);
         if (!cand) return null;
-        entityId = cand.id;
         cargo = cand.cargo;
+        const atributos = buildAtributosEntidade(cand.id, avPorCandAtrib.filter(av => av.candidato_id === cand.id));
+        const resumo = summarizeAtributos(atributos);
         return {
           candidatoId: cand.id,
           nome: cand.nome,
@@ -403,11 +428,18 @@ export async function GET(req: NextRequest) {
           tipoEntidade,
           totalVozes: r.total,
           liquidScore: r.liquidScore,
-          atributos: buildAtributosEntidade(cand.id, avPorCandAtrib.filter(av => av.candidato_id === cand.id)),
+          atributos,
+          atributosTotal: resumo.total,
+          atributosPositivos: resumo.positivos,
+          atributosNegativos: resumo.negativos,
+          atributosPositivosPct: resumo.positivoPct,
+          atributosNegativosPct: resumo.negativoPct,
         };
       } else if (r.tipo === 'orgao_publico') {
         const orgao = orgaos.find(o => o.nome === r.nome);
         if (!orgao) return null;
+        const atributos = buildAtributosEntidade(orgao.id, avPorOrgAtrib.filter(av => av.orgao_id === orgao.id));
+        const resumo = summarizeAtributos(atributos);
         return {
           candidatoId: orgao.id,
           nome: orgao.nome,
@@ -415,11 +447,18 @@ export async function GET(req: NextRequest) {
           tipoEntidade,
           totalVozes: r.total,
           liquidScore: r.liquidScore,
-          atributos: buildAtributosEntidade(orgao.id, avPorOrgAtrib.filter(av => av.orgao_id === orgao.id)),
+          atributos,
+          atributosTotal: resumo.total,
+          atributosPositivos: resumo.positivos,
+          atributosNegativos: resumo.negativos,
+          atributosPositivosPct: resumo.positivoPct,
+          atributosNegativosPct: resumo.negativoPct,
         };
       } else {
         const svc = servicos.find(s => s.nome === r.nome);
         if (!svc) return null;
+        const atributos = buildAtributosEntidade(svc.id, avPorSvcAtrib.filter(av => av.servico_id === svc.id));
+        const resumo = summarizeAtributos(atributos);
         return {
           candidatoId: svc.id,
           nome: svc.nome,
@@ -427,7 +466,12 @@ export async function GET(req: NextRequest) {
           tipoEntidade,
           totalVozes: r.total,
           liquidScore: r.liquidScore,
-          atributos: buildAtributosEntidade(svc.id, avPorSvcAtrib.filter(av => av.servico_id === svc.id)),
+          atributos,
+          atributosTotal: resumo.total,
+          atributosPositivos: resumo.positivos,
+          atributosNegativos: resumo.negativos,
+          atributosPositivosPct: resumo.positivoPct,
+          atributosNegativosPct: resumo.negativoPct,
         };
       }
     }).filter(Boolean);
@@ -459,6 +503,7 @@ export async function GET(req: NextRequest) {
         candidatoPorCidade,
       },
       topAtributos: { virtudes, defeitos },
+      atributosResumo,
       atributosPorCandidato,
       aprovacao: {
         sim: aprovacaoTotal,

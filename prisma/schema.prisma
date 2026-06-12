@@ -1,0 +1,288 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Campanha {
+  id                 String   @id @default(cuid())
+  nome               String
+  slug               String   @unique
+  status             String   @default("ativo") // ativo, pausado, encerrado
+  total_votos        Int      @default(0)
+  media_consolidada  Float    @default(0)
+  last_calc_at       DateTime?
+  meta_config        Json?    // Configurações extras (pesos, limites)
+  data_inicio        DateTime @default(now())
+  data_fim           DateTime?
+  
+  candidatos         Candidato[]
+  orgaos             OrgaoPublico[]
+  servicos           ServicoPublico[]
+  atributos          CampanhaAtributo[]
+  rodadas            RodadaMetodologica[]
+
+  @@map("campanhas")
+}
+
+model Atributo {
+  id          String   @id @default(cuid())
+  nome        String   @unique
+  descricao   String?
+  icone       String?
+  polaridade  Int      @default(1) // 1: Positivo, -1: Negativo
+  visivel     Boolean  @default(true)
+  categoria   String   @default("politico") // politico | orgao | servico
+
+  campanhas   CampanhaAtributo[]
+  avaliacoes  Avaliacao[]
+
+  @@index([categoria])
+  @@map("atributos")
+}
+
+model CampanhaAtributo {
+  id          String   @id @default(cuid())
+  campanha_id String
+  atributo_id String
+  
+  campanha    Campanha @relation(fields: [campanha_id], references: [id])
+  atributo    Atributo @relation(fields: [atributo_id], references: [id])
+
+  @@map("campanha_atributos")
+}
+
+model Candidato {
+  id                 String   @id @default(cuid())
+  nome               String
+  partido            String?
+  numero             String?
+  cargo              String
+  foto_url           String?
+  ano_eleicao        Int      @default(2024)
+  cidade             String
+  bairro             String?
+  status             String   @default("Ativo") // Ativo, Inativo
+  status_verificacao Boolean  @default(false)
+  total_avaliacoes   Int      @default(0)
+  campanha_id        String
+  
+  campanha           Campanha @relation(fields: [campanha_id], references: [id])
+  avaliacoes         Avaliacao[]
+  manifestacoes      Manifestacao[]
+
+  @@map("candidatos")
+}
+
+model Manifestacao {
+  id                  String   @id @default(cuid())
+  candidato_id        String?
+  orgao_id            String?  // nullable — preenchido quando categoria = orgao_publico
+  servico_id          String?  // nullable — preenchido quando categoria = servico_publico
+
+  // Indicadores Avançados (Paraná Pesquisas)
+  aprovacao           Boolean? // true: aprova, false: desaprova
+  expectativa_vitoria Boolean? // true: acredita que vence / confia, false: não
+
+  // Perfil do Eleitor
+  perfil              Json?    // { idade, sexo, escolaridade, etc }
+
+  // Auditoria e Anti-robô
+  fingerprint_hash    String
+  ip_hash             String
+  user_agent          String?
+  duration_ms         Int?
+  is_valid            Boolean  @default(true)
+  honeypot_triggered  Boolean  @default(false)
+
+  criado_em           DateTime @default(now())
+
+  candidato           Candidato?     @relation(fields: [candidato_id], references: [id])
+  orgao               OrgaoPublico?  @relation(fields: [orgao_id], references: [id])
+  servico             ServicoPublico? @relation(fields: [servico_id], references: [id])
+  avaliacoes          Avaliacao[]
+
+  @@index([candidato_id])
+  @@index([orgao_id])
+  @@index([servico_id])
+  @@index([fingerprint_hash])
+  @@map("manifestacoes")
+}
+
+model Avaliacao {
+  id                 String   @id @default(cuid())
+  manifestacao_id    String?
+  candidato_id       String?
+  orgao_id           String?   // nullable — preenchido quando categoria = orgao_publico
+  servico_id         String?   // nullable — preenchido quando categoria = servico_publico
+  atributo_id        String
+  valor              Int      // 1 ou -1
+  is_valid           Boolean  @default(true)
+
+  // Auditoria
+  fingerprint_hash   String
+  ip_hash            String
+  user_agent         String?
+  duration_ms        Int?
+  honeypot_triggered Boolean  @default(false)
+  device_info        Json?
+  geo_location       Json?
+
+  criado_em          DateTime @default(now())
+
+  manifestacao       Manifestacao?   @relation(fields: [manifestacao_id], references: [id])
+  candidato          Candidato?      @relation(fields: [candidato_id], references: [id])
+  orgao              OrgaoPublico?   @relation(fields: [orgao_id], references: [id])
+  servico            ServicoPublico? @relation(fields: [servico_id], references: [id])
+  atributo           Atributo        @relation(fields: [atributo_id], references: [id])
+
+  @@index([candidato_id])
+  @@index([orgao_id])
+  @@index([servico_id])
+  @@index([manifestacao_id])
+  @@map("avaliacoes")
+}
+
+model ServicoPublico {
+  id           String   @id @default(cuid())
+  nome         String
+  tipo         String   // upa, ubs, hospital, transporte, agua, energia, outro
+  cidade       String
+  uf           String   @default("MS")
+  descricao    String?
+  foto_url     String?
+  campanha_id  String?
+  status       String   @default("Ativo") // Ativo, Inativo
+
+  campanha      Campanha?      @relation(fields: [campanha_id], references: [id])
+  manifestacoes Manifestacao[]
+  avaliacoes    Avaliacao[]
+
+  criado_em     DateTime @default(now())
+  atualizado_em DateTime @updatedAt
+
+  @@index([cidade])
+  @@index([tipo])
+  @@index([status])
+  @@map("servicos_publicos")
+}
+
+model OrgaoPublico {
+  id           String   @id @default(cuid())
+  nome         String
+  tipo         String   // prefeitura, camara, tribunal, ministerio_publico, defensoria, tce, outro
+  cidade       String
+  uf           String   @default("MS")
+  descricao    String?
+  foto_url     String?
+  campanha_id  String?
+  status       String   @default("Ativo") // Ativo, Inativo
+
+  campanha     Campanha?      @relation(fields: [campanha_id], references: [id])
+  manifestacoes Manifestacao[]
+  avaliacoes   Avaliacao[]
+
+  criado_em    DateTime @default(now())
+  atualizado_em DateTime @updatedAt
+
+  @@index([cidade])
+  @@index([tipo])
+  @@index([status])
+  @@map("orgaos_publicos")
+}
+
+model Bloqueio {
+  id          String   @id @default(cuid())
+  hash        String   @unique // IP ou Fingerprint
+  motivo      String?
+  expira_em   DateTime?
+  criado_em   DateTime @default(now())
+
+  @@map("bloqueios")
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  acao        String   // EX: "VOTO_INVALIDADO", "CAMPANHA_CRIADA"
+  entidade    String   // EX: "Avaliacao", "Campanha"
+  entidade_id String
+  detalhes    Json?
+  usuario_id  String?  // ID do Admin (se houver)
+  criado_em   DateTime @default(now())
+
+  @@index([criado_em])
+  @@index([acao, criado_em])
+  @@index([entidade, criado_em])
+  @@map("audit_logs")
+}
+
+model ParametroPlataforma {
+  id          String   @id @default(cuid())
+  chave       String   @unique
+  valor       Json
+  grupo       String   @default("geral")
+  descricao   String?
+  updatedAt   DateTime @updatedAt
+
+  @@map("parametros_plataforma")
+}
+
+model CepMs {
+  cep                String    @id
+  uf                 String    @default("MS")
+  cidade             String
+  bairro             String?
+  logradouro         String?
+  origem             String    @default("brasilapi") // brasilapi, ibge_enderecos, dne, manual
+  ibge_municipio_id  String?
+  localidades        Json?
+  bairro_confianca   Float?
+  total_registros    Int       @default(0)
+  localidades_count  Int       @default(0)
+  logradouros_count  Int       @default(0)
+  latitude           Float?
+  longitude          Float?
+  importado_em       DateTime?
+  criado_em          DateTime  @default(now())
+  atualizado_em      DateTime  @updatedAt
+
+  @@index([cidade])
+  @@index([bairro])
+  @@index([origem])
+  @@map("ceps_ms")
+}
+
+model RodadaMetodologica {
+  id               String    @id @default(cuid())
+  titulo           String
+  tipo             String    @default("percepcao_espontanea") // percepcao_espontanea, pesquisa_registravel
+  status           String    @default("rascunho") // rascunho, ativa, encerrada, arquivada
+  campanha_id      String?
+  objetivo         String?
+  publico_alvo     String?
+  abrangencia      String?
+  tamanho_amostra  Int?
+  margem_erro      Float?
+  nivel_confianca  Float?
+  periodo_inicio   DateTime?
+  periodo_fim      DateTime?
+  plano_amostral   Json?
+  ponderacao       Json?
+  questionario     Json?
+  observacoes      String?
+  criado_em        DateTime  @default(now())
+  atualizado_em    DateTime  @updatedAt
+
+  campanha         Campanha? @relation(fields: [campanha_id], references: [id])
+
+  @@index([campanha_id])
+  @@index([tipo, status])
+  @@map("rodadas_metodologicas")
+}

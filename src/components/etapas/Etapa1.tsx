@@ -1,0 +1,350 @@
+'use client';
+
+import React from 'react';
+import { motion } from 'framer-motion';
+import { MapPin, Search, LocateFixed } from 'lucide-react';
+import Link from 'next/link';
+
+interface BairroPossivel {
+  bairro: string;
+  registros?: number;
+  proporcao?: number;
+}
+
+interface CepLookupResponse {
+  cidade?: string;
+  bairro?: string;
+  uf?: string;
+  origem?: string;
+  confiancaBairro?: number | null;
+  precisaConfirmarBairro?: boolean;
+  bairrosPossiveis?: BairroPossivel[];
+  error?: string;
+}
+
+interface Etapa1Props {
+  userData: {
+    ideologia: string;
+    cidade: string;
+    bairro: string;
+    uf?: string;
+    localidadeOrigem?: string;
+    bairrosPossiveis?: BairroPossivel[];
+    bairroConfianca?: number | null;
+    precisaConfirmarBairro?: boolean;
+  };
+  setUserData: (data: any) => void;
+  onNext: () => void;
+  config?: any;
+}
+
+export const Etapa1: React.FC<Etapa1Props> = ({ userData, setUserData, onNext, config }) => {
+  const [cep, setCep] = React.useState('');
+  const [cepStatus, setCepStatus] = React.useState<'idle' | 'loading' | 'found' | 'error'>('idle');
+  const [cepMessage, setCepMessage] = React.useState('');
+  const [geoStatus, setGeoStatus] = React.useState<'idle' | 'loading' | 'error'>('idle');
+
+  const ideologias = [
+    { id: 'esquerda', label: 'Progressista', color: '#a8c47a' },
+    { id: 'centro-esquerda', label: 'Centro-Esquerda', color: '#8fb88e' },
+    { id: 'centro', label: 'Moderado', color: '#c8933a' },
+    { id: 'centro-direita', label: 'Centro-Direita', color: '#d99d57' },
+    { id: 'direita', label: 'Conservador', color: '#d97757' },
+  ];
+
+  const normalizedCep = cep.replace(/\D/g, '');
+  const canResolveLater = userData.localidadeOrigem === 'manual_pendente';
+  const isComplete = Boolean(userData.ideologia && ((userData.cidade && userData.bairro) || canResolveLater));
+
+  const updateCep = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 8);
+    const formatted = digits.length > 5 ? `${digits.slice(0, 5)}-${digits.slice(5)}` : digits;
+    setCep(formatted);
+    setCepStatus('idle');
+    setCepMessage('');
+  };
+
+  const lookupCepDigits = React.useCallback(async (digits: string) => {
+    if (digits.length !== 8) return;
+    setCepStatus('loading');
+    setCepMessage('');
+    try {
+      const res = await fetch(`/api/cep/${digits}`);
+      const data = await res.json() as CepLookupResponse;
+      if (!res.ok) throw new Error(data.error || 'CEP não encontrado.');
+      const bairrosPossiveis = Array.isArray(data.bairrosPossiveis)
+        ? data.bairrosPossiveis.filter((item) => item.bairro)
+        : [];
+      setUserData({
+        ...userData,
+        cidade: data.cidade || '',
+        bairro: data.bairro || bairrosPossiveis[0]?.bairro || '',
+        uf: data.uf || 'MS',
+        localidadeOrigem: data.origem === 'ibge_enderecos' ? 'cep_ibge' : 'cep',
+        bairrosPossiveis,
+        bairroConfianca: data.confiancaBairro ?? null,
+        precisaConfirmarBairro: !!data.precisaConfirmarBairro,
+      });
+      setCepStatus('found');
+      setCepMessage(
+        data.precisaConfirmarBairro
+          ? 'Encontramos mais de uma localidade para este CEP. Você só precisará confirmar o bairro.'
+          : 'Região localizada. Você seguirá direto para a busca de candidato.'
+      );
+    } catch (error) {
+      setUserData({
+        ...userData,
+        cidade: '',
+        bairro: '',
+        uf: 'MS',
+        localidadeOrigem: 'manual_pendente',
+        bairrosPossiveis: [],
+        bairroConfianca: null,
+        precisaConfirmarBairro: true,
+      });
+      setCepStatus('error');
+      setCepMessage(
+        `${error instanceof Error ? error.message : 'Não foi possível consultar o CEP.'} Você poderá informar cidade e bairro manualmente.`
+      );
+    }
+  }, [userData, setUserData]);
+
+  const locateByGeo = () => {
+    if (!navigator.geolocation) {
+      setGeoStatus('error');
+      return;
+    }
+    setGeoStatus('loading');
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const { latitude, longitude } = pos.coords;
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&addressdetails=1`,
+            { headers: { 'Accept-Language': 'pt-BR' } }
+          );
+          const data = await res.json();
+          const postcode = data?.address?.postcode?.replace(/\D/g, '');
+          if (postcode && postcode.length >= 8) {
+            const digits = postcode.slice(0, 8);
+            const formatted = `${digits.slice(0, 5)}-${digits.slice(5)}`;
+            setCep(formatted);
+            setGeoStatus('idle');
+            // Dispara lookup automático com o CEP obtido
+            await lookupCepDigits(digits);
+          } else {
+            setGeoStatus('error');
+          }
+        } catch {
+          setGeoStatus('error');
+        }
+      },
+      () => setGeoStatus('error'),
+      { timeout: 10000 }
+    );
+  };
+
+  const lookupCep = async () => {
+    if (!/^\d{8}$/.test(normalizedCep)) {
+      setCepStatus('error');
+      setCepMessage('Digite um CEP com 8 números.');
+      return;
+    }
+    await lookupCepDigits(normalizedCep);
+  };
+
+  return (
+    <motion.div 
+      className="relative z-10 w-full h-full flex flex-col items-center px-6 gap-8 overflow-y-auto pt-24 pb-safe no-scrollbar"
+      initial={{ opacity: 0, x: 30 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -30 }}
+      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+    >
+      <div className="text-center shrink-0">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold font-display uppercase tracking-tight text-[#f5f0e8] drop-shadow-[0_0_15px_rgba(245,240,232,0.3)]">
+          {config?.onboarding_etapa1_titulo || 'Sua região'}
+        </h1>
+        <p className="text-xs text-[#b0aea5] uppercase tracking-[0.4em] mt-3 font-bold drop-shadow-sm">
+          Sem identificação nominal
+        </p>
+      </div>
+
+      <div className="w-full max-w-sm flex flex-col gap-8">
+        <div className="flex flex-col gap-3">
+          <label className="text-[11px] uppercase font-bold text-[#d97757] tracking-widest ml-1 drop-shadow-[0_0_8px_rgba(217,119,87,0.3)]">
+            CEP de onde mora
+          </label>
+          <div className="relative">
+            <input
+              type="text"
+              inputMode="numeric"
+              value={cep}
+              onChange={(e) => updateCep(e.target.value)}
+              className="w-full bg-[#1c1814]/80 border border-[#3d3128] rounded-2xl px-6 py-5 pr-14 text-sm focus:outline-none focus:border-[#d97757] transition-all placeholder:text-[#7a6e64]/50 text-[#f5f0e8] shadow-inner"
+              placeholder="00000-000"
+            />
+            <button
+              type="button"
+              onClick={lookupCep}
+              disabled={cepStatus === 'loading'}
+              aria-label="Buscar região pelo CEP"
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-xl bg-[#d97757]/10 text-[#d97757] flex items-center justify-center hover:bg-[#d97757]/20 disabled:opacity-40 transition-colors"
+            >
+              <Search size={18} />
+            </button>
+          </div>
+
+          <button
+            type="button"
+            onClick={locateByGeo}
+            disabled={geoStatus === 'loading'}
+            className="self-start flex items-center gap-1.5 text-[11px] text-[#7a6e64] hover:text-[#b0aea5] transition-colors disabled:opacity-40"
+          >
+            <LocateFixed size={13} className={geoStatus === 'loading' ? 'animate-spin' : ''} />
+            {geoStatus === 'loading' ? 'Localizando…' : geoStatus === 'error' ? 'Não foi possível obter localização' : 'Usar minha localização'}
+          </button>
+
+          <p className="text-sm text-[#7a6e64] leading-relaxed">
+            O CEP é usado apenas para localizar cidade e bairro. O CEP completo não será salvo na manifestação.
+            {' '}
+            <Link href="/privacidade" className="text-[#c8933a] underline underline-offset-2">
+              Ver privacidade
+            </Link>
+          </p>
+
+          {cepMessage && (
+            <div className={`rounded-xl border px-4 py-3 text-sm leading-relaxed ${
+              cepStatus === 'error'
+                ? 'border-[#d97757]/30 bg-[#d97757]/10 text-[#d97757]'
+                : 'border-[#a8c47a]/30 bg-[#a8c47a]/10 text-[#a8c47a]'
+            }`}>
+              {cepMessage}
+            </div>
+          )}
+
+          {(userData.cidade || userData.bairro) && (
+            <div className="flex items-start gap-3 rounded-xl border border-[#3d3128] bg-[#1c1814]/60 px-4 py-3">
+              <MapPin size={16} className="text-[#c8933a] mt-0.5 shrink-0" />
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#f5f0e8] break-words">
+                  {[userData.bairro, userData.cidade, userData.uf].filter(Boolean).join(' • ')}
+                </p>
+                <p className="text-[11px] text-[#7a6e64] mt-1">
+                  {userData.precisaConfirmarBairro
+                    ? 'Este CEP tem mais de uma localidade possível.'
+                    : 'Você poderá corrigir depois, se precisar.'}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="flex flex-col gap-6">
+          <label className="text-[11px] uppercase font-bold text-[#d97757] tracking-widest text-center drop-shadow-[0_0_8px_rgba(217,119,87,0.3)]">
+            Sua Linha Ideológica
+          </label>
+          
+          <div className="flex flex-col gap-3">
+            {ideologias.map((item) => {
+              const isSelected = userData.ideologia === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setUserData({ ...userData, ideologia: item.id })}
+                  className={`group relative w-full py-4 px-6 rounded-2xl border transition-all duration-500 flex items-center justify-between ${
+                    isSelected 
+                      ? 'bg-[#1c1814] border-[#d97757] shadow-[0_0_20px_rgba(217,119,87,0.15)]' 
+                      : 'bg-transparent border-[#3d3128] hover:border-[#7a6e64]'
+                  }`}
+                >
+                  <span className={`text-xs font-bold uppercase tracking-wider transition-colors ${
+                    isSelected ? 'text-[#f5f0e8]' : 'text-[#7a6e64] group-hover:text-[#b0aea5]'
+                  }`}>
+                    {item.label}
+                  </span>
+                  
+                  <div className="flex items-center gap-2">
+                    <div 
+                      className="w-2 h-2 rounded-full shadow-[0_0_8px_currentColor]" 
+                      style={{ color: item.color, backgroundColor: item.color }} 
+                    />
+                    {isSelected && (
+                      <motion.div 
+                        layoutId="check-ideology"
+                        className="w-4 h-4 bg-[#d97757] rounded-full flex items-center justify-center text-[8px] text-white"
+                      >
+                        ✓
+                      </motion.div>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {config?.geral_patrocinio_ativo === 'ativo' && config?.geral_patrocinio_imagem_url && (() => {
+        const zoom = Number(config.geral_patrocinio_zoom ?? 1);
+        const posX = Number(config.geral_patrocinio_pos_x ?? 50);
+        const posY = Number(config.geral_patrocinio_pos_y ?? 50);
+        const imgStyle: React.CSSProperties = {
+          position: 'absolute',
+          left: `${posX}%`,
+          top: `${posY}%`,
+          transform: `translate(-50%, -50%) scale(${zoom})`,
+          height: '60px',
+          maxWidth: 'none',
+          maxHeight: 'none',
+          objectFit: 'contain',
+          transformOrigin: 'center',
+        };
+        const inner = (extraClass: string) => (
+          <>
+            <span className="text-[8px] uppercase tracking-[0.22em] text-[#7a6e64] font-bold relative z-10">
+              {config?.geral_patrocinio_label || 'Realizado com apoio de'}
+            </span>
+            <div className="relative w-full h-[60px] overflow-hidden">
+              <img src={String(config.geral_patrocinio_imagem_url)} alt="Patrocinador" draggable={false} style={imgStyle} />
+            </div>
+          </>
+        );
+        return (
+          <div className="w-full max-w-sm shrink-0">
+            {config?.geral_patrocinio_link ? (
+              <a
+                href={String(config.geral_patrocinio_link)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="relative flex flex-col items-center gap-2 px-4 py-3 bg-[#1c1814]/60 border border-[#3d3128] rounded-2xl hover:border-[#7a6e64]/50 transition-colors overflow-hidden group"
+              >
+                <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/5 to-transparent transition-transform duration-[1200ms] ease-in-out pointer-events-none" />
+                {inner('opacity-80 group-hover:opacity-100 transition-opacity duration-300')}
+              </a>
+            ) : (
+              <div className="relative flex flex-col items-center gap-2 px-4 py-3 bg-[#1c1814]/60 border border-[#3d3128] rounded-2xl overflow-hidden">
+                <div className="absolute inset-0 animate-[shimmer_3s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-white/4 to-transparent pointer-events-none" />
+                {inner('')}
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
+      <div className="mt-auto pb-8">
+        <button
+          onClick={() => onNext()}
+          disabled={!isComplete}
+          className={`relative z-50 px-14 py-5 rounded-full font-bold text-[10px] uppercase tracking-[0.4em] transition-all duration-700 ${
+            isComplete
+              ? 'bg-[#d97757] text-[#f5f0e8] shadow-[0_0_50px_rgba(217,119,87,0.4)] scale-100 hover:scale-105 active:scale-95 cursor-pointer'
+              : 'bg-[#1c1814] text-[#7a6e64] opacity-20 scale-95 cursor-not-allowed border border-[#3d3128]'
+          }`}
+        >
+          Avançar
+        </button>
+      </div>
+    </motion.div>
+  );
+};

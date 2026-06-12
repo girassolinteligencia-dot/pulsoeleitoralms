@@ -7,7 +7,9 @@ import { adminFetch, downloadAdminCsv } from '@/lib/adminClient';
 
 interface RecentEvaluation {
   id: string;
-  candidato: { nome: string };
+  candidato?: { nome: string } | null;
+  orgao?: { nome: string } | null;
+  servico?: { nome: string } | null;
   atributo: { nome: string };
   valor: number;
   criado_em: string;
@@ -118,6 +120,13 @@ function LiquidBar({ score, total }: { score: number; total: number }) {
       />
     </div>
   );
+}
+
+function getEvaluationEntity(ev: RecentEvaluation) {
+  if (ev.candidato?.nome) return { nome: ev.candidato.nome, tipo: 'Político' };
+  if (ev.orgao?.nome) return { nome: ev.orgao.nome, tipo: 'Órgão público' };
+  if (ev.servico?.nome) return { nome: ev.servico.nome, tipo: 'Serviço público' };
+  return { nome: 'Entidade não identificada', tipo: 'Registro' };
 }
 
 export default function AdminDashboard() {
@@ -390,20 +399,23 @@ export default function AdminDashboard() {
             <span className="px-2 py-1 bg-positive/10 text-positive text-[8px] font-bold uppercase rounded-full animate-pulse tracking-widest">Live</span>
           </div>
           <div className="flex flex-col gap-2">
-            {recentEvaluations.map(ev => (
-              <div key={ev.id} className="flex justify-between items-center p-3 bg-white/[0.02] rounded-2xl border border-white/5 hover:border-white/10 transition-all">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0 ${ev.valor > 0 ? 'bg-positive/10 text-positive' : 'bg-negative/10 text-negative'}`}>
-                    {ev.valor > 0 ? '+' : '−'}
+            {recentEvaluations.map(ev => {
+              const entity = getEvaluationEntity(ev);
+              return (
+                <div key={ev.id} className="flex justify-between items-center p-3 bg-white/[0.02] rounded-2xl border border-white/5 hover:border-white/10 transition-all">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0 ${ev.valor > 0 ? 'bg-positive/10 text-positive' : 'bg-negative/10 text-negative'}`}>
+                      {ev.valor > 0 ? '+' : '−'}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[9px] font-bold uppercase tracking-wider truncate">{entity.nome}</p>
+                      <p className="text-[8px] text-text-muted opacity-50 uppercase tracking-widest truncate">{entity.tipo} · {ev.atributo.nome}</p>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-[9px] font-bold uppercase tracking-wider truncate">{ev.candidato.nome}</p>
-                    <p className="text-[8px] text-text-muted opacity-50 uppercase tracking-widest truncate">{ev.atributo.nome}</p>
-                  </div>
+                  <p className="text-[8px] text-text-muted font-mono opacity-30 shrink-0 ml-2">{new Date(ev.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
                 </div>
-                <p className="text-[8px] text-text-muted font-mono opacity-30 shrink-0 ml-2">{new Date(ev.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
-              </div>
-            ))}
+              );
+            })}
             {recentEvaluations.length === 0 && (
               <div className="py-16 text-center">
                 <p className="text-text-muted text-[9px] uppercase tracking-widest opacity-30">Aguardando sinal...</p>

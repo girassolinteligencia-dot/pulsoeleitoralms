@@ -12,6 +12,8 @@ export async function GET(req: NextRequest) {
       orderBy: { criado_em: 'desc' },
       include: {
         candidato: { select: { nome: true } },
+        orgao: { select: { nome: true } },
+        servico: { select: { nome: true } },
         atributo: { select: { nome: true } }
       }
     });

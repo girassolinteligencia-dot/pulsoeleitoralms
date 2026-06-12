@@ -244,7 +244,7 @@ function AbaAuditoria() {
 
 // ─── Aba: API Tokens ──────────────────────────────────────────────────────────
 
-interface TokenEntry { id: string; chave: string; descricao: string; token: string; ativo: boolean; criado_em: string; }
+interface TokenEntry { id: string; chave: string; descricao: string; token: string; ativo: boolean; legado?: boolean; criado_em: string; }
 
 function AbaTokens() {
   const [tokens, setTokens] = useState<TokenEntry[]>([]);
@@ -293,7 +293,8 @@ function AbaTokens() {
         <p className="text-[10px] uppercase font-bold tracking-widest text-text-muted">Endpoint</p>
         <code className="block text-xs text-primary bg-dark/60 rounded-xl px-4 py-3 break-all">GET /api/public/resultados</code>
         <div className="text-xs text-text-muted space-y-1">
-          <p><span className="text-white">Auth:</span> header <code className="text-primary">x-api-token</code> ou <code className="text-primary">?token=</code></p>
+          <p><span className="text-white">Auth:</span> header <code className="text-primary">x-api-token</code></p>
+          <p className="text-[10px] text-[#c8933a]">Tokens antigos em URL foram desativados. Gere um novo token e envie sempre pelo header.</p>
           <p className="text-[10px]">Parâmetros: <code className="text-primary">categoria</code> · <code className="text-primary">dias</code> · <code className="text-primary">atributos</code> · <code className="text-primary">limite</code></p>
         </div>
       </div>
@@ -332,13 +333,22 @@ function AbaTokens() {
           <div key={t.id} className={`bg-surface-1 border rounded-2xl p-4 flex items-center gap-4 ${t.ativo ? 'border-border' : 'border-white/5 opacity-50'}`}>
             <div className="flex-1 min-w-0 space-y-1">
               <div className="flex items-center gap-2">
-                <span className={`text-[8px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full ${t.ativo ? 'bg-positive/20 text-positive' : 'bg-white/10 text-text-muted'}`}>{t.ativo ? 'Ativo' : 'Revogado'}</span>
+                <span className={`text-[8px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full ${
+                  t.legado ? 'bg-[#c8933a]/20 text-[#c8933a]' : t.ativo ? 'bg-positive/20 text-positive' : 'bg-white/10 text-text-muted'
+                }`}>
+                  {t.legado ? 'Legado' : t.ativo ? 'Ativo' : 'Revogado'}
+                </span>
                 <span className="text-sm font-semibold text-white truncate">{t.descricao}</span>
               </div>
               <code className="text-[10px] text-text-muted">{t.token}</code>
             </div>
             <div className="flex gap-2 shrink-0">
-              <button type="button" onClick={() => toggle(t.id, t.ativo)} className="px-3 py-1.5 rounded-xl text-[9px] uppercase font-bold tracking-widest border border-white/10 text-text-muted hover:text-white transition-colors">
+              <button
+                type="button"
+                onClick={() => toggle(t.id, t.ativo)}
+                disabled={t.legado && !t.ativo}
+                className="px-3 py-1.5 rounded-xl text-[9px] uppercase font-bold tracking-widest border border-white/10 text-text-muted hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              >
                 {t.ativo ? 'Revogar' : 'Reativar'}
               </button>
               <button type="button" onClick={() => excluir(t.id)} className="px-3 py-1.5 rounded-xl text-[9px] uppercase font-bold tracking-widest border border-negative/20 text-negative/60 hover:text-negative transition-colors">
@@ -429,7 +439,7 @@ function UploadImagem({
             </span>
             <input
               type="file"
-              accept="image/webp,image/png,image/jpeg,image/svg+xml,image/x-icon"
+              accept="image/webp,image/png,image/jpeg,image/x-icon"
               onChange={handleFile}
               disabled={uploading}
               className="sr-only"
@@ -595,7 +605,7 @@ function UploadBanner({
           <span className="text-[10px] font-bold uppercase tracking-widest text-text-muted">
             {uploading ? 'Enviando…' : preview ? 'Trocar arquivo' : 'Selecionar arquivo'}
           </span>
-          <input type="file" accept="image/webp,image/png,image/jpeg,image/svg+xml" onChange={handleFile} disabled={uploading} className="sr-only" />
+          <input type="file" accept="image/webp,image/png,image/jpeg,image/x-icon" onChange={handleFile} disabled={uploading} className="sr-only" />
         </label>
         {saved && (
           <span className="text-[9px] font-bold text-positive uppercase tracking-widest shrink-0 animate-pulse">✓ Salvo</span>
@@ -867,7 +877,7 @@ function AbaConfiguracoes() {
             <UploadImagem
               chave="geral_favicon_url"
               label="Favicon"
-              dica="Exibido na aba do navegador. Suporta .webp, .png, .svg, .ico — máx. 512 KB"
+              dica="Exibido na aba do navegador. Suporta .webp, .png, .jpg, .ico — máx. 512 KB"
               currentUrl={String(get('geral_favicon_url') || '')}
               previewSize="sm"
               onSaved={fetchP}

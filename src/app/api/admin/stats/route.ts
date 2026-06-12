@@ -2,6 +2,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAdmin } from '@/lib/adminAuth';
 
+export const dynamic = 'force-dynamic';
+
+function formatCampoGrandeDate(date: Date) {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Campo_Grande',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date);
+}
+
+function normalizeSqlDateKey(value: Date | string) {
+  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  return value.slice(0, 10);
+}
+
 export async function GET(req: NextRequest) {
   const authError = await requireAdmin(req);
   if (authError) return authError;
@@ -66,7 +82,7 @@ export async function GET(req: NextRequest) {
         orderBy: { _count: { atributo_id: 'desc' } },
         take: 5,
       }),
-      prisma.$queryRaw<{ dia: string; total: number }[]>`
+      prisma.$queryRaw<{ dia: Date | string; total: number }[]>`
         SELECT DATE(criado_em AT TIME ZONE 'America/Campo_Grande') AS dia,
                COUNT(*)::int AS total
         FROM manifestacoes
@@ -138,8 +154,8 @@ export async function GET(req: NextRequest) {
     for (let i = 6; i >= 0; i--) {
       const d = new Date(agora);
       d.setDate(d.getDate() - i);
-      const diaStr = d.toISOString().slice(0, 10);
-      const encontrado = atividadeSemanalRaw.find(r => r.dia === diaStr);
+      const diaStr = formatCampoGrandeDate(d);
+      const encontrado = atividadeSemanalRaw.find(r => normalizeSqlDateKey(r.dia) === diaStr);
       atividadeSemanal.push({ dia: diaStr, total: encontrado ? Number(encontrado.total) : 0 });
     }
 

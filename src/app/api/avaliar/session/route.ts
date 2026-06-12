@@ -3,14 +3,35 @@ import { prisma } from '@/lib/prisma';
 import { generateSecureHash } from '@/lib/hash';
 import { createEvaluationSession } from '@/lib/evaluationSession';
 import { buildPublicCandidateWhere, getPublicScopeConfig } from '@/lib/publicScope';
+import { checkRateLimit } from '@/lib/rateLimit';
+
+const SESSION_RATE_LIMIT = 20;
+const SESSION_RATE_WINDOW_MS = 60 * 1000;
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { candidatoId, orgaoId, servicoId, fingerprint } = body;
 
-    if (typeof fingerprint !== 'string') {
+    if (typeof fingerprint !== 'string' || fingerprint.length < 8 || fingerprint.length > 512) {
       return NextResponse.json({ error: 'Payload inválido.' }, { status: 400 });
+    }
+
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || '127.0.0.1';
+    const fingerprintHash = generateSecureHash(fingerprint);
+    const ipLimit = checkRateLimit(`avaliar:session:ip:${generateSecureHash(ip)}`, SESSION_RATE_LIMIT, SESSION_RATE_WINDOW_MS);
+    const fingerprintLimit = checkRateLimit(`avaliar:session:fp:${fingerprintHash}`, SESSION_RATE_LIMIT, SESSION_RATE_WINDOW_MS);
+
+    if (!ipLimit.allowed || !fingerprintLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Muitas tentativas em curto período.' },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(Math.max(ipLimit.retryAfter, fingerprintLimit.retryAfter, 1)),
+          },
+        }
+      );
     }
 
     let entityId: string;
@@ -47,7 +68,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Payload inválido.' }, { status: 400 });
     }
 
-    const session = createEvaluationSession(entityId, generateSecureHash(fingerprint));
+    const session = createEvaluationSession(entityId, fingerprintHash);
 
     return NextResponse.json(session);
   } catch (error) {

@@ -82,12 +82,19 @@ interface HealthData {
 function BarChart({ data }: { data: AtividadeDia[] }) {
   const max = Math.max(...data.map(d => d.total), 1);
   const dias = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  const todayKey = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Campo_Grande',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
+
   return (
     <div className="flex items-end gap-2 h-24 w-full">
       {data.map((d, i) => {
         const pct = Math.max((d.total / max) * 100, d.total > 0 ? 8 : 2);
         const diaSemana = dias[new Date(d.dia + 'T12:00:00').getDay()];
-        const isToday = d.dia === new Date().toISOString().slice(0, 10);
+        const isToday = d.dia === todayKey;
         return (
           <div key={i} className="flex-1 flex flex-col items-center gap-1.5 group">
             <span className="text-[8px] text-text-muted opacity-0 group-hover:opacity-60 transition-opacity font-mono">
@@ -262,7 +269,7 @@ export default function AdminDashboard() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
         {[
-          { label: 'Total Avaliações', value: (stats?.totalEvaluations ?? 0).toLocaleString('pt-BR'), accent: true },
+          { label: 'Total Manifestações', value: (stats?.totalEvaluations ?? 0).toLocaleString('pt-BR'), accent: true },
           { label: 'Nas últimas 24h', value: (stats?.avaliacoes24h ?? 0).toLocaleString('pt-BR'), accent: false },
           { label: 'Políticos', value: (stats?.totalCandidatos ?? 0).toLocaleString('pt-BR'), accent: false },
           { label: 'Órgãos Públicos', value: (stats?.totalOrgaos ?? 0).toLocaleString('pt-BR'), accent: false },

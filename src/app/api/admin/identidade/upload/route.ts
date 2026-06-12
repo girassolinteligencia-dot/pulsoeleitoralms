@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import sharp from 'sharp';
 import { getAdminIdentity } from '@/lib/adminAuth';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { prisma } from '@/lib/prisma';
 
 const MAX_SIZE = 512 * 1024;
@@ -35,8 +35,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Chave inválida.' }, { status: 400 });
     }
 
-    if (!['image/webp', 'image/png', 'image/jpeg', 'image/svg+xml', 'image/x-icon', 'image/vnd.microsoft.icon'].includes(file.type)) {
-      return NextResponse.json({ error: 'Formato não suportado. Use .webp, .png, .jpg, .svg ou .ico' }, { status: 422 });
+    if (!['image/webp', 'image/png', 'image/jpeg', 'image/x-icon', 'image/vnd.microsoft.icon'].includes(file.type)) {
+      return NextResponse.json({ error: 'Formato não suportado. Use .webp, .png, .jpg ou .ico' }, { status: 422 });
     }
     if (file.size > MAX_SIZE) {
       return NextResponse.json({ error: `Arquivo muito grande (${(file.size / 1024).toFixed(0)} KB). Máximo: 512 KB.` }, { status: 422 });
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
     const bytes = await file.arrayBuffer();
     const rawBuffer = Buffer.from(bytes);
 
-    // SVG e ICO não passam pelo sharp — ficam no formato original
+    // ICO não passa pelo sharp; os demais bitmaps são normalizados para WebP.
     const isBitmap = ['image/webp', 'image/png', 'image/jpeg'].includes(file.type);
     let buffer: Buffer;
     let contentType: string;

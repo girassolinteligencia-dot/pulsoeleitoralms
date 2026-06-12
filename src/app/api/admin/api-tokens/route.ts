@@ -3,6 +3,11 @@ import { prisma } from '@/lib/prisma';
 import { getAdminIdentity, requireAdmin } from '@/lib/adminAuth';
 import { recordAuditLog } from '@/lib/auditLog';
 import { randomBytes } from 'crypto';
+import { hashApiToken, maskApiToken } from '@/lib/apiTokens';
+
+function readTokenValue(value: unknown) {
+  return (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
+}
 
 export async function GET(req: NextRequest) {
   const authError = await requireAdmin(req);
@@ -15,13 +20,17 @@ export async function GET(req: NextRequest) {
     });
 
     const tokens = params.map(p => {
-      const v = p.valor as Record<string, unknown>;
+      const v = readTokenValue(p.valor);
+      const tokenPrefix = typeof v.tokenPrefix === 'string' ? v.tokenPrefix : undefined;
+      const legado = typeof v.token === 'string' && typeof v.tokenHash !== 'string';
+
       return {
         id: p.id,
         chave: p.chave,
         descricao: p.descricao ?? '',
-        token: (v.token as string).slice(0, 8) + '••••••••••••••••••••••',
-        ativo: v.ativo as boolean,
+        token: legado ? 'Token legado em texto — revogue e gere um novo' : maskApiToken(tokenPrefix),
+        ativo: v.ativo === true,
+        legado,
         criado_em: (v.criado_em as string) ?? p.updatedAt,
       };
     });
@@ -44,11 +53,17 @@ export async function POST(req: NextRequest) {
 
     const token = 'pms_' + randomBytes(24).toString('hex');
     const chave = 'api_token_' + randomBytes(6).toString('hex');
+    const tokenPrefix = token.slice(0, 8);
 
     const parametro = await prisma.parametroPlataforma.create({
       data: {
         chave,
-        valor: { token, ativo: true, criado_em: new Date().toISOString() },
+        valor: {
+          tokenHash: hashApiToken(token),
+          tokenPrefix,
+          ativo: true,
+          criado_em: new Date().toISOString(),
+        },
         grupo: 'api_tokens',
         descricao: descricao.trim(),
       },
@@ -87,7 +102,16 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: 'Token não encontrado' }, { status: 404 });
     }
 
-    const valorAtual = existing.valor as Record<string, unknown>;
+    const valorAtual = readTokenValue(existing.valor);
+    const isLegacy = typeof valorAtual.token === 'string' && typeof valorAtual.tokenHash !== 'string';
+
+    if (ativo === true && isLegacy) {
+      return NextResponse.json(
+        { error: 'Token legado não pode ser reativado. Gere um novo token.' },
+        { status: 409 }
+      );
+    }
+
     const parametro = await prisma.parametroPlataforma.update({
       where: { id },
       data: { valor: { ...valorAtual, ativo } },

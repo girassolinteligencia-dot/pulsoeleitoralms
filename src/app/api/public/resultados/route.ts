@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { verifyApiTokenHash } from '@/lib/apiTokens';
 
 type CategoriaFiltro = 'todos' | 'politico' | 'orgao_publico' | 'servico_publico';
 
@@ -10,51 +11,82 @@ function buildCategoriaWhere(categoria: CategoriaFiltro, base: Record<string, un
   return base;
 }
 
-async function validateToken(token: string): Promise<boolean> {
-  const param = await prisma.parametroPlataforma.findFirst({
-    where: {
-      chave: { startsWith: 'api_token_' },
-      valor: { equals: { token, ativo: true } as unknown as never },
+function getAllowedOrigins() {
+  return new Set(
+    [
+      'https://pulsoms.ia.br',
+      'https://www.pulsoms.ia.br',
+      process.env.NEXT_PUBLIC_APP_URL,
+      ...(process.env.PUBLIC_API_ALLOWED_ORIGINS || '').split(','),
+    ]
+      .map(origin => origin?.trim())
+      .filter((origin): origin is string => Boolean(origin))
+  );
+}
+
+function getCorsHeaders(req: NextRequest) {
+  const origin = req.headers.get('origin');
+  const headers: Record<string, string> = { Vary: 'Origin' };
+
+  if (origin && getAllowedOrigins().has(origin)) {
+    headers['Access-Control-Allow-Origin'] = origin;
+  }
+
+  return headers;
+}
+
+function jsonWithCors(req: NextRequest, body: unknown, init?: ResponseInit) {
+  return NextResponse.json(body, {
+    ...init,
+    headers: {
+      ...getCorsHeaders(req),
+      ...(init?.headers || {}),
     },
   });
-  // Busca manual pois o JSON exact match via Prisma não funciona em todos os providers
-  if (param) return true;
+}
 
-  // Fallback: busca todos os tokens ativos e compara
+function parseBoundedInt(value: string | null, fallback: number, min: number, max: number) {
+  const parsed = value ? parseInt(value, 10) : fallback;
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.min(Math.max(parsed, min), max);
+}
+
+async function validateToken(token: string): Promise<boolean> {
   const allTokens = await prisma.parametroPlataforma.findMany({
     where: { chave: { startsWith: 'api_token_' }, grupo: 'api_tokens' },
   });
+
   return allTokens.some(p => {
     const v = p.valor as Record<string, unknown>;
-    return v?.token === token && v?.ativo === true;
+    return (
+      v?.ativo === true &&
+      typeof v.tokenHash === 'string' &&
+      verifyApiTokenHash(token, v.tokenHash)
+    );
   });
 }
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
 
-  // Autenticação por token
-  const token =
-    req.headers.get('x-api-token') ??
-    searchParams.get('token');
+  const token = req.headers.get('x-api-token')?.trim();
 
   if (!token) {
-    return NextResponse.json({ error: 'Token obrigatório' }, { status: 401 });
+    return jsonWithCors(req, { error: 'Token obrigatório no header x-api-token' }, { status: 401 });
   }
 
   const valid = await validateToken(token);
   if (!valid) {
-    return NextResponse.json({ error: 'Token inválido ou revogado' }, { status: 403 });
+    return jsonWithCors(req, { error: 'Token inválido ou revogado' }, { status: 403 });
   }
 
   // Parâmetros de filtro
   const categoria = (searchParams.get('categoria') || 'todos') as CategoriaFiltro;
-  const diasParam = searchParams.get('dias');
-  const dias = diasParam ? parseInt(diasParam) : 30;
+  const dias = parseBoundedInt(searchParams.get('dias'), 30, 1, 365);
   // atributos: lista separada por vírgula, ou "todos"
   const atributosParam = searchParams.get('atributos') || 'todos';
   const atributosFiltro = atributosParam === 'todos' ? null : atributosParam.split(',').map(s => s.trim()).filter(Boolean);
-  const limite = Math.min(parseInt(searchParams.get('limite') || '20'), 100);
+  const limite = parseBoundedInt(searchParams.get('limite'), 20, 1, 100);
 
   const desde = new Date();
   desde.setDate(desde.getDate() - dias);
@@ -70,7 +102,7 @@ export async function GET(req: NextRequest) {
     });
     atributoIds = atributosEncontrados.map(a => a.id);
     if (atributoIds.length === 0) {
-      return NextResponse.json({ error: 'Nenhum atributo válido encontrado' }, { status: 400 });
+      return jsonWithCors(req, { error: 'Nenhum atributo válido encontrado' }, { status: 400 });
     }
   }
 
@@ -233,19 +265,30 @@ export async function GET(req: NextRequest) {
     },
     {
       headers: {
+        ...getCorsHeaders(req),
         'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
-        'Access-Control-Allow-Origin': '*',
       },
     }
   );
 }
 
-export async function OPTIONS() {
+export async function OPTIONS(req: NextRequest) {
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(req);
+
+  if (origin && !corsHeaders['Access-Control-Allow-Origin']) {
+    return NextResponse.json(
+      { error: 'Origem não autorizada' },
+      { status: 403, headers: corsHeaders }
+    );
+  }
+
   return new NextResponse(null, {
     headers: {
-      'Access-Control-Allow-Origin': '*',
+      ...corsHeaders,
       'Access-Control-Allow-Methods': 'GET, OPTIONS',
       'Access-Control-Allow-Headers': 'x-api-token, Content-Type',
+      'Access-Control-Max-Age': '600',
     },
   });
 }

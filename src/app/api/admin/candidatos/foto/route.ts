@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminIdentity } from '@/lib/adminAuth';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { prisma } from '@/lib/prisma';
 
 const MAX_SIZE = 300 * 1024;

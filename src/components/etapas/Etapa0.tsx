@@ -31,14 +31,14 @@ const passos = [
 export const Etapa0: React.FC<Etapa0Props> = ({ onNext }) => {
   return (
     <motion.div
-      className="relative z-10 w-full h-full flex flex-col items-center px-6 overflow-y-auto pt-20 pb-10 no-scrollbar"
+      className="relative z-10 w-full h-full flex flex-col items-center px-4 sm:px-6 overflow-y-auto mobile-step sm:pt-20 sm:pb-10 no-scrollbar"
       initial={{ opacity: 0, x: 30 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -30 }}
       transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
     >
       {/* Cabeçalho */}
-      <div className="text-center shrink-0 mb-10">
+      <div className="text-center shrink-0 mb-5 sm:mb-10">
         <motion.h1
           className="text-2xl sm:text-3xl md:text-4xl font-bold font-display uppercase tracking-tight text-[#f5f0e8] drop-shadow-[0_0_15px_rgba(245,240,232,0.3)]"
           initial={{ opacity: 0, y: -12 }}
@@ -62,13 +62,13 @@ export const Etapa0: React.FC<Etapa0Props> = ({ onNext }) => {
         {passos.map((passo, i) => (
           <motion.div
             key={passo.numero}
-            className="flex items-start gap-4 rounded-2xl border border-[#3d3128] bg-[#1c1814]/60 px-5 py-5"
+            className="flex items-start gap-3 sm:gap-4 rounded-2xl border border-[#3d3128] bg-[#1c1814]/60 px-4 sm:px-5 py-3.5 sm:py-5"
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 + i * 0.12, ease: [0.16, 1, 0.3, 1] }}
           >
             {/* Ícone */}
-            <div className="w-10 h-10 rounded-full bg-[#d97757]/10 border border-[#d97757]/30 flex items-center justify-center text-lg shrink-0 [filter:sepia(1)_saturate(3)_hue-rotate(340deg)_brightness(0.85)]">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#d97757]/10 border border-[#d97757]/30 flex items-center justify-center text-base sm:text-lg shrink-0 [filter:sepia(1)_saturate(3)_hue-rotate(340deg)_brightness(0.85)]">
               {passo.icone}
             </div>
 
@@ -79,7 +79,7 @@ export const Etapa0: React.FC<Etapa0Props> = ({ onNext }) => {
                   {passo.titulo}
                 </span>
               </div>
-              <p className="text-sm text-[#7a6e64] leading-relaxed">
+              <p className="text-xs sm:text-sm text-[#7a6e64] leading-relaxed">
                 {passo.descricao}
               </p>
             </div>
@@ -89,7 +89,7 @@ export const Etapa0: React.FC<Etapa0Props> = ({ onNext }) => {
 
       {/* Separador */}
       <motion.div
-        className="w-16 h-px bg-gradient-to-r from-transparent via-[#3d3128] to-transparent my-8 shrink-0"
+        className="w-16 h-px bg-gradient-to-r from-transparent via-[#3d3128] to-transparent my-5 sm:my-8 shrink-0"
         initial={{ scaleX: 0, opacity: 0 }}
         animate={{ scaleX: 1, opacity: 1 }}
         transition={{ duration: 0.6, delay: 0.7 }}
@@ -118,7 +118,7 @@ export const Etapa0: React.FC<Etapa0Props> = ({ onNext }) => {
 
       {/* CTA */}
       <motion.div
-        className="mt-10 shrink-0"
+        className="mobile-action-bar sm:static sm:mt-10 sm:p-0 shrink-0 flex justify-center"
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.9 }}
@@ -126,7 +126,7 @@ export const Etapa0: React.FC<Etapa0Props> = ({ onNext }) => {
         <button
           type="button"
           onClick={onNext}
-          className="px-14 py-5 rounded-full bg-[#d97757] text-[#f5f0e8] font-bold text-[10px] uppercase tracking-[0.4em] font-display shadow-[0_0_50px_rgba(217,119,87,0.35)] hover:bg-[#c4633d] hover:scale-105 active:scale-95 transition-all duration-300"
+          className="w-full max-w-[300px] px-8 sm:px-14 py-4 sm:py-5 rounded-full bg-[#d97757] text-[#f5f0e8] font-bold text-[10px] uppercase tracking-[0.28em] sm:tracking-[0.4em] font-display shadow-[0_0_50px_rgba(217,119,87,0.35)] hover:bg-[#c4633d] hover:scale-105 active:scale-95 transition-all duration-300"
         >
           Começar →
         </button>

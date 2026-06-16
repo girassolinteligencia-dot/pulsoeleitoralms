@@ -9,7 +9,7 @@ const DEFAULTS = {
 };
 
 export default async function LandingPage() {
-  let textos = { ...DEFAULTS };
+  const textos = { ...DEFAULTS };
 
   try {
     const parametros = await prisma.parametroPlataforma.findMany({

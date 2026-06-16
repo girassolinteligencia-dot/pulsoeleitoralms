@@ -70,6 +70,18 @@
     padding-left: var(--safe-left, 0);
     padding-right: var(--safe-right, 0);
   }
+  .mobile-step {
+    padding-top: calc(var(--safe-top, 0px) + 4.25rem);
+    padding-bottom: calc(var(--safe-bottom, 0px) + 5.75rem);
+  }
+  .mobile-action-bar {
+    position: sticky;
+    bottom: 0;
+    z-index: 30;
+    width: 100%;
+    padding: 0.75rem 0 calc(var(--safe-bottom, 0px) + 0.75rem);
+    background: linear-gradient(to top, rgba(20, 20, 19, 0.98) 0%, rgba(20, 20, 19, 0.92) 72%, rgba(20, 20, 19, 0) 100%);
+  }
 }
 
 * {
@@ -88,6 +100,22 @@ body {
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   width: 100%;
+}
+
+@media (max-width: 640px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    touch-action: manipulation;
+  }
 }
 
 h1, h2, h3, h4, .font-title {

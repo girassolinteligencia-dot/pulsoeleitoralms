@@ -80,7 +80,7 @@ export const EtapaDestaque: React.FC<EtapaDestaqueProps> = ({
 
   return (
     <motion.div
-      className="relative z-10 w-full h-full flex flex-col items-center px-4 sm:px-6 gap-5 overflow-y-auto pt-20 sm:pt-24 pb-safe no-scrollbar"
+      className="relative z-10 w-full h-full flex flex-col items-center px-4 sm:px-6 gap-4 sm:gap-5 overflow-y-auto mobile-step sm:pt-24 sm:pb-safe no-scrollbar"
       initial={{ opacity: 0, x: 50 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -50 }}
@@ -99,7 +99,7 @@ export const EtapaDestaque: React.FC<EtapaDestaqueProps> = ({
       {/* Grid de destaques */}
       {!mostrarResultados && destaques.length > 0 && (
         <div className="w-full max-w-xl grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
-          {destaques.slice(0, 9).map((ent, i) => (
+          {destaques.slice(0, 6).map((ent, i) => (
             <motion.button
               key={ent.id}
               type="button"
@@ -107,10 +107,10 @@ export const EtapaDestaque: React.FC<EtapaDestaqueProps> = ({
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.04 }}
-              className="flex flex-col items-center justify-center gap-2 bg-[#1c1814]/60 border border-[#3d3128] rounded-2xl px-2 py-4 sm:py-5 text-center hover:border-[#d97757]/60 hover:bg-[#1c1814] active:scale-95 transition-all group"
+              className="min-h-[116px] sm:min-h-0 flex flex-col items-center justify-center gap-2 bg-[#1c1814]/60 border border-[#3d3128] rounded-2xl px-2 py-3 sm:py-5 text-center hover:border-[#d97757]/60 hover:bg-[#1c1814] active:scale-95 transition-all group"
             >
               {ent.foto_url ? (
-                <div className="w-10 h-10 rounded-full bg-[#1c1814] border border-[#3d3128] flex items-center justify-center shrink-0 overflow-hidden p-1">
+                <div className="w-12 h-12 sm:w-10 sm:h-10 rounded-full bg-[#1c1814] border border-[#3d3128] flex items-center justify-center shrink-0 overflow-hidden p-1">
                   <img
                     src={ent.foto_url}
                     alt={ent.nome}
@@ -118,7 +118,7 @@ export const EtapaDestaque: React.FC<EtapaDestaqueProps> = ({
                   />
                 </div>
               ) : (
-                <div className="w-10 h-10 rounded-full bg-[#d97757]/10 border border-[#d97757]/20 flex items-center justify-center shrink-0">
+                <div className="w-12 h-12 sm:w-10 sm:h-10 rounded-full bg-[#d97757]/10 border border-[#d97757]/20 flex items-center justify-center shrink-0">
                   <span className="text-[#d97757] text-xs font-bold">
                     {ent.nome.charAt(0).toUpperCase()}
                   </span>
@@ -161,7 +161,7 @@ export const EtapaDestaque: React.FC<EtapaDestaqueProps> = ({
             value={query}
             onChange={e => { setQuery(e.target.value); if (!e.target.value.trim()) limparBusca(); }}
             placeholder={PLACEHOLDER[categoria]}
-            className="w-full bg-[#1c1814]/80 border border-[#3d3128] rounded-xl px-5 py-4 text-sm focus:outline-none focus:border-[#d97757] transition-all placeholder:text-[#7a6e64]/50 text-[#f5f0e8] pr-12"
+            className="w-full bg-[#1c1814]/80 border border-[#3d3128] rounded-xl px-5 py-4 text-base sm:text-sm focus:outline-none focus:border-[#d97757] transition-all placeholder:text-[#7a6e64]/50 text-[#f5f0e8] pr-12"
           />
           <button
             type="submit"
@@ -223,7 +223,7 @@ export const EtapaDestaque: React.FC<EtapaDestaqueProps> = ({
       )}
 
       {/* Voltar */}
-      <div className="mt-auto pb-8 flex flex-col items-center gap-4 w-full">
+      <div className="mobile-action-bar sm:static sm:mt-auto sm:pb-8 flex flex-col items-center gap-4 w-full">
         {onSugestao && (
           <button
             type="button"

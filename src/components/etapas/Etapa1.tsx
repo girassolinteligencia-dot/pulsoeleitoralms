@@ -12,6 +12,7 @@ interface BairroPossivel {
 }
 
 interface CepLookupResponse {
+  cep?: string;
   cidade?: string;
   bairro?: string;
   uf?: string;
@@ -19,6 +20,7 @@ interface CepLookupResponse {
   confiancaBairro?: number | null;
   precisaConfirmarBairro?: boolean;
   bairrosPossiveis?: BairroPossivel[];
+  distanciaKm?: number | null;
   error?: string;
 }
 
@@ -56,6 +58,30 @@ export const Etapa1: React.FC<Etapa1Props> = ({ userData, setUserData, onNext, c
   const canResolveLater = userData.localidadeOrigem === 'manual_pendente';
   const isComplete = Boolean(userData.ideologia && ((userData.cidade && userData.bairro) || canResolveLater));
 
+  const applyCepData = React.useCallback((data: CepLookupResponse) => {
+    const bairrosPossiveis = Array.isArray(data.bairrosPossiveis)
+      ? data.bairrosPossiveis.filter((item) => item.bairro)
+      : [];
+    const origem = data.origem?.startsWith('geo_')
+      ? 'geo_cep'
+      : data.origem === 'ibge_enderecos'
+        ? 'cep_ibge'
+        : 'cep';
+
+    setUserData((current: typeof userData) => ({
+      ...current,
+      cidade: data.cidade || '',
+      bairro: data.bairro || bairrosPossiveis[0]?.bairro || '',
+      uf: data.uf || 'MS',
+      localidadeOrigem: origem,
+      bairrosPossiveis,
+      bairroConfianca: data.confiancaBairro ?? null,
+      precisaConfirmarBairro: !!data.precisaConfirmarBairro,
+    }));
+
+    return bairrosPossiveis;
+  }, [setUserData]);
+
   const updateCep = (value: string) => {
     const digits = value.replace(/\D/g, '').slice(0, 8);
     const formatted = digits.length > 5 ? `${digits.slice(0, 5)}-${digits.slice(5)}` : digits;
@@ -72,19 +98,7 @@ export const Etapa1: React.FC<Etapa1Props> = ({ userData, setUserData, onNext, c
       const res = await fetch(`/api/cep/${digits}`);
       const data = await res.json() as CepLookupResponse;
       if (!res.ok) throw new Error(data.error || 'CEP não encontrado.');
-      const bairrosPossiveis = Array.isArray(data.bairrosPossiveis)
-        ? data.bairrosPossiveis.filter((item) => item.bairro)
-        : [];
-      setUserData({
-        ...userData,
-        cidade: data.cidade || '',
-        bairro: data.bairro || bairrosPossiveis[0]?.bairro || '',
-        uf: data.uf || 'MS',
-        localidadeOrigem: data.origem === 'ibge_enderecos' ? 'cep_ibge' : 'cep',
-        bairrosPossiveis,
-        bairroConfianca: data.confiancaBairro ?? null,
-        precisaConfirmarBairro: !!data.precisaConfirmarBairro,
-      });
+      applyCepData(data);
       setCepStatus('found');
       setCepMessage(
         data.precisaConfirmarBairro
@@ -92,8 +106,8 @@ export const Etapa1: React.FC<Etapa1Props> = ({ userData, setUserData, onNext, c
           : 'Região localizada. Você seguirá direto para a busca de candidato.'
       );
     } catch (error) {
-      setUserData({
-        ...userData,
+      setUserData((current: typeof userData) => ({
+        ...current,
         cidade: '',
         bairro: '',
         uf: 'MS',
@@ -101,46 +115,77 @@ export const Etapa1: React.FC<Etapa1Props> = ({ userData, setUserData, onNext, c
         bairrosPossiveis: [],
         bairroConfianca: null,
         precisaConfirmarBairro: true,
-      });
+      }));
       setCepStatus('error');
       setCepMessage(
         `${error instanceof Error ? error.message : 'Não foi possível consultar o CEP.'} Você poderá informar cidade e bairro manualmente.`
       );
     }
-  }, [userData, setUserData]);
+  }, [applyCepData, setUserData]);
+
+  const setGeoError = (message: string) => {
+    setGeoStatus('error');
+    setCepStatus('error');
+    setCepMessage(`${message} Você poderá informar o CEP manualmente.`);
+  };
 
   const locateByGeo = () => {
-    if (!navigator.geolocation) {
-      setGeoStatus('error');
+    if (!globalThis.isSecureContext) {
+      setGeoError('A localização do celular só funciona em conexão segura HTTPS.');
       return;
     }
+
+    if (!navigator.geolocation) {
+      setGeoError('Este navegador não oferece geolocalização.');
+      return;
+    }
+
     setGeoStatus('loading');
+    setCepStatus('loading');
+    setCepMessage('Solicitando permissão de localização do celular...');
+
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         try {
           const { latitude, longitude } = pos.coords;
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&addressdetails=1`,
-            { headers: { 'Accept-Language': 'pt-BR' } }
-          );
-          const data = await res.json();
-          const postcode = data?.address?.postcode?.replace(/\D/g, '');
-          if (postcode && postcode.length >= 8) {
-            const digits = postcode.slice(0, 8);
+          const params = new URLSearchParams({
+            lat: String(latitude),
+            lon: String(longitude),
+          });
+          const res = await fetch(`/api/geolocalizacao/cep?${params.toString()}`);
+          const data = await res.json() as CepLookupResponse;
+          if (!res.ok) throw new Error(data.error || 'Não foi possível localizar seu CEP.');
+
+          const digits = data.cep?.replace(/\D/g, '').slice(0, 8);
+          if (digits && digits.length === 8) {
             const formatted = `${digits.slice(0, 5)}-${digits.slice(5)}`;
             setCep(formatted);
-            setGeoStatus('idle');
-            // Dispara lookup automático com o CEP obtido
-            await lookupCepDigits(digits);
-          } else {
-            setGeoStatus('error');
           }
-        } catch {
-          setGeoStatus('error');
+
+          applyCepData(data);
+          setGeoStatus('idle');
+          setCepStatus('found');
+          setCepMessage(
+            data.precisaConfirmarBairro
+              ? 'Localização encontrada. Este CEP tem mais de uma localidade possível; você só precisará confirmar o bairro.'
+              : 'Localização encontrada pelo celular. Você poderá corrigir depois, se precisar.'
+          );
+        } catch (error) {
+          setGeoError(error instanceof Error ? error.message : 'Não foi possível usar a localização do celular.');
         }
       },
-      () => setGeoStatus('error'),
-      { timeout: 10000 }
+      (error) => {
+        const blockedByPolicy = /permissions?\s*policy|disabled in this document|blocked/i.test(error.message || '');
+        const message = error.code === error.PERMISSION_DENIED
+          ? blockedByPolicy
+            ? 'O navegador bloqueou a localização para este site.'
+            : 'Permissão de localização negada no celular.'
+          : error.code === error.TIMEOUT
+            ? 'O celular demorou demais para retornar a localização.'
+            : 'O celular não conseguiu informar a localização.';
+        setGeoError(message);
+      },
+      { enableHighAccuracy: false, maximumAge: 300000, timeout: 15000 }
     );
   };
 
@@ -155,7 +200,7 @@ export const Etapa1: React.FC<Etapa1Props> = ({ userData, setUserData, onNext, c
 
   return (
     <motion.div 
-      className="relative z-10 w-full h-full flex flex-col items-center px-6 gap-8 overflow-y-auto pt-24 pb-safe no-scrollbar"
+      className="relative z-10 w-full h-full flex flex-col items-center px-4 sm:px-6 gap-5 sm:gap-8 overflow-y-auto mobile-step sm:pt-24 sm:pb-safe no-scrollbar"
       initial={{ opacity: 0, x: 30 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -30 }}
@@ -170,7 +215,7 @@ export const Etapa1: React.FC<Etapa1Props> = ({ userData, setUserData, onNext, c
         </p>
       </div>
 
-      <div className="w-full max-w-sm flex flex-col gap-8">
+      <div className="w-full max-w-sm flex flex-col gap-5 sm:gap-8">
         <div className="flex flex-col gap-3">
           <label className="text-[11px] uppercase font-bold text-[#d97757] tracking-widest ml-1 drop-shadow-[0_0_8px_rgba(217,119,87,0.3)]">
             CEP de onde mora
@@ -181,7 +226,7 @@ export const Etapa1: React.FC<Etapa1Props> = ({ userData, setUserData, onNext, c
               inputMode="numeric"
               value={cep}
               onChange={(e) => updateCep(e.target.value)}
-              className="w-full bg-[#1c1814]/80 border border-[#3d3128] rounded-2xl px-6 py-5 pr-14 text-sm focus:outline-none focus:border-[#d97757] transition-all placeholder:text-[#7a6e64]/50 text-[#f5f0e8] shadow-inner"
+              className="w-full bg-[#1c1814]/80 border border-[#3d3128] rounded-2xl px-5 sm:px-6 py-4 sm:py-5 pr-14 text-base sm:text-sm focus:outline-none focus:border-[#d97757] transition-all placeholder:text-[#7a6e64]/50 text-[#f5f0e8] shadow-inner"
               placeholder="00000-000"
             />
             <button
@@ -332,11 +377,11 @@ export const Etapa1: React.FC<Etapa1Props> = ({ userData, setUserData, onNext, c
         );
       })()}
 
-      <div className="mt-auto pb-8">
+      <div className="mobile-action-bar sm:static sm:mt-auto sm:pb-8 flex justify-center">
         <button
           onClick={() => onNext()}
           disabled={!isComplete}
-          className={`relative z-50 px-14 py-5 rounded-full font-bold text-[10px] uppercase tracking-[0.4em] transition-all duration-700 ${
+          className={`relative z-50 w-full max-w-[300px] px-8 sm:px-14 py-4 sm:py-5 rounded-full font-bold text-[10px] uppercase tracking-[0.28em] sm:tracking-[0.4em] transition-all duration-700 ${
             isComplete
               ? 'bg-[#d97757] text-[#f5f0e8] shadow-[0_0_50px_rgba(217,119,87,0.4)] scale-100 hover:scale-105 active:scale-95 cursor-pointer'
               : 'bg-[#1c1814] text-[#7a6e64] opacity-20 scale-95 cursor-not-allowed border border-[#3d3128]'

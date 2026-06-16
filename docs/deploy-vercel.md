@@ -7,8 +7,8 @@ O repositorio local foi limpo de vinculos antigos de Vercel. Antes do deploy fin
 Depois do link, registre aqui:
 
 - Producao: `https://pulsoms.ia.br`
-- URL Vercel: `https://pulsomsia.vercel.app`
-- Projeto/time: `paulocardoso-labs-projects/pulsoms-ia`
+- URL Vercel: `https://pulsomsia-girassolinteligencia-8661s-projects.vercel.app`
+- Projeto/time: `girassolinteligencia-8661s-projects/pulsoms_ia`
 - Deployment ID validado: `dpl_...`
 
 Para deixar o repositorio explicitamente linkado, rode:
@@ -91,7 +91,7 @@ DATABASE_URL=
 DIRECT_URL=
 SUPABASE_SERVICE_ROLE_KEY=
 NEXT_PUBLIC_APP_URL=https://pulsoms.ia.br
-ADMIN_EMAILS=paulofernandogarciacardoso@gmail.com
+ADMIN_EMAILS=girassolinteligencia@gmail.com
 EVALUATION_SESSION_SECRET=
 ENCRYPTION_KEY=
 AUDIT_LOG_RETENTION_DAYS=365

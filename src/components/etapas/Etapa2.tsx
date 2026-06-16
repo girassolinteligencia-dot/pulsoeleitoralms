@@ -90,7 +90,7 @@ export const Etapa2: React.FC<Etapa2Props> = ({ userData, setUserData, onNext, o
 
   return (
     <motion.div 
-      className="relative z-10 w-full h-full flex flex-col items-center px-6 gap-6 overflow-y-auto pt-24 pb-safe no-scrollbar"
+      className="relative z-10 w-full h-full flex flex-col items-center px-4 sm:px-6 gap-4 sm:gap-6 overflow-y-auto mobile-step sm:pt-24 sm:pb-safe no-scrollbar"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
@@ -105,7 +105,7 @@ export const Etapa2: React.FC<Etapa2Props> = ({ userData, setUserData, onNext, o
         </p>
       </div>
 
-      <div className="w-full max-w-sm flex flex-col gap-6 pb-10">
+      <div className="w-full max-w-sm flex flex-col gap-5 sm:gap-6 pb-4 sm:pb-10">
         {renderSelect('Sexo', 'sexo', userData.sexo)}
         {renderSelect('Cor/Raça', 'cor', userData.cor)}
         {renderSelect('Faixa Etária', 'faixaEtaria', userData.faixaEtaria)}
@@ -120,11 +120,11 @@ export const Etapa2: React.FC<Etapa2Props> = ({ userData, setUserData, onNext, o
         {renderSelect('Tempo de Residência', 'tempoResidencia', userData.tempoResidencia)}
       </div>
 
-      <div className="mt-auto pb-8 flex flex-col items-center gap-4 w-full">
+      <div className="mobile-action-bar sm:static sm:mt-auto sm:pb-8 flex flex-col items-center gap-4 w-full">
         <button 
           onClick={() => onNext()}
           disabled={!isComplete}
-          className={`w-full max-w-[300px] px-14 py-5 rounded-full font-bold text-[10px] uppercase tracking-[0.4em] transition-all duration-700 ${
+          className={`w-full max-w-[300px] px-8 sm:px-14 py-4 sm:py-5 rounded-full font-bold text-[10px] uppercase tracking-[0.28em] sm:tracking-[0.4em] transition-all duration-700 ${
             isComplete
               ? 'bg-[#d97757] text-[#f5f0e8] shadow-[0_0_50px_rgba(217,119,87,0.4)] scale-100 opacity-100' 
               : 'bg-[#1c1814] text-[#7a6e64] opacity-20 scale-95 cursor-not-allowed border border-[#3d3128]'

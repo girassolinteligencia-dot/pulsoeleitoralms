@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getAdminIdentity, requireAdmin } from '@/lib/adminAuth';
+import { getAdminIdentityWithRole, requireAdmin } from '@/lib/adminAuth';
 import { recordAuditLog } from '@/lib/auditLog';
 import { buildPublicCandidateWhere, getPublicScopeConfig } from '@/lib/publicScope';
 import { buildSearchOR } from '@/lib/normalize-search';
@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
 
 // POST create a new candidate
 export async function POST(req: NextRequest) {
-  const auth = await getAdminIdentity(req);
+  const auth = await getAdminIdentityWithRole(req, ['admin', 'editor']);
   if ('error' in auth) return auth.error;
 
   try {
@@ -121,7 +121,7 @@ export async function POST(req: NextRequest) {
 
 // PATCH update a candidate
 export async function PATCH(req: NextRequest) {
-  const auth = await getAdminIdentity(req);
+  const auth = await getAdminIdentityWithRole(req, ['admin', 'editor']);
   if ('error' in auth) return auth.error;
 
   try {

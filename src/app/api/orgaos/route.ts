@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getFotoUrl } from '@/lib/supabase';
+import { getFotoUrl } from '@/lib/fotoUrl';
 import { buildSearchOR } from '@/lib/normalize-search';
 
 export async function GET(req: NextRequest) {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import sharp from 'sharp';
-import { getAdminIdentity } from '@/lib/adminAuth';
+import { getAdminIdentityWithRole } from '@/lib/adminAuth';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { prisma } from '@/lib/prisma';
 
@@ -22,7 +22,7 @@ const DESCRICOES: Record<ChavePermitida, string> = {
 };
 
 export async function POST(req: NextRequest) {
-  const auth = await getAdminIdentity(req);
+  const auth = await getAdminIdentityWithRole(req, ['admin']);
   if ('error' in auth) return auth.error;
 
   try {

@@ -16,7 +16,6 @@ import { EtapaCategoria, type Categoria } from '@/components/etapas/EtapaCategor
 import { EtapaFinal } from '@/components/etapas/EtapaFinal';
 import { Etapa6 } from '@/components/etapas/Etapa6';
 import { EtapaSugestao } from '@/components/etapas/EtapaSugestao';
-import { Fragmento } from '@/components/fragmento/Fragmento';
 import { PulsoEfeito } from '@/components/ui/PulsoEfeito';
 
 interface Atributo {
@@ -65,6 +64,15 @@ export default function AvaliarPage() {
   const [loading, setLoading] = useState(false);
   const [loadingBusca, setLoadingBusca] = useState(false);
   const [config, setConfig] = useState<any>(null);
+  const [categoria, setCategoria] = useState<Categoria>('politico');
+  const [candidatos, setCandidatos] = useState<Candidato[]>([]);
+  const [candidato, setCandidato] = useState<Candidato | null>(null);
+  const [orgaos, setOrgaos] = useState<OrgaoPublico[]>([]);
+  const [orgao, setOrgao] = useState<OrgaoPublico | null>(null);
+  const [servicos, setServicos] = useState<ServicoPublico[]>([]);
+  const [servico, setServico] = useState<ServicoPublico | null>(null);
+  const [destaquesOrgaos, setDestaquesOrgaos] = useState<EntidadeDestaque[]>([]);
+  const [destaquesServicos, setDestaquesServicos] = useState<EntidadeDestaque[]>([]);
   
   const [userData, setUserData] = useState({
     ideologia: '',
@@ -112,16 +120,6 @@ export default function AvaliarPage() {
     loadConfig();
     loadDestaques();
   }, []);
-
-  const [categoria, setCategoria] = useState<Categoria>('politico');
-  const [candidatos, setCandidatos] = useState<Candidato[]>([]);
-  const [candidato, setCandidato] = useState<Candidato | null>(null);
-  const [orgaos, setOrgaos] = useState<OrgaoPublico[]>([]);
-  const [orgao, setOrgao] = useState<OrgaoPublico | null>(null);
-  const [servicos, setServicos] = useState<ServicoPublico[]>([]);
-  const [servico, setServico] = useState<ServicoPublico | null>(null);
-  const [destaquesOrgaos, setDestaquesOrgaos] = useState<EntidadeDestaque[]>([]);
-  const [destaquesServicos, setDestaquesServicos] = useState<EntidadeDestaque[]>([]);
 
   const [evaluations, setEvaluations] = useState<{ atributoId: string; valor: number }[]>([]);
   const [aprovacao, setAprovacao] = useState<boolean | null>(null);
@@ -408,7 +406,7 @@ export default function AvaliarPage() {
   if (showSplash) return <Splash onComplete={() => setShowSplash(false)} />;
 
   return (
-    <main className="relative w-full h-[100svh] overflow-hidden bg-[#141413] text-[#f5f0e8] flex flex-col items-center">
+    <main className="relative w-full h-[100dvh] min-h-[100svh] overflow-hidden bg-[#141413] text-[#f5f0e8] flex flex-col items-center">
       <Header />
 
       {/* Honeypot Anti-robô */}

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { buildCepResponse, isCepMs, normalizeCep } from '@/lib/cepMs';
 
 type SegmentData = {
   params: Promise<{ cep: string }>;
@@ -12,61 +13,6 @@ interface BrasilApiCepResponse {
   neighborhood?: string;
   street?: string;
   service?: string;
-}
-
-type CepMsRecord = NonNullable<Awaited<ReturnType<typeof prisma.cepMs.findUnique>>>;
-
-interface LocalidadeOption {
-  bairro: string;
-  registros: number;
-  proporcao: number;
-}
-
-function normalizeCep(value: string) {
-  return value.replace(/\D/g, '');
-}
-
-function isCepMs(value: string) {
-  const numeric = Number(value);
-  return numeric >= 79000000 && numeric <= 79999999;
-}
-
-function parseLocalidades(value: unknown): LocalidadeOption[] {
-  if (!Array.isArray(value)) return [];
-
-  return value
-    .map((item) => {
-      if (!item || typeof item !== 'object') return null;
-      const record = item as Record<string, unknown>;
-      const bairro = typeof record.bairro === 'string' ? record.bairro.trim() : '';
-      const registros = typeof record.registros === 'number' ? record.registros : 0;
-      const proporcao = typeof record.proporcao === 'number' ? record.proporcao : 0;
-
-      if (!bairro) return null;
-      return { bairro, registros, proporcao };
-    })
-    .filter((item): item is LocalidadeOption => item !== null);
-}
-
-function buildCepResponse(record: CepMsRecord, cache: 'hit' | 'miss') {
-  const localidades = parseLocalidades(record.localidades);
-  const confiancaBairro = typeof record.bairro_confianca === 'number'
-    ? record.bairro_confianca
-    : null;
-  const bairrosPossiveis = localidades.slice(0, 8);
-  const precisaConfirmarBairro = bairrosPossiveis.length > 1 && (confiancaBairro === null || confiancaBairro < 0.8);
-
-  return {
-    cidade: record.cidade,
-    bairro: record.bairro || bairrosPossiveis[0]?.bairro || '',
-    uf: record.uf,
-    logradouro: record.logradouro || '',
-    origem: record.origem,
-    cache,
-    confiancaBairro,
-    precisaConfirmarBairro,
-    bairrosPossiveis,
-  };
 }
 
 export async function GET(_req: Request, segmentData: SegmentData) {

@@ -5,6 +5,13 @@ import { supabase } from '@/lib/supabase';
 import { useRouter, usePathname } from 'next/navigation';
 import { Session } from '@supabase/supabase-js';
 import Image from 'next/image';
+import { adminFetch } from '@/lib/adminClient';
+
+type AdminProfile = {
+  email: string;
+  nome?: string | null;
+  role: 'admin' | 'editor' | 'viewer';
+};
 
 export default function AdminLayout({
   children,
@@ -12,6 +19,7 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const [session, setSession] = useState<Session | null>(null);
+  const [adminProfile, setAdminProfile] = useState<AdminProfile | null>(null);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -32,6 +40,13 @@ export default function AdminLayout({
         router.push('/admin/login');
       } else {
         setSession(currentSession);
+        const profileRes = await adminFetch('/api/admin/me');
+        if (!profileRes.ok) {
+          await supabase.auth.signOut();
+          router.push('/admin/login');
+          return;
+        }
+        setAdminProfile(await profileRes.json());
         setLoading(false);
       }
     };
@@ -41,7 +56,15 @@ export default function AdminLayout({
       if (event === 'SIGNED_IN') {
         if (currentSession) {
           setSession(currentSession);
-          setLoading(false);
+          adminFetch('/api/admin/me')
+            .then(async (res) => {
+              if (!res.ok) throw new Error('Acesso administrativo negado');
+              setAdminProfile(await res.json());
+              setLoading(false);
+            })
+            .catch(() => {
+              supabase.auth.signOut().then(() => router.push('/admin/login'));
+            });
         } else {
           supabase.auth.signOut().then(() => {
             router.push('/admin/login');
@@ -78,6 +101,9 @@ export default function AdminLayout({
     { id: 'territorio', label: 'Território', icon: '🗺️', path: '/admin/territorio' },
     { id: 'relatorios', label: 'Relatórios', icon: '📊', path: '/admin/relatorios' },
     { id: 'landing', label: 'Landing Page', icon: '🖥️', path: '/admin/landing' },
+    ...(adminProfile?.role === 'admin'
+      ? [{ id: 'usuarios', label: 'Usuários', icon: '👤', path: '/admin/usuarios' }]
+      : []),
     { id: 'sistema', label: 'Sistema', icon: '🔧', path: '/admin/sistema' },
   ];
 
@@ -119,6 +145,11 @@ export default function AdminLayout({
           <Image src="/logo.webp" alt="PULSO ELEITORAL MS" width={180} height={54} className="w-full h-auto object-contain" />
           <p className="text-[8px] text-[#d97757] uppercase font-bold tracking-widest text-center">Painel Administrativo</p>
           <p className="text-[8px] text-text-muted uppercase font-bold tracking-widest text-center truncate w-full opacity-60">{session?.user?.email}</p>
+          {adminProfile && (
+            <p className="text-[8px] text-primary uppercase font-bold tracking-widest text-center">
+              {adminProfile.role}
+            </p>
+          )}
         </div>
 
         {/* Nav scrollable */}

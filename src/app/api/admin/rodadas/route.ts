@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getAdminIdentity, requireAdmin } from '@/lib/adminAuth';
+import { getAdminIdentityWithRole, requireAdmin } from '@/lib/adminAuth';
 import { recordAuditLog } from '@/lib/auditLog';
 
 const TIPOS_PERMITIDOS = new Set(['percepcao_espontanea', 'pesquisa_registravel']);
@@ -166,7 +166,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const auth = await getAdminIdentity(req);
+  const auth = await getAdminIdentityWithRole(req, ['admin', 'editor']);
   if ('error' in auth) return auth.error;
 
   try {
@@ -211,7 +211,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  const auth = await getAdminIdentity(req);
+  const auth = await getAdminIdentityWithRole(req, ['admin', 'editor']);
   if ('error' in auth) return auth.error;
 
   try {

@@ -15,6 +15,9 @@ interface Campanha {
   _count: {
     candidatos: number;
     atributos: number;
+    orgaos: number;
+    servicos: number;
+    rodadas: number;
   };
   public_scope?: {
     visivel: boolean;
@@ -57,6 +60,8 @@ export default function ManageCampanhas() {
   const [toggling, setToggling] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<ConfirmModal | null>(null);
   const [actioning, setActioning] = useState(false);
+  const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
+  const [currentRole, setCurrentRole] = useState<string | null>(null);
   const LIMIT = 20;
 
   const fetchCampanhas = useCallback(async (pageNum: number, searchTerm: string) => {
@@ -83,6 +88,17 @@ export default function ManageCampanhas() {
   useEffect(() => {
     fetchCampanhas(page, search);
   }, [page, search, fetchCampanhas]);
+
+  useEffect(() => {
+    adminFetch('/api/admin/me')
+      .then((res) => res.ok ? res.json() : null)
+      .then((profile) => setCurrentRole(profile?.role || null))
+      .catch(() => setCurrentRole(null));
+  }, []);
+
+  useEffect(() => {
+    setDeleteConfirmationText('');
+  }, [confirm]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -154,7 +170,11 @@ export default function ManageCampanhas() {
       const res = await adminFetch('/api/admin/campanhas', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: campanha.id }),
+        body: JSON.stringify({
+          id: campanha.id,
+          confirmConsequences: true,
+          confirmationText: deleteConfirmationText,
+        }),
       });
       if (res.ok) {
         setConfirm(null);
@@ -180,6 +200,19 @@ export default function ManageCampanhas() {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '');
   };
+
+  const getDeletionConsequences = (campanha: Campanha) => [
+    `${campanha._count.candidatos} político${campanha._count.candidatos === 1 ? '' : 's'} vinculado${campanha._count.candidatos === 1 ? '' : 's'} será${campanha._count.candidatos === 1 ? '' : 'o'} excluído${campanha._count.candidatos === 1 ? '' : 's'}.`,
+    `${campanha.total_votos.toLocaleString('pt-BR')} voto${campanha.total_votos === 1 ? '' : 's'} e manifestações desses políticos deixarão os relatórios históricos.`,
+    `${campanha._count.atributos} atributo${campanha._count.atributos === 1 ? '' : 's'} do ciclo será${campanha._count.atributos === 1 ? '' : 'o'} removido${campanha._count.atributos === 1 ? '' : 's'}.`,
+    `${(campanha._count.orgaos || 0) + (campanha._count.servicos || 0)} órgão${(campanha._count.orgaos || 0) + (campanha._count.servicos || 0) === 1 ? '/serviço será desvinculado' : 's/serviços serão desvinculados'} do ciclo, sem apagar seus cadastros.`,
+    `${campanha._count.rodadas || 0} rodada${campanha._count.rodadas === 1 ? '' : 's'} metodológica${campanha._count.rodadas === 1 ? '' : 's'} será${campanha._count.rodadas === 1 ? '' : 'o'} desvinculada${campanha._count.rodadas === 1 ? '' : 's'}.`,
+  ];
+
+  const canConfirmDeletion = Boolean(
+    confirm?.tipo === 'excluir' && deleteConfirmationText === confirm.campanha.nome
+  );
+  const canDeleteCycles = currentRole === 'admin';
 
   return (
     <div className="flex flex-col gap-8 pb-32">
@@ -363,7 +396,7 @@ export default function ManageCampanhas() {
                           Encerrar
                         </button>
                       )}
-                      {camp.status === 'encerrado' && camp.total_votos === 0 && camp._count.candidatos === 0 && (
+                      {canDeleteCycles && camp.status === 'encerrado' && (
                         <button
                           type="button"
                           onClick={() => setConfirm({ tipo: 'excluir', campanha: camp })}
@@ -488,7 +521,7 @@ export default function ManageCampanhas() {
                       Encerrar
                     </button>
                   )}
-                  {camp.status === 'encerrado' && camp.total_votos === 0 && camp._count.candidatos === 0 && (
+                  {canDeleteCycles && camp.status === 'encerrado' && (
                     <button
                       type="button"
                       onClick={() => setConfirm({ tipo: 'excluir', campanha: camp })}
@@ -527,7 +560,7 @@ export default function ManageCampanhas() {
       {confirm && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => !actioning && setConfirm(null)} />
-          <div className="relative w-full max-w-sm bg-surface-1 border border-border rounded-[2.5rem] p-8 shadow-2xl flex flex-col gap-6">
+          <div className="relative w-full max-w-lg bg-surface-1 border border-border rounded-[2.5rem] p-8 shadow-2xl flex flex-col gap-6">
             <div className="flex flex-col gap-2">
               <span className="text-2xl">{confirm.tipo === 'excluir' ? '🗑️' : '🔒'}</span>
               <h3 className="text-sm font-bold font-display uppercase tracking-widest text-text">
@@ -535,16 +568,45 @@ export default function ManageCampanhas() {
               </h3>
               <p className="text-[11px] text-text-muted leading-relaxed">
                 {confirm.tipo === 'excluir'
-                  ? <>Tem certeza que deseja <span className="text-negative font-bold">excluir permanentemente</span> o ciclo <span className="text-text font-bold">"{confirm.campanha.nome}"</span>? Esta ação não pode ser desfeita.</>
-                  : <>O ciclo <span className="text-text font-bold">"{confirm.campanha.nome}"</span> será marcado como <span className="text-negative font-bold">Encerrado</span> e removido do escopo público. Os dados são preservados.</>
+                  ? <>Tem certeza que deseja <span className="text-negative font-bold">excluir permanentemente</span> o ciclo <span className="text-text font-bold">&quot;{confirm.campanha.nome}&quot;</span>? Esta ação não pode ser desfeita.</>
+                  : <>O ciclo <span className="text-text font-bold">&quot;{confirm.campanha.nome}&quot;</span> será marcado como <span className="text-negative font-bold">Encerrado</span> e removido do escopo público. Os dados são preservados.</>
                 }
               </p>
             </div>
+            {confirm.tipo === 'excluir' && (
+              <div className="flex flex-col gap-5">
+                <div className="rounded-3xl border border-negative/30 bg-negative/5 p-5">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-negative mb-3">
+                    Consequências da exclusão
+                  </p>
+                  <ul className="flex flex-col gap-2 text-[11px] leading-relaxed text-text-muted">
+                    {getDeletionConsequences(confirm.campanha).map((item) => (
+                      <li key={item} className="flex gap-2">
+                        <span className="text-negative">•</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <label className="flex flex-col gap-2">
+                  <span className="text-[9px] uppercase font-bold tracking-widest text-text-muted">
+                    Digite o nome do ciclo para confirmar
+                  </span>
+                  <input
+                    value={deleteConfirmationText}
+                    onChange={(event) => setDeleteConfirmationText(event.target.value)}
+                    className="bg-white/5 border border-white/10 focus:border-negative/50 outline-none rounded-2xl px-5 py-4 text-xs text-white transition-all placeholder:text-white/20"
+                    placeholder={confirm.campanha.nome}
+                    disabled={actioning}
+                  />
+                </label>
+              </div>
+            )}
             <div className="flex gap-3">
               <button
                 type="button"
                 onClick={() => confirm.tipo === 'excluir' ? excluirCiclo(confirm.campanha) : arquivarCiclo(confirm.campanha)}
-                disabled={actioning}
+                disabled={actioning || (confirm.tipo === 'excluir' && !canConfirmDeletion)}
                 className="flex-1 bg-negative/10 border border-negative/30 text-negative py-3 rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-negative/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {actioning ? 'Aguarde…' : confirm.tipo === 'excluir' ? 'Sim, excluir' : 'Sim, encerrar'}

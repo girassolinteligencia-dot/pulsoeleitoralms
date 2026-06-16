@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAdminIdentity } from '@/lib/adminAuth';
+import { getAdminIdentityWithRole } from '@/lib/adminAuth';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { prisma } from '@/lib/prisma';
 
@@ -7,7 +7,7 @@ const MAX_SIZE = 300 * 1024;
 const BUCKET = 'candidatos';
 
 export async function POST(req: NextRequest) {
-  const auth = await getAdminIdentity(req);
+  const auth = await getAdminIdentityWithRole(req, ['admin', 'editor']);
   if ('error' in auth) return auth.error;
 
   try {
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const auth = await getAdminIdentity(req);
+  const auth = await getAdminIdentityWithRole(req, ['admin', 'editor']);
   if ('error' in auth) return auth.error;
 
   const { searchParams } = new URL(req.url);

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getFotoUrl } from '@/lib/fotoUrl';
 
 export async function GET() {
   try {
@@ -26,13 +27,15 @@ export async function GET() {
     ]);
 
     // Preserva a ordem definida pelo admin
-    const orgaosOrdenados = orgaoIds
-      .map(id => orgaos.find(o => o.id === id))
-      .filter(Boolean);
+    const orgaosOrdenados = orgaoIds.flatMap(id => {
+      const orgao = orgaos.find(o => o.id === id);
+      return orgao ? [{ ...orgao, foto_url: getFotoUrl(orgao.foto_url) }] : [];
+    });
 
-    const servicosOrdenados = servicoIds
-      .map(id => servicos.find(s => s.id === id))
-      .filter(Boolean);
+    const servicosOrdenados = servicoIds.flatMap(id => {
+      const servico = servicos.find(s => s.id === id);
+      return servico ? [{ ...servico, foto_url: getFotoUrl(servico.foto_url) }] : [];
+    });
 
     return NextResponse.json(
       { orgaos: orgaosOrdenados, servicos: servicosOrdenados },

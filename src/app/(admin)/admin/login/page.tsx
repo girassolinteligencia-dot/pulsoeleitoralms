@@ -98,7 +98,7 @@ export default function AdminLoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full bg-white/5 border border-white/5 focus:border-primary/50 outline-none rounded-2xl px-6 py-5 text-sm text-white transition-all placeholder:text-white/20"
-                placeholder="admin@pulsoeleitoral.ms"
+                placeholder="girassolinteligencia@gmail.com"
               />
               <div className="absolute inset-0 rounded-2xl border border-primary/20 opacity-0 group-focus-within:opacity-100 pointer-events-none transition-opacity" />
             </div>
@@ -136,7 +136,7 @@ export default function AdminLoginPage() {
           )}
 
           <p className="text-[8px] text-text-muted uppercase tracking-[0.2em] leading-relaxed opacity-50 text-center">
-            Use um e-mail previamente cadastrado no Supabase Auth e autorizado em ADMIN_EMAILS.
+            Use um e-mail cadastrado no Supabase Auth e ativo em Usuários Administrativos.
           </p>
 
           <button 

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-const contactEmail = process.env.NEXT_PUBLIC_PRIVACY_CONTACT_EMAIL || 'privacidade@pulsoeleitoral.ms';
+const contactEmail = process.env.NEXT_PUBLIC_PRIVACY_CONTACT_EMAIL || 'girassolinteligencia@gmail.com';
 
 export default function PrivacidadePage() {
   return (

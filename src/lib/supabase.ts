@@ -1,20 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
+export { getFotoUrl } from './fotoUrl';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const hasPublicSupabaseConfig = Boolean(supabaseUrl && supabaseAnonKey);
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-/**
- * Resolve a URL pública de uma foto.
- * O banco armazena apenas o caminho relativo, ex: "candidatos/ID.webp".
- * Caminhos legados com "/" inicial também são tratados.
- */
-export function getFotoUrl(path: string | null | undefined): string | null {
-  if (!path) return null;
-  // Já é URL completa
-  if (path.startsWith('http')) return path;
-  // Remove barra inicial se houver (legado: "/candidatos/ID.webp")
-  const clean = path.startsWith('/') ? path.slice(1) : path;
-  return `${supabaseUrl}/storage/v1/object/public/${clean}`;
-}
+export const supabase = createClient(
+  hasPublicSupabaseConfig ? supabaseUrl! : 'https://placeholder.supabase.co',
+  hasPublicSupabaseConfig ? supabaseAnonKey! : 'placeholder-anon-key'
+);

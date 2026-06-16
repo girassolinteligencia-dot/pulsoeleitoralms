@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getAdminIdentity, requireAdmin } from '@/lib/adminAuth';
+import { getAdminIdentityWithRole, requireAdmin } from '@/lib/adminAuth';
 import { recordAuditLog } from '@/lib/auditLog';
 import { buildPublicCandidateWhere, getPublicScopeConfig } from '@/lib/publicScope';
 
@@ -31,7 +31,13 @@ export async function GET(req: NextRequest) {
         where,
         include: {
           _count: {
-            select: { candidatos: true, atributos: true },
+            select: {
+              candidatos: true,
+              atributos: true,
+              orgaos: true,
+              servicos: true,
+              rodadas: true,
+            },
           },
         },
         orderBy: { data_inicio: 'desc' },
@@ -78,7 +84,7 @@ export async function GET(req: NextRequest) {
 
 // POST create a new campanha
 export async function POST(req: NextRequest) {
-  const auth = await getAdminIdentity(req);
+  const auth = await getAdminIdentityWithRole(req, ['admin', 'editor']);
   if ('error' in auth) return auth.error;
 
   try {
@@ -123,35 +129,89 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// DELETE campanha — só permitido se sem votos e sem candidatos
+// DELETE campanha — operação restrita e confirmada pelo administrador.
 export async function DELETE(req: NextRequest) {
-  const auth = await getAdminIdentity(req);
+  const auth = await getAdminIdentityWithRole(req, ['admin']);
   if ('error' in auth) return auth.error;
 
   try {
-    const { id } = await req.json();
+    const { id, confirmConsequences, confirmationText } = await req.json();
     if (!id) return NextResponse.json({ error: 'ID é obrigatório' }, { status: 400 });
 
     const campanha = await prisma.campanha.findUnique({
       where: { id },
-      include: { _count: { select: { candidatos: true } } },
+      include: {
+        _count: {
+          select: {
+            candidatos: true,
+            atributos: true,
+            orgaos: true,
+            servicos: true,
+            rodadas: true,
+          },
+        },
+      },
     });
     if (!campanha) return NextResponse.json({ error: 'Ciclo não encontrado' }, { status: 404 });
 
-    if (campanha.total_votos > 0 || campanha._count.candidatos > 0) {
+    if (campanha.status !== 'encerrado') {
       return NextResponse.json(
-        { error: 'Ciclo com dados não pode ser excluído. Use "Encerrar" para arquivá-lo.' },
+        { error: 'Apenas ciclos encerrados podem ser excluídos. Encerre o ciclo antes da exclusão.' },
         { status: 409 }
       );
     }
 
-    await prisma.campanha.delete({ where: { id } });
+    if (confirmConsequences !== true || confirmationText !== campanha.nome) {
+      return NextResponse.json(
+        { error: 'Confirme as consequências digitando exatamente o nome do ciclo.' },
+        { status: 400 }
+      );
+    }
+
+    const candidatos = await prisma.candidato.findMany({
+      where: { campanha_id: id },
+      select: { id: true },
+    });
+    const candidatoIds = candidatos.map((candidato) => candidato.id);
+
+    const [avaliacoesPoliticos, manifestacoesPoliticos] = candidatoIds.length > 0
+      ? await Promise.all([
+          prisma.avaliacao.count({ where: { candidato_id: { in: candidatoIds } } }),
+          prisma.manifestacao.count({ where: { candidato_id: { in: candidatoIds } } }),
+        ])
+      : [0, 0];
+
+    await prisma.$transaction(async (tx) => {
+      if (candidatoIds.length > 0) {
+        await tx.avaliacao.deleteMany({ where: { candidato_id: { in: candidatoIds } } });
+        await tx.manifestacao.deleteMany({ where: { candidato_id: { in: candidatoIds } } });
+        await tx.candidato.deleteMany({ where: { campanha_id: id } });
+      }
+
+      await tx.campanhaAtributo.deleteMany({ where: { campanha_id: id } });
+      await tx.orgaoPublico.updateMany({ where: { campanha_id: id }, data: { campanha_id: null } });
+      await tx.servicoPublico.updateMany({ where: { campanha_id: id }, data: { campanha_id: null } });
+      await tx.rodadaMetodologica.updateMany({ where: { campanha_id: id }, data: { campanha_id: null } });
+      await tx.campanha.delete({ where: { id } });
+    });
+
     await recordAuditLog({
       admin: auth,
       acao: 'CAMPANHA_EXCLUIDA',
       entidade: 'Campanha',
       entidadeId: id,
-      detalhes: { nome: campanha.nome, slug: campanha.slug },
+      detalhes: {
+        nome: campanha.nome,
+        slug: campanha.slug,
+        total_votos: campanha.total_votos,
+        politicos_excluidos: campanha._count.candidatos,
+        atributos_removidos: campanha._count.atributos,
+        manifestacoes_politicos_excluidas: manifestacoesPoliticos,
+        avaliacoes_politicos_excluidas: avaliacoesPoliticos,
+        orgaos_desvinculados: campanha._count.orgaos,
+        servicos_desvinculados: campanha._count.servicos,
+        rodadas_desvinculadas: campanha._count.rodadas,
+      },
     });
 
     return NextResponse.json({ success: true });
@@ -163,7 +223,7 @@ export async function DELETE(req: NextRequest) {
 
 // PATCH update a campanha
 export async function PATCH(req: NextRequest) {
-  const auth = await getAdminIdentity(req);
+  const auth = await getAdminIdentityWithRole(req, ['admin', 'editor']);
   if ('error' in auth) return auth.error;
 
   try {

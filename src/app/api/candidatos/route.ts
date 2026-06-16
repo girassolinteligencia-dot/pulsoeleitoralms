@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { buildPublicCandidateWhere, getPublicScopeConfig } from '@/lib/publicScope';
-import { getFotoUrl } from '@/lib/supabase';
+import { getFotoUrl } from '@/lib/fotoUrl';
 import { buildSearchOR } from '@/lib/normalize-search';
 
 export async function GET(req: NextRequest) {

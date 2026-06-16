@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getAdminIdentity, requireAdmin } from '@/lib/adminAuth';
+import { getAdminIdentityWithRole, requireAdmin } from '@/lib/adminAuth';
 import { recordAuditLog } from '@/lib/auditLog';
-import { getFotoUrl } from '@/lib/supabase';
+import { getFotoUrl } from '@/lib/fotoUrl';
 import { buildSearchOR } from '@/lib/normalize-search';
 
 export async function GET(req: NextRequest) {
@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const auth = await getAdminIdentity(req);
+  const auth = await getAdminIdentityWithRole(req, ['admin', 'editor']);
   if ('error' in auth) return auth.error;
 
   try {
@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  const auth = await getAdminIdentity(req);
+  const auth = await getAdminIdentityWithRole(req, ['admin', 'editor']);
   if ('error' in auth) return auth.error;
 
   try {
@@ -124,7 +124,7 @@ export async function PATCH(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const auth = await getAdminIdentity(req);
+  const auth = await getAdminIdentityWithRole(req, ['admin', 'editor']);
   if ('error' in auth) return auth.error;
 
   const { searchParams } = new URL(req.url);

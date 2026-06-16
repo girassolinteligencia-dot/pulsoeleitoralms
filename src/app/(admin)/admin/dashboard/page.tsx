@@ -97,7 +97,7 @@ function BarChart({ data }: { data: AtividadeDia[] }) {
         const isToday = d.dia === todayKey;
         return (
           <div key={i} className="flex-1 flex flex-col items-center gap-1.5 group">
-            <span className="text-[8px] text-text-muted opacity-0 group-hover:opacity-60 transition-opacity font-mono">
+            <span className={`text-[8px] font-mono transition-colors ${isToday ? 'text-primary' : 'text-text-muted opacity-60 group-hover:opacity-90'}`}>
               {d.total}
             </span>
             <div className="w-full flex items-end" style={{ height: '72px' }}>

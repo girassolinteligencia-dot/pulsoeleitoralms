@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
-import { getAdminIdentity } from '@/lib/adminAuth';
+import { getAdminIdentity, getAdminIdentityWithRole } from '@/lib/adminAuth';
 import { recordAuditLog } from '@/lib/auditLog';
 
 const DEFAULT_LIMIT = 50;
@@ -94,7 +94,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  const auth = await getAdminIdentity(req);
+  const auth = await getAdminIdentityWithRole(req, ['admin', 'editor']);
   if ('error' in auth) return auth.error;
 
   try {

@@ -940,8 +940,8 @@ Status em 2026-05-19:
 
 - Deploy de producao concluido na Vercel.
 - URL publica: `https://pulsoms.ia.br`
-- URL Vercel: `https://pulsomsia.vercel.app`
-- Projeto/time: `paulocardoso-labs-projects/pulsoms-ia`
+- URL Vercel: `https://pulsomsia-girassolinteligencia-8661s-projects.vercel.app`
+- Projeto/time: `girassolinteligencia-8661s-projects/pulsoms_ia`
 - Deployment ID validado: `dpl_...`
 - Smoke publico de producao aprovado com `npm run smoke`.
 - Smoke de seguranca anonimo aprovado com `npm run smoke:security`.
@@ -2065,3 +2065,77 @@ npx vercel deploy --prod
 - **DATABASE_URL na Vercel deve ser sempre o pooler (porta 6543).** Porta 5432 direta e bloqueada e causa erro `Can't reach database server`.
 - Fotos de candidatos (473 MB) nao estao na Vercel (ignoradas por `.vercelignore`); servidas via Supabase Storage bucket `candidatos`. Upload pendente: `npm run upload-assets` (requer `SUPABASE_SERVICE_ROLE_KEY`).
 - Smokes admin (`npm run smoke:admin`) requerem `ADMIN_SMOKE_TOKEN` com access token Supabase de usuario listado em `ADMIN_EMAILS`.
+
+## Atualizacao de producao - 2026-06-13
+
+Escopo publicado:
+
+- Padronizacao da conta unica do projeto para `girassolinteligencia@gmail.com`.
+- Correcao do fluxo mobile "Usar minha localizacao" para busca territorial por CEP.
+- Nova rota server-side `/api/geolocalizacao/cep`, usando latitude/longitude do navegador e a base `ceps_ms`.
+- Centralizacao dos helpers de resposta de CEP em `src/lib/cepMs.ts`.
+- Separacao de `getFotoUrl` em helper leve, evitando instanciacao desnecessaria do Supabase Client em rotas server-side.
+- Resolucao de URLs de fotos nos destaques publicos.
+
+Validacoes locais antes do deploy:
+
+```bash
+npm run lint   # passou; 21 warnings existentes
+npm run build  # passou
+```
+
+Deploy:
+
+- Publicado em producao na Vercel.
+- Deployment ID: `dpl_A6PWuEYFtyyq9QNTczqJtXAdDxCf`
+- URL Vercel: `https://pulsoms-fk6s0ifxg-girassolinteligencia-8661s-projects.vercel.app`
+- Alias atualizado: `https://pulsoms.ia.br`
+
+Validacoes em producao:
+
+- `/` -> 200
+- `/avaliar` -> 200
+- `/api/health` -> 200
+- `/api/cep/79002000` -> 200
+- `/api/public/destaques` -> 200, com `foto_url` resolvida para Supabase Storage
+- `/api/geolocalizacao/cep?lat=-20.4697&lon=-54.6201` -> 200, retornando `Campo Grande`, `VILA CARVALHO`, CEP `79005050`
+- `/api/admin/stats` sem token -> 401
+
+## Hotfix mobile/geolocalizacao - 2026-06-13
+
+Problema observado em celular:
+
+- O navegador exibia "Permissao de localizacao negada", mas nao abria prompt de permissao.
+- Causa confirmada: o header global `Permissions-Policy` estava com `geolocation=()`, bloqueando a API de geolocalizacao antes do prompt do navegador.
+
+Correcoes:
+
+- `Permissions-Policy` alterado para `geolocation=(self)`, mantendo `camera`, `microphone` e `payment` bloqueados.
+- Mensagem de erro de geolocalizacao ajustada para diferenciar bloqueio por policy de negacao real.
+- Ajustes mobile-first no fluxo `/avaliar`:
+  - `100dvh` com fallback `100svh`;
+  - inputs com fonte minima de 16px em mobile para evitar zoom automatico do iOS;
+  - acoes principais em rodape sticky nos passos iniciais;
+  - reducao de paddings/gaps em telas pequenas;
+  - cards de destaques mais compactos e imagens mais legiveis no mobile.
+
+Validacoes:
+
+```bash
+npm run lint   # passou; 21 warnings existentes
+npm run build  # passou
+```
+
+Deploy:
+
+- Deployment ID: `dpl_Ch97hx2opNRJPviPMtRbp2MEPRfk`
+- URL Vercel: `https://pulsoms-lsh1tqlbg-girassolinteligencia-8661s-projects.vercel.app`
+- Alias atualizado: `https://pulsoms.ia.br`
+
+Validacoes em producao:
+
+- `/avaliar` -> 200
+- Header `Permissions-Policy` -> `camera=(), microphone=(), geolocation=(self), payment=()`
+- `/api/geolocalizacao/cep?lat=-20.4697&lon=-54.6201` -> 200, retornando CEP `79005050`
+- `/api/health` -> 200
+- `/api/admin/stats` sem token -> 401

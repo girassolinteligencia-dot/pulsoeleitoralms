@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getAdminIdentity, requireAdmin } from '@/lib/adminAuth';
+import { getAdminIdentityWithRole, requireAdminRole } from '@/lib/adminAuth';
 import { recordAuditLog } from '@/lib/auditLog';
 import { randomBytes } from 'crypto';
 import { hashApiToken, maskApiToken } from '@/lib/apiTokens';
@@ -10,7 +10,7 @@ function readTokenValue(value: unknown) {
 }
 
 export async function GET(req: NextRequest) {
-  const authError = await requireAdmin(req);
+  const authError = await requireAdminRole(req, ['admin']);
   if (authError) return authError;
 
   try {
@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const auth = await getAdminIdentity(req);
+  const auth = await getAdminIdentityWithRole(req, ['admin']);
   if ('error' in auth) return auth.error;
 
   try {
@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  const auth = await getAdminIdentity(req);
+  const auth = await getAdminIdentityWithRole(req, ['admin']);
   if ('error' in auth) return auth.error;
 
   try {
@@ -132,7 +132,7 @@ export async function PATCH(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const auth = await getAdminIdentity(req);
+  const auth = await getAdminIdentityWithRole(req, ['admin']);
   if ('error' in auth) return auth.error;
 
   try {

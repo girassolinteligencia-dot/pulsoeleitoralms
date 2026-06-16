@@ -223,6 +223,21 @@ model AuditLog {
   @@map("audit_logs")
 }
 
+model AdminUser {
+  id              String    @id @default(cuid())
+  email           String    @unique
+  nome            String?
+  role            String    @default("viewer") // admin, editor, viewer
+  ativo           Boolean   @default(true)
+  ultimo_login_em DateTime?
+  criado_em       DateTime  @default(now())
+  atualizado_em   DateTime  @updatedAt
+
+  @@index([ativo])
+  @@index([role])
+  @@map("admin_users")
+}
+
 model ParametroPlataforma {
   id          String   @id @default(cuid())
   chave       String   @unique

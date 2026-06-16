@@ -41,7 +41,7 @@ export const Etapa3: React.FC<Etapa3Props> = ({ userData, setUserData, onNext, o
 
   return (
     <motion.div 
-      className="relative z-10 w-full h-full flex flex-col items-center px-6 gap-8 overflow-y-auto pt-24 pb-safe no-scrollbar"
+      className="relative z-10 w-full h-full flex flex-col items-center px-4 sm:px-6 gap-5 sm:gap-8 overflow-y-auto mobile-step sm:pt-24 sm:pb-safe no-scrollbar"
       initial={{ opacity: 0, scale: 1.1 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9 }}
@@ -56,7 +56,7 @@ export const Etapa3: React.FC<Etapa3Props> = ({ userData, setUserData, onNext, o
         </p>
       </div>
 
-      <div className="w-full max-w-sm flex flex-col gap-8">
+      <div className="w-full max-w-sm flex flex-col gap-5 sm:gap-8">
         {!isManualPending && (
           <div className="rounded-2xl border border-[#3d3128] bg-[#1c1814]/55 px-4 py-3">
             <p className="text-[11px] uppercase tracking-[0.22em] text-[#8d8177] font-bold">
@@ -84,7 +84,7 @@ export const Etapa3: React.FC<Etapa3Props> = ({ userData, setUserData, onNext, o
               })}
               list="cidades-ms"
               title="Informe sua cidade"
-              className="w-full bg-[#1c1814]/80 border border-[#3d3128] rounded-2xl px-6 py-5 text-sm focus:outline-none focus:border-[#d97757] transition-all text-[#f5f0e8] placeholder:text-[#7a6e64]/50"
+              className="w-full bg-[#1c1814]/80 border border-[#3d3128] rounded-2xl px-5 sm:px-6 py-4 sm:py-5 text-base sm:text-sm focus:outline-none focus:border-[#d97757] transition-all text-[#f5f0e8] placeholder:text-[#7a6e64]/50"
               placeholder="Digite sua cidade"
             />
             <datalist id="cidades-ms">
@@ -158,17 +158,17 @@ export const Etapa3: React.FC<Etapa3Props> = ({ userData, setUserData, onNext, o
               precisaConfirmarBairro: false,
               bairrosPossiveis: [],
             })}
-            className="w-full bg-[#1c1814]/80 border border-[#3d3128] rounded-2xl px-6 py-5 text-sm focus:outline-none focus:border-[#d97757] transition-all placeholder:text-[#7a6e64]/50 text-[#f5f0e8]"
+            className="w-full bg-[#1c1814]/80 border border-[#3d3128] rounded-2xl px-5 sm:px-6 py-4 sm:py-5 text-base sm:text-sm focus:outline-none focus:border-[#d97757] transition-all placeholder:text-[#7a6e64]/50 text-[#f5f0e8]"
             placeholder="Digite seu bairro"
           />
         </div>
       </div>
 
-      <div className="mt-auto pb-8 flex flex-col items-center gap-4 w-full">
+      <div className="mobile-action-bar sm:static sm:mt-auto sm:pb-8 flex flex-col items-center gap-4 w-full">
         <button 
           onClick={() => onNext()}
           disabled={!isComplete}
-          className={`w-full max-w-[300px] px-14 py-5 rounded-full font-bold text-[10px] uppercase tracking-[0.4em] transition-all duration-700 ${
+          className={`w-full max-w-[300px] px-8 sm:px-14 py-4 sm:py-5 rounded-full font-bold text-[10px] uppercase tracking-[0.28em] sm:tracking-[0.4em] transition-all duration-700 ${
             isComplete
               ? 'bg-[#d97757] text-[#f5f0e8] shadow-[0_0_50px_rgba(217,119,87,0.4)] scale-100 opacity-100' 
               : 'bg-[#1c1814] text-[#7a6e64] opacity-20 scale-95 cursor-not-allowed border border-[#3d3128]'

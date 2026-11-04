@@ -7,9 +7,9 @@ Use este checklist antes de considerar a plataforma pronta para operação cont�
 - `NEXT_PUBLIC_SUPABASE_URL` configurado.
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` configurada com anon/publishable key válida.
 - `DATABASE_URL` configurada com pooler Supabase.
-- `DIRECT_URL` configurada quando necessário.
+- `DIRECT_URL` configurada para conexão de migration funcional; em manutenção local pode usar o session pooler Supabase na porta `5432`.
 - `NEXT_PUBLIC_APP_URL` configurada para o domínio real.
-- `ADMIN_EMAILS` contém somente e-mails autorizados.
+- `ADMIN_EMAILS` contém somente e-mails de bootstrap/fallback autorizados.
 - `EVALUATION_SESSION_SECRET` definido com segredo forte.
 - `ENCRYPTION_KEY` definido com segredo forte.
 - `ADMIN_SMOKE_TOKEN` não fica salvo em produção; use apenas em smoke temporário.
@@ -19,6 +19,8 @@ Use este checklist antes de considerar a plataforma pronta para operação cont�
 ## Supabase Auth
 
 - Usuários admin criados em **Authentication > Users**.
+- Usuários administrativos ativos em `/admin/usuarios`.
+- Pelo menos um usuário com role `admin` ativo.
 - Senhas definidas ou login magic link configurado.
 - Redirect URLs incluem:
   - domínio de produção `/admin/dashboard`;
@@ -37,12 +39,17 @@ npm run db:preflight
 Critérios:
 
 - Todas as migrações aplicadas.
+- Migration `20260616090000_add_admin_users` registrada em `_prisma_migrations`.
+- Tabela `admin_users` criada e com admin inicial ativo.
 - RLS habilitado nas 11 tabelas esperadas.
 - Tabelas sensíveis restritas:
   - `manifestacoes`
   - `avaliacoes`
   - `bloqueios`
   - `audit_logs`
+  - `admin_users`
+
+Pendência conhecida em 2026-06-16: a Supabase CLI alertou RLS desabilitado em `admin_users`, `_prisma_migrations`, `orgaos_publicos` e `servicos_publicos`. Não habilite RLS sem policies adequadas, pois isso pode bloquear a aplicação. Tratar em sprint de hardening.
 
 ## Validação Técnica
 
@@ -131,6 +138,8 @@ npm run profile:retention:apply
 - Confirmar candidatos ativos em `/api/candidatos`.
 - Confirmar configurações públicas em `/api/configuracoes/public`.
 - Acessar painel admin.
+- Acessar `/admin/usuarios` com role `admin`.
+- Criar usuário administrativo de teste e desativá-lo após validação.
 - Abrir:
   - Dashboard;
   - Metodologia;
@@ -138,6 +147,7 @@ npm run profile:retention:apply
   - Auditoria;
   - Moderação;
   - Segurança.
+  - Usuários.
 
 ## Pós-deploy
 

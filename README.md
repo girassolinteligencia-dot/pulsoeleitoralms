@@ -71,6 +71,14 @@ O painel admin fica em:
 
 O login principal usa Supabase Auth com e-mail e senha. Magic link permanece disponível como alternativa.
 
+O acesso administrativo é controlado pela tabela `admin_users`:
+
+- `admin`: gerencia usuários, tokens, configurações sensíveis e exclusões destrutivas;
+- `editor`: edita conteúdo operacional;
+- `viewer`: acesso de leitura ao painel.
+
+`ADMIN_EMAILS` permanece como bootstrap/fallback para criar o primeiro administrador autorizado.
+
 Guia: [docs/acesso-admin.md](docs/acesso-admin.md)
 
 ## Metodologia
@@ -111,6 +119,12 @@ Healthcheck público e seguro:
 ```
 
 Ele valida conexão com banco, campanhas ativas e candidatos disponíveis no escopo público sem expor credenciais ou dados sensíveis.
+
+Produção atual:
+
+```text
+https://pulsoms.ia.br
+```
 
 ## Validação
 

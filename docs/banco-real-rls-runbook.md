@@ -14,6 +14,7 @@ Este runbook descreve a aplicação controlada das migrações e políticas RLS 
 
 - Backup/snapshot recente do projeto Supabase.
 - `DATABASE_URL` apontando para o banco correto.
+- `DIRECT_URL` apontando para uma conexão de migration funcional.
 - Janela de manutenção definida.
 - Confirmação de que a aplicação usa as APIs Next para leitura/escrita de `manifestacoes` e `avaliacoes`.
 
@@ -36,6 +37,35 @@ npx prisma migrate resolve --applied 20260519000000_initial_baseline
 
 ```bash
 npm run db:deploy
+```
+
+### Observação Supabase IPv6 / pooler
+
+Em 2026-06-16, a conexão direta local `db.bbqgskzvguqqejmotbpz.supabase.co:5432` falhou por limitação de IPv6/rede. O caminho que funcionou para SQL de manutenção foi o session pooler:
+
+```text
+aws-1-sa-east-1.pooler.supabase.com:5432
+```
+
+O transaction pooler na porta `6543` pode falhar em ferramentas que usam prepared statements persistentes. Para migrations manuais, prefira a porta `5432` do pooler quando a URL direta não estiver acessível.
+
+### Migration admin_users aplicada manualmente
+
+A migration `20260616090000_add_admin_users` foi aplicada manualmente em produção em 2026-06-16 porque o Prisma engine não conseguiu alcançar a URL direta Supabase a partir do ambiente local.
+
+Itens aplicados:
+
+- tabela `admin_users`;
+- índices `admin_users_email_key`, `admin_users_ativo_idx`, `admin_users_role_idx`;
+- seed `girassolinteligencia@gmail.com` com role `admin`;
+- registro da migration em `_prisma_migrations`.
+
+Antes de reexecutar migrations, confirme:
+
+```sql
+SELECT migration_name, applied_steps_count
+FROM _prisma_migrations
+WHERE migration_name = '20260616090000_add_admin_users';
 ```
 
 4. Aplicar RLS:
@@ -73,8 +103,27 @@ Tabelas restritas:
 - `avaliacoes`
 - `bloqueios`
 - `audit_logs`
+- `admin_users`
 
 Essas tabelas devem ser acessadas por rotas server-side da aplicação, não diretamente pelo cliente público.
+
+## Pendência RLS conhecida
+
+A Supabase CLI reportou RLS desabilitado nas tabelas:
+
+- `public._prisma_migrations`
+- `public.admin_users`
+- `public.orgaos_publicos`
+- `public.servicos_publicos`
+
+Não aplique apenas `ALTER TABLE ... ENABLE ROW LEVEL SECURITY` sem policies revisadas, pois isso pode bloquear fluxos existentes. SQL sugerido pela Supabase para habilitação, a ser executado somente após definição das policies:
+
+```sql
+ALTER TABLE public._prisma_migrations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.admin_users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.orgaos_publicos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.servicos_publicos ENABLE ROW LEVEL SECURITY;
+```
 
 ## Critérios de Aceite
 

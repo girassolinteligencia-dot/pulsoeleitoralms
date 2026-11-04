@@ -4,6 +4,41 @@ Data da auditoria: 2026-05-18
 Workspace: `C:\.PULSOELEITORAL`  
 Escopo: estrutura, stack, build, lint, dependencias, seguranca, banco, APIs, fluxo publico, admin, CI e prontidao para finalizar no VS Code.
 
+## Atualizacao operacional - 2026-06-16 - Usuários administrativos e deploy
+
+Correcoes e evolucoes executadas:
+
+- Criado modelo Prisma `AdminUser` e migration `20260616090000_add_admin_users`.
+- Criada tela `/admin/usuarios` para gestão de usuários administrativos.
+- Criadas APIs protegidas `/api/admin/me` e `/api/admin/users`.
+- Autorização administrativa passou a usar roles `admin`, `editor` e `viewer`.
+- `ADMIN_EMAILS` passou a funcionar como bootstrap/fallback do primeiro administrador.
+- A exclusão de ciclos foi restrita a usuários `admin` e passou a exigir confirmação explícita com consequências.
+- Rotas administrativas sensíveis foram segmentadas por role:
+  - `admin`: usuários, tokens, configurações sensíveis, identidade visual, bloqueios e exclusões destrutivas;
+  - `editor`: edição operacional;
+  - `viewer`: leitura.
+- Deploy de produção publicado em `https://pulsoms.ia.br`.
+
+Banco de produção:
+
+- Tabela `admin_users`, índices e seed inicial foram aplicados manualmente em 2026-06-16.
+- Admin inicial: `girassolinteligencia@gmail.com`.
+- Migration `20260616090000_add_admin_users` registrada em `_prisma_migrations`.
+- A aplicação foi validada em produção com `/api/health`, `/admin/login`, `/admin/usuarios` e `/api/admin/users` sem token retornando `401`.
+
+Deploy validado:
+
+- Commit: `2e359504`
+- Deployment Vercel: `dpl_Bn17by54SPki6WjSY2Nmo3Px6bfT`
+- Alias: `https://pulsoms.ia.br`
+
+Pendência crítica de hardening:
+
+- A Supabase CLI reportou RLS desabilitado em `public._prisma_migrations`, `public.admin_users`, `public.orgaos_publicos` e `public.servicos_publicos`.
+- Não foi aplicado RLS automaticamente porque habilitar sem policies pode bloquear a aplicação.
+- Próxima rodada recomendada: criar policies específicas para `admin_users`, `orgaos_publicos` e `servicos_publicos`, validar via smoke e só então habilitar RLS.
+
 ## Atualizacao de execucao - 2026-05-18
 
 Correcoes executadas nesta rodada:

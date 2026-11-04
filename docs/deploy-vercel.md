@@ -2,14 +2,15 @@
 
 ## Estado Atual
 
-O repositorio local foi limpo de vinculos antigos de Vercel. Antes do deploy final, vincule este checkout ao projeto Vercel correto do PulsoMS e configure o dominio definitivo.
+O repositorio está vinculado ao projeto Vercel de produção do PulsoMS.
 
-Depois do link, registre aqui:
+Estado validado em 2026-06-16:
 
 - Producao: `https://pulsoms.ia.br`
-- URL Vercel: `https://pulsomsia-girassolinteligencia-8661s-projects.vercel.app`
+- URL Vercel validada: `https://pulsoms-qk5l2uxng-girassolinteligencia-8661s-projects.vercel.app`
 - Projeto/time: `girassolinteligencia-8661s-projects/pulsoms_ia`
-- Deployment ID validado: `dpl_...`
+- Deployment ID validado: `dpl_Bn17by54SPki6WjSY2Nmo3Px6bfT`
+- Commit validado: `2e359504`
 
 Para deixar o repositorio explicitamente linkado, rode:
 
@@ -17,7 +18,7 @@ Para deixar o repositorio explicitamente linkado, rode:
 npx vercel link
 ```
 
-Selecione o time Vercel correto do projeto PulsoMS e o projeto `pulsoms-ia`.
+Selecione o time Vercel correto do projeto PulsoMS e o projeto `pulsoms_ia`.
 
 Se aparecer:
 
@@ -99,6 +100,12 @@ AUDIT_LOG_RETENTION_DAYS=365
 
 Não configure `ADMIN_SMOKE_TOKEN` como variável permanente de produção.
 
+Notas sobre banco Supabase:
+
+- `DATABASE_URL` deve apontar para o pooler Supabase usado pela aplicação.
+- `DIRECT_URL` deve apontar para uma conexão de migration funcional. Se a URL direta `db.<project-ref>.supabase.co:5432` falhar por IPv6 no ambiente local, use o session pooler `aws-1-sa-east-1.pooler.supabase.com:5432`.
+- A migration `20260616090000_add_admin_users` foi aplicada manualmente em produção e registrada em `_prisma_migrations` em 2026-06-16.
+
 Confirme que o projeto possui estas variaveis configuradas na Vercel:
 
 - `DATABASE_URL`
@@ -129,6 +136,8 @@ npm audit --omit=dev
 npm run smoke
 npm run smoke:security
 ```
+
+Se `prisma migrate deploy` falhar por conectividade IPv6 com Supabase, confirme `DIRECT_URL` e use o runbook [banco-real-rls-runbook.md](banco-real-rls-runbook.md).
 
 ## Pós-deploy
 

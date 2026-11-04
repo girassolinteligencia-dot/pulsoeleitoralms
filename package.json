@@ -28,7 +28,14 @@
     "import-data": "ts-node scripts/import_candidatos.ts",
     "vincular-atributos": "ts-node scripts/vincular_atributos.ts",
     "upload-assets": "ts-node scripts/upload_assets.ts",
-    "push": "powershell ./scripts/sync.ps1"
+    "push": "powershell ./scripts/sync.ps1",
+    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate:local": "wrangler d1 migrations apply pulso-db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply pulso-db --remote",
+    "backup:supabase": "node scripts/export-supabase.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
@@ -39,6 +46,7 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "dotenv": "^17.4.2",
+    "drizzle-orm": "^0.45.4",
     "framer-motion": "^12.38.0",
     "gsap": "^3.15.0",
     "lucide-react": "^1.11.0",
@@ -50,16 +58,20 @@
     "recharts": "^3.8.1",
     "resend": "^6.12.4",
     "tailwind-merge": "^3.5.0",
-    "tailwindcss": "^3.4.19"
+    "tailwindcss": "^3.4.19",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@opennextjs/cloudflare": "^1.20.16",
     "@types/node": "^20.19.39",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "drizzle-kit": "^0.31.11",
     "eslint": "^9",
-    "eslint-config-next": "^16.2.6",
+    "eslint-config-next": "^16.4.5",
     "ts-node": "^10.9.2",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wrangler": "^4.157.0"
   },
   "overrides": {
     "postcss": "^8.5.12"

@@ -1,0 +1,34 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "pulso-eleitoral",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-11-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS",
+  },
+  "services": [
+    { "binding": "WORKER_SELF_REFERENCE", "service": "pulso-eleitoral" },
+  ],
+  "routes": [
+    { "pattern": "pulsoms.ia.br", "custom_domain": true },
+    { "pattern": "www.pulsoms.ia.br", "custom_domain": true },
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "pulso-db",
+      "database_id": "a10eace2-40a9-4850-8490-b9b9bebd164e",
+      "migrations_dir": "drizzle/migrations",
+    },
+  ],
+  "r2_buckets": [{ "binding": "FOTOS", "bucket_name": "pulso-fotos" }],
+  "kv_namespaces": [
+    { "binding": "KV", "id": "fef8e33fb2b147449bbf5402b08ebe8f" },
+  ],
+  "observability": { "enabled": true },
+  "vars": {
+    "NEXT_PUBLIC_APP_URL": "https://pulsoms.ia.br",
+  },
+}

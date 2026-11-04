@@ -1,0 +1,10 @@
+# Copie para .dev.vars (não versionado) para rodar `npm run preview` localmente.
+NEXT_PUBLIC_APP_URL=http://localhost:8787
+EVALUATION_SESSION_SECRET=
+ENCRYPTION_KEY=
+JWT_SECRET=
+ADMIN_EMAILS=
+CF_ACCESS_TEAM_DOMAIN=
+CF_ACCESS_AUD=
+TURNSTILE_SECRET_KEY=
+RESEND_API_KEY=

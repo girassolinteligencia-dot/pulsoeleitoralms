@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { getDb } from '@/server/db/client';
+import { buscarCep, salvarCepBrasilApi } from '@/server/repos/ceps';
 import { buildCepResponse, isCepMs, normalizeCep } from '@/lib/cepMs';
 
 type SegmentData = {
@@ -27,11 +28,8 @@ export async function GET(_req: Request, segmentData: SegmentData) {
     return NextResponse.json({ error: 'A plataforma aceita apenas CEPs de Mato Grosso do Sul.' }, { status: 400 });
   }
 
-  const cached = await prisma.cepMs.findUnique({
-    where: {
-      cep: normalizedCep,
-    },
-  });
+  const db = getDb();
+  const cached = await buscarCep(db, normalizedCep);
 
   if (cached) {
     return NextResponse.json(
@@ -70,40 +68,7 @@ export async function GET(_req: Request, segmentData: SegmentData) {
       return NextResponse.json({ error: 'CEP localizado fora de Mato Grosso do Sul.' }, { status: 400 });
     }
 
-    const saved = await prisma.cepMs.upsert({
-      where: {
-        cep: normalizedCep,
-      },
-      create: {
-        cep: normalizedCep,
-        uf: data.state,
-        cidade: data.city || '',
-        bairro: data.neighborhood || null,
-        logradouro: data.street || null,
-        origem: 'brasilapi',
-        localidades: data.neighborhood
-          ? [{ bairro: data.neighborhood, registros: 1, proporcao: 1 }]
-          : [],
-        bairro_confianca: data.neighborhood ? 1 : null,
-        total_registros: data.neighborhood ? 1 : 0,
-        localidades_count: data.neighborhood ? 1 : 0,
-        logradouros_count: data.street ? 1 : 0,
-      },
-      update: {
-        uf: data.state,
-        cidade: data.city || '',
-        bairro: data.neighborhood || null,
-        logradouro: data.street || null,
-        origem: 'brasilapi',
-        localidades: data.neighborhood
-          ? [{ bairro: data.neighborhood, registros: 1, proporcao: 1 }]
-          : [],
-        bairro_confianca: data.neighborhood ? 1 : null,
-        total_registros: data.neighborhood ? 1 : 0,
-        localidades_count: data.neighborhood ? 1 : 0,
-        logradouros_count: data.street ? 1 : 0,
-      },
-    });
+    const saved = await salvarCepBrasilApi(db, normalizedCep, { ...data, state: data.state });
 
     return NextResponse.json(
       buildCepResponse(saved, 'miss'),

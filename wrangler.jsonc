@@ -27,6 +27,24 @@
   "kv_namespaces": [
     { "binding": "KV", "id": "fef8e33fb2b147449bbf5402b08ebe8f" },
   ],
+  // Rate limit global (período: 10 ou 60 s). namespace_id é único por conta.
+  "ratelimits": [
+    {
+      "name": "RL_SESSAO",
+      "namespace_id": "71001",
+      "simple": { "limit": 20, "period": 60 },
+    },
+    {
+      "name": "RL_ENVIO",
+      "namespace_id": "71002",
+      "simple": { "limit": 10, "period": 60 },
+    },
+    {
+      "name": "RL_PUBLICO",
+      "namespace_id": "71003",
+      "simple": { "limit": 120, "period": 60 },
+    },
+  ],
   "observability": { "enabled": true },
   "vars": {
     "NEXT_PUBLIC_APP_URL": "https://pulsoms.ia.br",

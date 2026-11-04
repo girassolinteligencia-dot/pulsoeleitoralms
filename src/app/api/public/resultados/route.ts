@@ -1,15 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { and, eq, like } from 'drizzle-orm';
+import { getDb, type DB } from '@/server/db/client';
+import { parametrosPlataforma } from '@/server/db/schema';
+import { dadosApiPublica, idsAtributosPorNome, type CategoriaFiltro } from '@/server/repos/resultados';
+import { getFotoUrl } from '@/lib/fotoUrl';
 import { verifyApiTokenHash } from '@/lib/apiTokens';
 
-type CategoriaFiltro = 'todos' | 'politico' | 'orgao_publico' | 'servico_publico';
-
-function buildCategoriaWhere(categoria: CategoriaFiltro, base: Record<string, unknown>) {
-  if (categoria === 'politico') return { ...base, candidato_id: { not: null } };
-  if (categoria === 'orgao_publico') return { ...base, orgao_id: { not: null } };
-  if (categoria === 'servico_publico') return { ...base, servico_id: { not: null } };
-  return base;
-}
+const CATEGORIAS: CategoriaFiltro[] = ['todos', 'politico', 'orgao_publico', 'servico_publico'];
 
 function getAllowedOrigins() {
   return new Set(
@@ -51,10 +48,11 @@ function parseBoundedInt(value: string | null, fallback: number, min: number, ma
   return Math.min(Math.max(parsed, min), max);
 }
 
-async function validateToken(token: string): Promise<boolean> {
-  const allTokens = await prisma.parametroPlataforma.findMany({
-    where: { chave: { startsWith: 'api_token_' }, grupo: 'api_tokens' },
-  });
+async function validateToken(db: DB, token: string): Promise<boolean> {
+  const allTokens = await db
+    .select({ valor: parametrosPlataforma.valor })
+    .from(parametrosPlataforma)
+    .where(and(like(parametrosPlataforma.chave, 'api_token_%'), eq(parametrosPlataforma.grupo, 'api_tokens')));
 
   return allTokens.some(p => {
     const v = p.valor as Record<string, unknown>;
@@ -75,13 +73,15 @@ export async function GET(req: NextRequest) {
     return jsonWithCors(req, { error: 'Token obrigatório no header x-api-token' }, { status: 401 });
   }
 
-  const valid = await validateToken(token);
+  const db = getDb();
+  const valid = await validateToken(db, token);
   if (!valid) {
     return jsonWithCors(req, { error: 'Token inválido ou revogado' }, { status: 403 });
   }
 
   // Parâmetros de filtro
-  const categoria = (searchParams.get('categoria') || 'todos') as CategoriaFiltro;
+  const categoriaParam = searchParams.get('categoria') || 'todos';
+  const categoria = (CATEGORIAS as string[]).includes(categoriaParam) ? (categoriaParam as CategoriaFiltro) : 'todos';
   const dias = parseBoundedInt(searchParams.get('dias'), 30, 1, 365);
   // atributos: lista separada por vírgula, ou "todos"
   const atributosParam = searchParams.get('atributos') || 'todos';
@@ -90,164 +90,43 @@ export async function GET(req: NextRequest) {
 
   const desde = new Date();
   desde.setDate(desde.getDate() - dias);
-  const baseWhere = { criado_em: { gte: desde }, is_valid: true };
-  const avaliacaoWhere = buildCategoriaWhere(categoria, baseWhere);
-
-  // Adiciona filtro de atributos se selecionado
+  // Filtro de atributos por nome
   let atributoIds: string[] | null = null;
   if (atributosFiltro) {
-    const atributosEncontrados = await prisma.atributo.findMany({
-      where: { nome: { in: atributosFiltro }, visivel: true },
-      select: { id: true, nome: true },
-    });
-    atributoIds = atributosEncontrados.map(a => a.id);
+    atributoIds = await idsAtributosPorNome(db, atributosFiltro);
     if (atributoIds.length === 0) {
       return jsonWithCors(req, { error: 'Nenhum atributo válido encontrado' }, { status: 400 });
     }
   }
 
-  const avaliacaoWhereComAtrib = atributoIds
-    ? { ...avaliacaoWhere, atributo_id: { in: atributoIds } }
-    : avaliacaoWhere;
-
-  // 1. Ranking de entidades
-  const [rankingCandRaw, rankingOrgRaw, rankingSvcRaw] = await Promise.all([
-    categoria === 'todos' || categoria === 'politico'
-      ? prisma.avaliacao.groupBy({
-          by: ['candidato_id'],
-          _sum: { valor: true },
-          _count: { _all: true },
-          where: { ...avaliacaoWhereComAtrib, candidato_id: { not: null } },
-          orderBy: { _count: { candidato_id: 'desc' } },
-          take: limite,
-        })
-      : Promise.resolve([]),
-    categoria === 'todos' || categoria === 'orgao_publico'
-      ? prisma.avaliacao.groupBy({
-          by: ['orgao_id'],
-          _sum: { valor: true },
-          _count: { _all: true },
-          where: { ...avaliacaoWhereComAtrib, orgao_id: { not: null } },
-          orderBy: { _count: { orgao_id: 'desc' } },
-          take: limite,
-        })
-      : Promise.resolve([]),
-    categoria === 'todos' || categoria === 'servico_publico'
-      ? prisma.avaliacao.groupBy({
-          by: ['servico_id'],
-          _sum: { valor: true },
-          _count: { _all: true },
-          where: { ...avaliacaoWhereComAtrib, servico_id: { not: null } },
-          orderBy: { _count: { servico_id: 'desc' } },
-          take: limite,
-        })
-      : Promise.resolve([]),
-  ]);
-
-  const [candidatos, orgaos, servicos] = await Promise.all([
-    rankingCandRaw.length > 0
-      ? prisma.candidato.findMany({
-          where: { id: { in: rankingCandRaw.map(r => r.candidato_id!).filter(Boolean) } },
-          select: { id: true, nome: true, cargo: true, partido: true, foto_url: true },
-        })
-      : Promise.resolve([]),
-    rankingOrgRaw.length > 0
-      ? prisma.orgaoPublico.findMany({
-          where: { id: { in: rankingOrgRaw.map(r => r.orgao_id!).filter(Boolean) } },
-          select: { id: true, nome: true, tipo: true, cidade: true, foto_url: true },
-        })
-      : Promise.resolve([]),
-    rankingSvcRaw.length > 0
-      ? prisma.servicoPublico.findMany({
-          where: { id: { in: rankingSvcRaw.map(r => r.servico_id!).filter(Boolean) } },
-          select: { id: true, nome: true, tipo: true, cidade: true, foto_url: true },
-        })
-      : Promise.resolve([]),
-  ]);
-
+  const d = await dadosApiPublica(db, { desde, categoria, atributoIds, limite });
+  const item = (
+    tipo: 'politico' | 'orgao_publico' | 'servico_publico',
+    r: { id: string | null; soma: number; total: number },
+    e: { nome: string; foto_url: string | null } | undefined,
+    subtipo: string,
+    complemento: string,
+  ) => ({
+    tipo,
+    id: r.id!,
+    nome: e?.nome ?? 'Desconhecido',
+    subtipo,
+    complemento,
+    foto_url: getFotoUrl(e?.foto_url),
+    total_avaliacoes: r.total,
+    score_liquido: Math.round(((r.soma ?? 0) / r.total) * 100),
+    score_bruto: r.soma ?? 0,
+  });
   const ranking = [
-    ...rankingCandRaw.map(r => {
-      const c = candidatos.find(x => x.id === r.candidato_id);
-      const score = r._sum.valor ?? 0;
-      return {
-        tipo: 'politico' as const,
-        id: r.candidato_id!,
-        nome: c?.nome ?? 'Desconhecido',
-        subtipo: c?.cargo ?? '',
-        complemento: c?.partido ?? '',
-        foto_url: c?.foto_url ?? null,
-        total_avaliacoes: r._count._all,
-        score_liquido: Math.round((score / r._count._all) * 100),
-        score_bruto: score,
-      };
-    }),
-    ...rankingOrgRaw.map(r => {
-      const o = orgaos.find(x => x.id === r.orgao_id);
-      const score = r._sum.valor ?? 0;
-      return {
-        tipo: 'orgao_publico' as const,
-        id: r.orgao_id!,
-        nome: o?.nome ?? 'Desconhecido',
-        subtipo: o?.tipo ?? '',
-        complemento: o?.cidade ?? '',
-        foto_url: o?.foto_url ?? null,
-        total_avaliacoes: r._count._all,
-        score_liquido: Math.round((score / r._count._all) * 100),
-        score_bruto: score,
-      };
-    }),
-    ...rankingSvcRaw.map(r => {
-      const s = servicos.find(x => x.id === r.servico_id);
-      const score = r._sum.valor ?? 0;
-      return {
-        tipo: 'servico_publico' as const,
-        id: r.servico_id!,
-        nome: s?.nome ?? 'Desconhecido',
-        subtipo: s?.tipo ?? '',
-        complemento: s?.cidade ?? '',
-        foto_url: s?.foto_url ?? null,
-        total_avaliacoes: r._count._all,
-        score_liquido: Math.round((score / r._count._all) * 100),
-        score_bruto: score,
-      };
-    }),
+    ...d.rankCand.map((r) => { const c = d.cands.find((x) => x.id === r.id); return item('politico', r, c, c?.cargo ?? '', c?.partido ?? ''); }),
+    ...d.rankOrg.map((r) => { const o = d.orgs.find((x) => x.id === r.id); return item('orgao_publico', r, o, o?.tipo ?? '', o?.cidade ?? ''); }),
+    ...d.rankSvc.map((r) => { const v = d.svcs.find((x) => x.id === r.id); return item('servico_publico', r, v, v?.tipo ?? '', v?.cidade ?? ''); }),
   ].sort((a, b) => b.score_liquido - a.score_liquido).slice(0, limite);
 
-  // 2. Top atributos
-  const temasRaw = await prisma.avaliacao.groupBy({
-    by: ['atributo_id'],
-    _count: { _all: true },
-    where: avaliacaoWhereComAtrib,
-    orderBy: { _count: { atributo_id: 'desc' } },
-    take: 10,
-  });
-
-  const atributosInfo = await prisma.atributo.findMany({
-    where: { id: { in: temasRaw.map(t => t.atributo_id) } },
-    select: { id: true, nome: true, polaridade: true },
-  });
-
-  const atributos = temasRaw.map(t => {
-    const info = atributosInfo.find(a => a.id === t.atributo_id);
-    return {
-      nome: info?.nome ?? 'N/A',
-      polaridade: info?.polaridade ?? 0,
-      total: t._count._all,
-    };
-  });
-
-  // 3. Totais gerais
-  const [totalAvaliacoes, totalEntidades] = await Promise.all([
-    prisma.avaliacao.count({ where: avaliacaoWhereComAtrib }),
-    prisma.manifestacao.count({ where: { criado_em: { gte: desde }, is_valid: true } }),
-  ]);
-
-  // Lista de atributos disponíveis (útil para montar filtros no site externo)
-  const atributosDisponiveis = await prisma.atributo.findMany({
-    where: { visivel: true },
-    select: { nome: true, polaridade: true },
-    orderBy: { nome: 'asc' },
-  });
+  const atributos = d.temas.map((t) => ({ nome: t.nome, polaridade: t.polaridade, total: t.total }));
+  const totalAvaliacoes = d.totalAvaliacoes;
+  const totalEntidades = d.totalParticipantes;
+  const atributosDisponiveis = d.disponiveis;
 
   return NextResponse.json(
     {
@@ -266,7 +145,8 @@ export async function GET(req: NextRequest) {
     {
       headers: {
         ...getCorsHeaders(req),
-        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        // Resposta autenticada por token: nunca em cache compartilhado.
+        'Cache-Control': 'private, max-age=60',
       },
     }
   );

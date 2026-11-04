@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { buildPublicCandidateWhere, getPublicScopeConfig } from '@/lib/publicScope';
+import { sql } from 'drizzle-orm';
+import { getDb } from '@/server/db/client';
+import { campanhas, candidatos } from '@/server/db/schema';
+import { getPublicScopeConfig, publicCandidateConditions } from '@/server/repos/scope';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,15 +11,6 @@ type CheckStatus = 'ok' | 'degraded' | 'unknown';
 
 function checkStatus(condition: boolean): CheckStatus {
   return condition ? 'ok' : 'degraded';
-}
-
-async function safeMetric<T>(label: string, getter: () => Promise<T>, fallback: T) {
-  try {
-    return await getter();
-  } catch (error) {
-    console.error(`Health metric failed: ${label}`, error);
-    return fallback;
-  }
 }
 
 function buildResponse(status: HealthStatus, body: Record<string, unknown>, httpStatus = 200) {
@@ -41,74 +34,36 @@ export async function GET() {
   const startedAt = Date.now();
 
   try {
+    const db = getDb();
     const dbStartedAt = Date.now();
-    await prisma.$queryRaw`select 1`;
+    await db.run(sql`select 1`);
     const databaseMs = Date.now() - dbStartedAt;
 
-    const scopeConfig = await getPublicScopeConfig();
-    const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    const since7d = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const scopeConfig = await getPublicScopeConfig(db);
+    const now = Date.now();
+    const since24h = now - 24 * 60 * 60 * 1000;
+    const since7d = now - 7 * 24 * 60 * 60 * 1000;
 
-    const activeCampaigns = await prisma.campanha.count({
-      where: {
-        status: 'ativo',
-      },
-    });
-    const publicCandidates = await prisma.candidato.count({
-      where: buildPublicCandidateWhere(scopeConfig),
-    });
-    const cepsMs = await safeMetric('ceps_ms.total', () => prisma.cepMs.count(), 0);
-
-    const [
-      activeRodadas,
-      cepsBaixaConfianca,
-      manifestacoes24h,
-      avaliacoes24h,
-      auditLogs7d,
-      bloqueiosAtivos,
-    ] = await Promise.all([
-      safeMetric('rodadas.ativas', () => prisma.rodadaMetodologica.count({
-        where: {
-          status: 'ativa',
-        },
-      }), 0),
-      safeMetric('ceps_ms.baixa_confianca', () => prisma.cepMs.count({
-        where: {
-          bairro_confianca: {
-            lt: 0.8,
-          },
-        },
-      }), 0),
-      safeMetric('manifestacoes.24h', () => prisma.manifestacao.count({
-        where: {
-          criado_em: {
-            gte: since24h,
-          },
-        },
-      }), 0),
-      safeMetric('avaliacoes.24h', () => prisma.avaliacao.count({
-        where: {
-          criado_em: {
-            gte: since24h,
-          },
-        },
-      }), 0),
-      safeMetric('audit_logs.7d', () => prisma.auditLog.count({
-        where: {
-          criado_em: {
-            gte: since7d,
-          },
-        },
-      }), 0),
-      safeMetric('bloqueios.ativos', () => prisma.bloqueio.count({
-        where: {
-          OR: [
-            { expira_em: null },
-            { expira_em: { gt: new Date() } },
-          ],
-        },
-      }), 0),
+    const [[publicRow], [m]] = await Promise.all([
+      db
+        .select({ n: sql<number>`count(*)` })
+        .from(candidatos)
+        .innerJoin(campanhas, sql`${campanhas.id} = ${candidatos.campanha_id}`)
+        .where(publicCandidateConditions(scopeConfig)),
+      db.all<Record<string, number>>(sql`
+        select
+          (select count(*) from campanhas where status = 'ativo') as activeCampaigns,
+          (select count(*) from ceps_ms) as cepsMs,
+          (select count(*) from rodadas_metodologicas where status = 'ativa') as activeRodadas,
+          (select count(*) from ceps_ms where bairro_confianca < 0.8) as cepsBaixaConfianca,
+          (select count(*) from manifestacoes where criado_em >= ${since24h}) as manifestacoes24h,
+          (select count(*) from avaliacoes where criado_em >= ${since24h}) as avaliacoes24h,
+          (select count(*) from audit_logs where criado_em >= ${since7d}) as auditLogs7d,
+          (select count(*) from bloqueios where expira_em is null or expira_em > ${now}) as bloqueiosAtivos
+      `),
     ]);
+    const publicCandidates = publicRow?.n ?? 0;
+    const { activeCampaigns, cepsMs, activeRodadas, cepsBaixaConfianca, manifestacoes24h, avaliacoes24h, auditLogs7d, bloqueiosAtivos } = m;
 
     const coreOk = activeCampaigns > 0 && publicCandidates > 0 && cepsMs > 0;
     const status: HealthStatus = coreOk ? 'ok' : 'degraded';

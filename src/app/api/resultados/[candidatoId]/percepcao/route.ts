@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { getDb } from '@/server/db/client';
+import { atributosDaCampanhaDoCandidato, manifestacoesComAvaliacoes, rankingPorCargo } from '@/server/repos/resultados';
 
 type PerfilValue = Record<string, unknown>;
 
@@ -72,31 +73,13 @@ export async function GET(
     const agora = new Date();
     const inicio48h = new Date(agora.getTime() - 48 * 60 * 60 * 1000);
 
-    const [manifestacoes, candidato, candidatosMesmoCargo] = await Promise.all([
-      prisma.manifestacao.findMany({
-        where: { candidato_id: candidatoId, is_valid: true },
-        include: {
-          avaliacoes: { where: { is_valid: true }, include: { atributo: true } },
-        },
-        orderBy: { criado_em: 'desc' },
-      }),
-      prisma.candidato.findUnique({
-        where: { id: candidatoId },
-        select: { cargo: true, campanha_id: true },
-      }),
-      // busca liquid scores de candidatos do mesmo cargo para comparativo
-      prisma.avaliacao.groupBy({
-        by: ['candidato_id'],
-        _sum: { valor: true },
-        _count: { _all: true },
-        where: {
-          is_valid: true,
-          candidato: {
-            cargo: (await prisma.candidato.findUnique({ where: { id: candidatoId }, select: { cargo: true } }))?.cargo ?? '',
-          },
-        },
-      }),
+    const db = getDb();
+    const [manifestacoes, candidato] = await Promise.all([
+      manifestacoesComAvaliacoes(db, { tipo: 'candidato', id: candidatoId }),
+      atributosDaCampanhaDoCandidato(db, candidatoId),
     ]);
+    // saldo de candidatos do mesmo cargo para comparativo
+    const candidatosMesmoCargo = await rankingPorCargo(db, candidato?.cargo ?? '');
 
     const vozesValidas = manifestacoes.length;
     const aprovacoes = manifestacoes.filter(m => m.aprovacao === true).length;
@@ -161,9 +144,9 @@ export async function GET(
     };
 
     // Comparativo de cargo
-    const meuLiquid = (candidatosMesmoCargo.find(c => c.candidato_id === candidatoId)?._sum.valor ?? 0);
+    const meuLiquid = (candidatosMesmoCargo.find(c => c.candidato_id === candidatoId)?.soma ?? 0);
     const ranking = candidatosMesmoCargo
-      .map(c => ({ id: c.candidato_id, liquid: c._sum.valor ?? 0, total: c._count._all }))
+      .map(c => ({ id: c.candidato_id, liquid: c.soma ?? 0, total: c.total }))
       .sort((a, b) => b.liquid - a.liquid);
     const posicaoCargo = ranking.findIndex(r => r.id === candidatoId) + 1;
     const totalCargo = ranking.length;

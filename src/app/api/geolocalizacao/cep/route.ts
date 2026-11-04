@@ -1,11 +1,7 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { buildCepResponse, type CepMsResponseRecord } from '@/lib/cepMs';
-
-interface NearbyCepRow extends CepMsResponseRecord {
-  cep: string;
-  distancia_km: number | null;
-}
+import { buildCepResponse } from '@/lib/cepMs';
+import { getDb } from '@/server/db/client';
+import { cepMaisProximo } from '@/server/repos/ceps';
 
 function parseCoordinate(value: string | null) {
   if (!value) return null;
@@ -31,32 +27,7 @@ export async function GET(req: Request) {
   }
 
   try {
-    const rows = await prisma.$queryRaw<NearbyCepRow[]>`
-      SELECT
-        cep,
-        uf,
-        cidade,
-        bairro,
-        logradouro,
-        origem,
-        localidades,
-        bairro_confianca,
-        (
-          111.045 * sqrt(
-            power(latitude - ${latitude}, 2) +
-            power((longitude - ${longitude}) * cos(radians(${latitude})), 2)
-          )
-        )::float AS distancia_km
-      FROM ceps_ms
-      WHERE latitude IS NOT NULL
-        AND longitude IS NOT NULL
-      ORDER BY
-        power(latitude - ${latitude}, 2) +
-        power(longitude - ${longitude}, 2)
-      LIMIT 1
-    `;
-
-    const nearest = rows[0];
+    const nearest = await cepMaisProximo(getDb(), latitude, longitude);
     if (!nearest) {
       return NextResponse.json({ error: 'Não foi possível localizar um CEP próximo.' }, { status: 404 });
     }

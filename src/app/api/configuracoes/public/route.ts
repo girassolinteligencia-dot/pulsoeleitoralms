@@ -1,32 +1,24 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { count, eq } from 'drizzle-orm';
+import { getDb } from '@/server/db/client';
+import { manifestacoes } from '@/server/db/schema';
+import { getParametrosPorPrefixo } from '@/server/repos/parametros';
+
+const PREFIXOS_PUBLICOS = [
+  'geral_', 'onboarding_', 'public_', 'landing_', 'fluxo_', 'etapafinal_', 'resultado_', 'sugestao_',
+];
 
 export async function GET() {
   try {
-    const [parametros, totalPulsos] = await Promise.all([
-      prisma.parametroPlataforma.findMany({
-      where: {
-        OR: [
-          { chave: { startsWith: 'geral_' } },
-          { chave: { startsWith: 'onboarding_' } },
-          { chave: { startsWith: 'public_' } },
-          { chave: { startsWith: 'landing_' } },
-          { chave: { startsWith: 'fluxo_' } },
-          { chave: { startsWith: 'etapafinal_' } },
-          { chave: { startsWith: 'resultado_' } },
-          { chave: { startsWith: 'sugestao_' } },
-        ],
-      },
-    }),
-      prisma.manifestacao.count({ where: { is_valid: true } }),
+    const db = getDb();
+    const [parametros, [total]] = await Promise.all([
+      getParametrosPorPrefixo(db, PREFIXOS_PUBLICOS),
+      db.select({ n: count() }).from(manifestacoes).where(eq(manifestacoes.is_valid, true)),
     ]);
-
-    const config = parametros.reduce((acc, curr) => {
-      acc[curr.chave] = curr.valor;
-      return acc;
-    }, {} as Record<string, unknown>);
-
-    return NextResponse.json({ ...config, _total_pulsos: totalPulsos });
+    return NextResponse.json(
+      { ...Object.fromEntries(parametros), _total_pulsos: total?.n ?? 0 },
+      { headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60' } },
+    );
   } catch {
     return NextResponse.json({ error: 'Erro ao buscar configurações' }, { status: 500 });
   }

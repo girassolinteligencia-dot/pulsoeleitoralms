@@ -1,15 +1,15 @@
 import type { MetadataRoute } from 'next';
-import { prisma } from '@/lib/prisma';
+import { getDbAsync } from '@/server/db/client';
+import { asString, getParametros } from '@/server/repos/parametros';
+import { getFotoUrl } from '@/lib/fotoUrl';
+
+export const dynamic = 'force-dynamic';
 
 export default async function manifest(): Promise<MetadataRoute.Manifest> {
   let iconUrl = '/favicon.webp';
   try {
-    const param = await prisma.parametroPlataforma.findUnique({
-      where: { chave: 'geral_pwa_icone_url' },
-    });
-    if (param?.valor && typeof param.valor === 'string') {
-      iconUrl = param.valor;
-    }
+    const p = await getParametros(await getDbAsync(), ['geral_pwa_icone_url']);
+    iconUrl = getFotoUrl(asString(p.get('geral_pwa_icone_url'))) || iconUrl;
   } catch {
     // fallback ao favicon padrão
   }

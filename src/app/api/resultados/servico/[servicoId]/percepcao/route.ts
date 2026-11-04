@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { getDb } from '@/server/db/client';
+import { entidadeInfo, manifestacoesComAvaliacoes } from '@/server/repos/resultados';
 
 function percent(part: number, total: number) {
   return total > 0 ? Math.round((part / total) * 100) : 0;
@@ -70,13 +71,7 @@ export async function GET(
     const agora = new Date();
     const inicio48h = new Date(agora.getTime() - 48 * 60 * 60 * 1000);
 
-    const manifestacoes = await prisma.manifestacao.findMany({
-      where: { servico_id: servicoId, is_valid: true },
-      include: {
-        avaliacoes: { where: { is_valid: true }, include: { atributo: true } },
-      },
-      orderBy: { criado_em: 'desc' },
-    });
+    const manifestacoes = await manifestacoesComAvaliacoes(getDb(), { tipo: 'servico', id: servicoId });
 
     const vozesValidas = manifestacoes.length;
     const aprovacoes = manifestacoes.filter((m) => m.aprovacao === true).length;

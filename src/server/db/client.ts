@@ -1,24 +1,24 @@
 import "server-only";
-import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { drizzle } from "drizzle-orm/d1";
+import { bindings, bindingsAsync } from "@/server/cf";
 import * as schema from "./schema";
 
-export type DB = ReturnType<typeof createDb>;
-
-function createDb(d1: D1Database) {
+function createDb(d1: Parameters<typeof drizzle>[0]) {
   return drizzle(d1, { schema });
 }
 
+export type DB = ReturnType<typeof createDb>;
+
 /** Cliente Drizzle ligado ao binding D1 da requisição atual. */
 export function getDb(): DB {
-  const { env } = getCloudflareContext();
-  return createDb((env as { DB: D1Database }).DB);
+  return createDb(bindings().DB as unknown as Parameters<typeof drizzle>[0]);
 }
 
-/** Versão assíncrona para uso em rotas estáticas/ISR. */
+/** Versão assíncrona para uso em páginas estáticas/ISR. */
 export async function getDbAsync(): Promise<DB> {
-  const { env } = await getCloudflareContext({ async: true });
-  return createDb((env as { DB: D1Database }).DB);
+  return createDb(
+    (await bindingsAsync()).DB as unknown as Parameters<typeof drizzle>[0],
+  );
 }
 
 export { schema };

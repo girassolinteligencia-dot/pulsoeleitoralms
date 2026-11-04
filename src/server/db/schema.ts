@@ -102,6 +102,7 @@ export const candidatos = sqliteTable(
     situacao_candidatura: text("situacao_candidatura"),
     situacao_totalizacao: text("situacao_totalizacao"), // ELEITO, SUPLENTE, NÃO ELEITO…
     fonte: text("fonte").notNull().default("manual"), // manual | tse_ckan | tse_divulgacand
+    busca: text("busca").notNull().default(""), // nome+cargo+partido+cidade normalizados
     atualizado_tse_em: ts("atualizado_tse_em"),
   },
   (t) => [
@@ -126,6 +127,7 @@ export const orgaosPublicos = sqliteTable(
     foto_url: text("foto_url"),
     campanha_id: text("campanha_id").references(() => campanhas.id),
     status: text("status").notNull().default("Ativo"),
+    busca: text("busca").notNull().default(""),
     criado_em: now("criado_em"),
     atualizado_em: updatedAt("atualizado_em"),
   },
@@ -148,6 +150,7 @@ export const servicosPublicos = sqliteTable(
     foto_url: text("foto_url"),
     campanha_id: text("campanha_id").references(() => campanhas.id),
     status: text("status").notNull().default("Ativo"),
+    busca: text("busca").notNull().default(""),
     criado_em: now("criado_em"),
     atualizado_em: updatedAt("atualizado_em"),
   },

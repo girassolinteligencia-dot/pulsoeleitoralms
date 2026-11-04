@@ -31,7 +31,6 @@
     "push": "powershell ./scripts/sync.ps1",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
-    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate:local": "wrangler d1 migrations apply pulso-db --local",
     "db:migrate:remote": "wrangler d1 migrations apply pulso-db --remote",
@@ -41,7 +40,6 @@
     "@prisma/client": "^6.19.3",
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.104.1",
-    "@vercel/speed-insights": "^2.0.0",
     "autoprefixer": "^10.5.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
@@ -62,6 +60,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261104.1",
     "@opennextjs/cloudflare": "^1.20.16",
     "@types/node": "^20.19.39",
     "@types/react": "^19",

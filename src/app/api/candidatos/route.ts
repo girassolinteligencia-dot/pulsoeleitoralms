@@ -1,66 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { buildPublicCandidateWhere, getPublicScopeConfig } from '@/lib/publicScope';
-import { getFotoUrl } from '@/lib/fotoUrl';
-import { buildSearchOR } from '@/lib/normalize-search';
+import { getDb } from '@/server/db/client';
+import { listarCandidatosPublicos } from '@/server/repos/catalogo';
 
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const search = (searchParams.get('search') || '').trim();
-
+  const search = (req.nextUrl.searchParams.get('search') || '').trim().slice(0, 100);
   try {
-    // Cidade/bairro informados pelo usuario sao variaveis do respondente.
-    // A busca publica deve manter todos os candidatos ativos disponiveis.
-    const scopeConfig = await getPublicScopeConfig();
-    const candidatos = await prisma.candidato.findMany({
-      where: buildPublicCandidateWhere(scopeConfig, {
-        ...(search && { OR: buildSearchOR(search, ['nome', 'cargo', 'partido', 'cidade']) }),
-      }),
-      orderBy: { nome: 'asc' },
-      take: 50,
-      select: {
-        id: true,
-        nome: true,
-        partido: true,
-        cargo: true,
-        cidade: true,
-        foto_url: true,
-        status_verificacao: true,
-        campanha: {
-          select: {
-            atributos: {
-              select: {
-                atributo: {
-                  select: {
-                    id: true,
-                    nome: true,
-                    polaridade: true
-                  }
-                }
-              },
-              where: {
-                atributo: {
-                  visivel: true
-                }
-              }
-            }
-          }
-        }
-      }
-    });
-
-    return NextResponse.json(
-      candidatos.map((candidato) => {
-        const nomeCompleto = candidato.nome;
-        const idx = nomeCompleto.indexOf('(');
-        const nomeUrna = idx > 0 ? nomeCompleto.slice(0, idx).trim() : nomeCompleto;
-        return {
-          ...candidato,
-          foto_url: getFotoUrl(candidato.foto_url),
-          nomeExibido: candidato.status_verificacao ? nomeCompleto : nomeUrna,
-        };
-      })
-    );
+    // Cidade/bairro informados pelo usuário são variáveis do respondente:
+    // a busca pública mantém todos os candidatos ativos disponíveis.
+    return NextResponse.json(await listarCandidatosPublicos(getDb(), search));
   } catch (error) {
     console.error('Erro ao buscar candidatos:', error);
     return NextResponse.json([], { status: 200 });

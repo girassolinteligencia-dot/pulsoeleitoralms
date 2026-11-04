@@ -1,5 +1,8 @@
-import { prisma } from '@/lib/prisma';
 import LandingClient from '@/components/ui/LandingClient';
+import { getDbAsync } from '@/server/db/client';
+import { getParametrosPorPrefixo } from '@/server/repos/parametros';
+
+export const dynamic = 'force-dynamic';
 
 const DEFAULTS = {
   landing_titulo_linha1: 'Não é uma pesquisa.',
@@ -10,19 +13,13 @@ const DEFAULTS = {
 
 export default async function LandingPage() {
   const textos = { ...DEFAULTS };
-
   try {
-    const parametros = await prisma.parametroPlataforma.findMany({
-      where: { chave: { startsWith: 'landing_' } },
-    });
-    for (const p of parametros) {
-      if (p.chave in textos && p.valor) {
-        textos[p.chave as keyof typeof textos] = p.valor as string;
-      }
+    const p = await getParametrosPorPrefixo(await getDbAsync(), ['landing_']);
+    for (const [chave, valor] of p) {
+      if (chave in textos && typeof valor === 'string' && valor) textos[chave as keyof typeof textos] = valor;
     }
   } catch {
-    // usa DEFAULTS se banco falhar
+    // usa DEFAULTS se o banco falhar
   }
-
   return <LandingClient textos={textos} />;
 }

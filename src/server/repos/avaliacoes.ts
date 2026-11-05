@@ -1,3 +1,4 @@
+import type { BatchItem } from "drizzle-orm/batch";
 import "server-only";
 import { and, count, eq, gt, gte, inArray, isNull, or, sql } from "drizzle-orm";
 import type { DB } from "@/server/db/client";
@@ -194,7 +195,7 @@ export async function registrarManifestacao(db: DB, m: NovaManifestacao) {
     honeypot_triggered: m.isBot,
   };
 
-  const stmts = [
+  const stmts: BatchItem<"sqlite">[] = [
     db.insert(manifestacoes).values({
       id: manifestacaoId,
       ...ref,
@@ -204,8 +205,10 @@ export async function registrarManifestacao(db: DB, m: NovaManifestacao) {
       perfil: m.perfil,
       is_valid: m.isValid,
     }),
-    db.insert(avaliacoes).values(
-      m.itens.map((i) => ({
+    // Um INSERT por item: o D1 aceita no máximo 100 parâmetros por comando
+    // (~14 por linha aqui). O batch mantém tudo atômico.
+    ...m.itens.map((i) =>
+      db.insert(avaliacoes).values({
         manifestacao_id: manifestacaoId,
         ...ref,
         ...auditoria,
@@ -213,11 +216,11 @@ export async function registrarManifestacao(db: DB, m: NovaManifestacao) {
         valor: i.valor,
         is_valid: m.isValid,
         device_info: { ua: m.userAgent, platform: m.plataforma },
-      })),
+      }),
     ),
-  ] as const;
+  ];
 
-  const extras = [];
+  const extras: BatchItem<"sqlite">[] = [];
   if (m.isValid) {
     if (m.alvo.tipo === "candidato") {
       extras.push(
@@ -250,6 +253,7 @@ export async function registrarManifestacao(db: DB, m: NovaManifestacao) {
     );
   }
 
-  await db.batch([...stmts, ...extras]);
+  const [primeiro, ...resto] = [...stmts, ...extras];
+  await db.batch([primeiro, ...resto]);
   return manifestacaoId;
 }

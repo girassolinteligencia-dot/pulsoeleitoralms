@@ -1,6 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { requireAdmin } from '@/lib/adminAuth';
+import { NextRequest, NextResponse } from "next/server";
+import { and, asc, count, desc, eq, gte, like, lte, or } from "drizzle-orm";
+import { requireAdmin } from "@/lib/adminAuth";
+import { getDb } from "@/server/db/client";
+import { auditLogs } from "@/server/db/schema";
 
 function parseOptionalDate(value: string | null, endOfDay = false) {
   if (!value) return null;
@@ -15,54 +17,55 @@ export async function GET(req: NextRequest) {
   if (authError) return authError;
 
   try {
-    const { searchParams } = new URL(req.url);
-    const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
-    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50')));
-    const acao = searchParams.get('acao') || '';
-    const entidade = searchParams.get('entidade') || '';
-    const search = searchParams.get('search')?.trim() || '';
-    const inicio = parseOptionalDate(searchParams.get('inicio'));
-    const fim = parseOptionalDate(searchParams.get('fim'), true);
-    const skip = (page - 1) * limit;
+    const sp = req.nextUrl.searchParams;
+    const page = Math.max(1, parseInt(sp.get("page") || "1") || 1);
+    const limit = Math.min(
+      100,
+      Math.max(1, parseInt(sp.get("limit") || "50") || 50),
+    );
+    const acao = sp.get("acao") || "";
+    const entidade = sp.get("entidade") || "";
+    const search = (sp.get("search") || "").trim().replace(/[%_]/g, "");
+    const inicio = parseOptionalDate(sp.get("inicio"));
+    const fim = parseOptionalDate(sp.get("fim"), true);
 
-    const where = {
-      ...(acao && { acao }),
-      ...(entidade && { entidade }),
-      ...((inicio || fim) && {
-        criado_em: {
-          ...(inicio && { gte: inicio }),
-          ...(fim && { lte: fim }),
-        },
-      }),
-      ...(search && {
-        OR: [
-          { acao: { contains: search, mode: 'insensitive' as const } },
-          { entidade: { contains: search, mode: 'insensitive' as const } },
-          { entidade_id: { contains: search, mode: 'insensitive' as const } },
-          { usuario_id: { contains: search, mode: 'insensitive' as const } },
-        ],
-      }),
-    };
+    // LIKE do SQLite já ignora maiúsculas/minúsculas para ASCII
+    const pattern = `%${search}%`;
+    const where = and(
+      acao ? eq(auditLogs.acao, acao) : undefined,
+      entidade ? eq(auditLogs.entidade, entidade) : undefined,
+      inicio ? gte(auditLogs.criado_em, inicio) : undefined,
+      fim ? lte(auditLogs.criado_em, fim) : undefined,
+      search
+        ? or(
+            like(auditLogs.acao, pattern),
+            like(auditLogs.entidade, pattern),
+            like(auditLogs.entidade_id, pattern),
+            like(auditLogs.usuario_id, pattern),
+          )
+        : undefined,
+    );
 
-    const [logs, total, acoes, entidades] = await Promise.all([
-      prisma.auditLog.findMany({
-        where,
-        orderBy: { criado_em: 'desc' },
-        take: limit,
-        skip,
-      }),
-      prisma.auditLog.count({ where }),
-      prisma.auditLog.findMany({
-        distinct: ['acao'],
-        select: { acao: true },
-        orderBy: { acao: 'asc' },
-      }),
-      prisma.auditLog.findMany({
-        distinct: ['entidade'],
-        select: { entidade: true },
-        orderBy: { entidade: 'asc' },
-      }),
+    const db = getDb();
+    const [logs, [tot], acoes, entidades] = await Promise.all([
+      db
+        .select()
+        .from(auditLogs)
+        .where(where)
+        .orderBy(desc(auditLogs.criado_em))
+        .limit(limit)
+        .offset((page - 1) * limit),
+      db.select({ n: count() }).from(auditLogs).where(where),
+      db
+        .selectDistinct({ acao: auditLogs.acao })
+        .from(auditLogs)
+        .orderBy(asc(auditLogs.acao)),
+      db
+        .selectDistinct({ entidade: auditLogs.entidade })
+        .from(auditLogs)
+        .orderBy(asc(auditLogs.entidade)),
     ]);
+    const total = tot?.n ?? 0;
 
     return NextResponse.json({
       data: logs,
@@ -70,12 +73,15 @@ export async function GET(req: NextRequest) {
       page,
       totalPages: Math.ceil(total / limit),
       filters: {
-        acoes: acoes.map((item) => item.acao),
-        entidades: entidades.map((item) => item.entidade),
+        acoes: acoes.map((i) => i.acao),
+        entidades: entidades.map((i) => i.entidade),
       },
     });
   } catch (error) {
-    console.error('Erro ao buscar AuditLog:', error);
-    return NextResponse.json({ error: 'Erro interno ao buscar auditoria' }, { status: 500 });
+    console.error("Erro ao buscar AuditLog:", error);
+    return NextResponse.json(
+      { error: "Erro interno ao buscar auditoria" },
+      { status: 500 },
+    );
   }
 }

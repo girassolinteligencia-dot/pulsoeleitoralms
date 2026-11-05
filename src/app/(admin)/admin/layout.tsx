@@ -1,11 +1,9 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
 import { useRouter, usePathname } from 'next/navigation';
-import { Session } from '@supabase/supabase-js';
 import Image from 'next/image';
-import { adminFetch } from '@/lib/adminClient';
+import { adminFetch, adminLogout } from '@/lib/adminClient';
 
 type AdminProfile = {
   email: string;
@@ -18,67 +16,34 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [session, setSession] = useState<Session | null>(null);
   const [adminProfile, setAdminProfile] = useState<AdminProfile | null>(null);
+  const [accessDenied, setAccessDenied] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
+  // Login é feito pelo Cloudflare Access antes da página carregar; /admin/login só redireciona.
   const isLoginPage = pathname === '/admin/login';
   const [loading, setLoading] = useState(!isLoginPage);
 
-  const handleLogout = () => {
-    supabase.auth.signOut().then(() => router.push('/admin/login'));
-  };
+  const handleLogout = () => adminLogout();
 
   useEffect(() => {
     if (isLoginPage) return;
-
-    const checkSession = async () => {
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
-
-      if (!currentSession) {
-        router.push('/admin/login');
-      } else {
-        setSession(currentSession);
-        const profileRes = await adminFetch('/api/admin/me');
-        if (!profileRes.ok) {
-          await supabase.auth.signOut();
-          router.push('/admin/login');
+    let cancel = false;
+    adminFetch('/api/admin/me')
+      .then(async (res) => {
+        if (cancel) return;
+        if (!res.ok) {
+          setAccessDenied(true);
+          setLoading(false);
           return;
         }
-        setAdminProfile(await profileRes.json());
+        setAdminProfile(await res.json());
         setLoading(false);
-      }
-    };
-
-    // Escuta mudanças de estado
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
-      if (event === 'SIGNED_IN') {
-        if (currentSession) {
-          setSession(currentSession);
-          adminFetch('/api/admin/me')
-            .then(async (res) => {
-              if (!res.ok) throw new Error('Acesso administrativo negado');
-              setAdminProfile(await res.json());
-              setLoading(false);
-            })
-            .catch(() => {
-              supabase.auth.signOut().then(() => router.push('/admin/login'));
-            });
-        } else {
-          supabase.auth.signOut().then(() => {
-            router.push('/admin/login');
-          });
-        }
-      } else if (event === 'SIGNED_OUT') {
-        router.push('/admin/login');
-      }
-    });
-
-    checkSession();
-
+      })
+      .catch(() => !cancel && (setAccessDenied(true), setLoading(false)));
     return () => {
-      subscription.unsubscribe();
+      cancel = true;
     };
   }, [router, isLoginPage]);
 
@@ -87,6 +52,14 @@ export default function AdminLayout({
   if (loading) return (
     <div className="w-full h-[100svh] bg-dark flex items-center justify-center text-primary font-display uppercase tracking-widest animate-pulse">
       Autenticando...
+    </div>
+  );
+
+  if (accessDenied) return (
+    <div className="w-full h-[100svh] bg-dark flex flex-col items-center justify-center gap-4 text-center px-4">
+      <p className="text-primary font-display uppercase tracking-widest">Acesso administrativo negado</p>
+      <p className="text-text-muted text-sm max-w-sm">Seu e-mail foi autenticado, mas não está ativo na lista de usuários administrativos.</p>
+      <button onClick={handleLogout} className="px-4 py-2 border border-primary/40 text-primary text-xs uppercase tracking-widest">Sair</button>
     </div>
   );
 
@@ -144,7 +117,7 @@ export default function AdminLayout({
         <div className="flex flex-col items-center gap-1 px-6 pt-6 pb-4 shrink-0">
           <Image src="/logo.webp" alt="PULSO ELEITORAL MS" width={180} height={54} className="w-full h-auto object-contain" />
           <p className="text-[8px] text-[#d97757] uppercase font-bold tracking-widest text-center">Painel Administrativo</p>
-          <p className="text-[8px] text-text-muted uppercase font-bold tracking-widest text-center truncate w-full opacity-60">{session?.user?.email}</p>
+          <p className="text-[8px] text-text-muted uppercase font-bold tracking-widest text-center truncate w-full opacity-60">{adminProfile?.email}</p>
           {adminProfile && (
             <p className="text-[8px] text-primary uppercase font-bold tracking-widest text-center">
               {adminProfile.role}

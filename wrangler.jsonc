@@ -48,5 +48,6 @@
   "observability": { "enabled": true },
   "vars": {
     "NEXT_PUBLIC_APP_URL": "https://pulsoms.ia.br",
+    "CF_ACCESS_TEAM_DOMAIN": "timegirassol.cloudflareaccess.com",
   },
 }

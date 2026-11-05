@@ -1,149 +1,210 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { getAdminIdentityWithRole, requireAdmin } from '@/lib/adminAuth';
-import { recordAuditLog } from '@/lib/auditLog';
-import { buildPublicCandidateWhere, getPublicScopeConfig } from '@/lib/publicScope';
-import { buildSearchOR } from '@/lib/normalize-search';
+import { NextRequest, NextResponse } from "next/server";
+import { and, asc, count, eq, like, sql } from "drizzle-orm";
+import { getAdminIdentityWithRole, requireAdmin } from "@/lib/adminAuth";
+import { recordAuditLog } from "@/lib/auditLog";
+import { buildBusca, likePattern } from "@/lib/normalize-search";
+import { getDb } from "@/server/db/client";
+import { campanhas, candidatos } from "@/server/db/schema";
+import {
+  getPublicScopeConfig,
+  publicCandidateConditions,
+} from "@/server/repos/scope";
 
-// GET candidates for admin with pagination
+const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
+
+// GET: candidatos do escopo público, paginados
 export async function GET(req: NextRequest) {
   const authError = await requireAdmin(req);
   if (authError) return authError;
 
   try {
-    const { searchParams } = new URL(req.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '50');
-    const search = searchParams.get('search') || '';
-    const skip = (page - 1) * limit;
+    const sp = req.nextUrl.searchParams;
+    const page = Math.max(1, parseInt(sp.get("page") || "1") || 1);
+    const limit = Math.min(
+      200,
+      Math.max(1, parseInt(sp.get("limit") || "50") || 50),
+    );
+    const search = (sp.get("search") || "").trim();
 
-    const scopeConfig = await getPublicScopeConfig();
-    const where = buildPublicCandidateWhere(scopeConfig, {
-      ...(search && { OR: buildSearchOR(search, ['nome', 'cargo', 'partido', 'cidade']) }),
-    });
+    const db = getDb();
+    const scope = await getPublicScopeConfig(db);
+    const where = publicCandidateConditions(
+      scope,
+      search ? like(candidatos.busca, likePattern(search)) : undefined,
+    );
 
-    const [candidatos, total] = await Promise.all([
-      prisma.candidato.findMany({
-        where,
-        include: { campanha: true },
-        orderBy: { nome: 'asc' },
-        take: limit,
-        skip,
-      }),
-      prisma.candidato.count({ where }),
+    const [rows, [tot]] = await Promise.all([
+      db
+        .select({ c: candidatos, campanha: campanhas })
+        .from(candidatos)
+        .innerJoin(campanhas, eq(campanhas.id, candidatos.campanha_id))
+        .where(where)
+        .orderBy(asc(candidatos.nome))
+        .limit(limit)
+        .offset((page - 1) * limit),
+      db
+        .select({ n: count() })
+        .from(candidatos)
+        .innerJoin(campanhas, eq(campanhas.id, candidatos.campanha_id))
+        .where(where),
     ]);
+    const total = tot?.n ?? 0;
 
     return NextResponse.json({
-      data: candidatos,
+      data: rows.map(({ c, campanha }) => ({ ...c, campanha })),
       total,
       page,
       totalPages: Math.ceil(total / limit),
     });
   } catch (error) {
-    console.error('Erro ao buscar candidatos admin:', error);
-    return NextResponse.json({ data: [], total: 0, page: 1, totalPages: 0 }, { status: 200 });
+    console.error("Erro ao buscar candidatos admin:", error);
+    return NextResponse.json(
+      { data: [], total: 0, page: 1, totalPages: 0 },
+      { status: 200 },
+    );
   }
 }
 
-// POST create a new candidate
+// POST: cria candidato (com verificação de duplicidade)
 export async function POST(req: NextRequest) {
-  const auth = await getAdminIdentityWithRole(req, ['admin', 'editor']);
-  if ('error' in auth) return auth.error;
+  const auth = await getAdminIdentityWithRole(req, ["admin", "editor"]);
+  if ("error" in auth) return auth.error;
 
   try {
-    const body = await req.json();
-    const { nome, partido, numero, cargo, cidade, bairro, foto_url, campanha_id, ano_eleicao, check_only } = body;
-
-    if (!nome?.trim() || !cargo?.trim() || !cidade?.trim() || !campanha_id) {
-      return NextResponse.json({ error: 'Campos obrigatórios: nome, cargo, cidade, campanha_id' }, { status: 400 });
+    const b = await req.json();
+    const nome = str(b.nome).toUpperCase();
+    const cargo = str(b.cargo);
+    const cidade = str(b.cidade);
+    if (!nome || !cargo || !cidade || !b.campanha_id) {
+      return NextResponse.json(
+        { error: "Campos obrigatórios: nome, cargo, cidade, campanha_id" },
+        { status: 400 },
+      );
     }
 
-    // Verifica duplicidade: mesmo nome normalizado + cargo + cidade em qualquer campanha
-    const nomeNorm = nome.trim().toUpperCase();
-    const existing = await prisma.candidato.findMany({
-      where: {
-        nome: { equals: nomeNorm, mode: 'insensitive' },
-        cargo: { equals: cargo.trim(), mode: 'insensitive' },
-        cidade: { equals: cidade.trim(), mode: 'insensitive' },
-      },
-      include: { campanha: { select: { nome: true } } },
-      take: 5,
-    });
+    const db = getDb();
+    // Duplicidade: mesmo nome + cargo + cidade (ignorando maiúsculas) em qualquer campanha
+    const existing = await db
+      .select({ c: candidatos, campanha: campanhas.nome })
+      .from(candidatos)
+      .innerJoin(campanhas, eq(campanhas.id, candidatos.campanha_id))
+      .where(
+        and(
+          sql`upper(${candidatos.nome}) = ${nome}`,
+          sql`lower(${candidatos.cargo}) = lower(${cargo})`,
+          sql`lower(${candidatos.cidade}) = lower(${cidade})`,
+        ),
+      )
+      .limit(5);
 
     if (existing.length > 0) {
-      return NextResponse.json({
-        error: 'duplicado',
-        message: `Político já cadastrado na plataforma.`,
-        existentes: existing.map(c => ({
-          id: c.id,
-          nome: c.nome,
-          cargo: c.cargo,
-          cidade: c.cidade,
-          partido: c.partido,
-          ano_eleicao: c.ano_eleicao,
-          campanha: c.campanha.nome,
-        })),
-      }, { status: 409 });
+      return NextResponse.json(
+        {
+          error: "duplicado",
+          message: "Político já cadastrado na plataforma.",
+          existentes: existing.map(({ c, campanha }) => ({
+            id: c.id,
+            nome: c.nome,
+            cargo: c.cargo,
+            cidade: c.cidade,
+            partido: c.partido,
+            ano_eleicao: c.ano_eleicao,
+            campanha,
+          })),
+        },
+        { status: 409 },
+      );
     }
 
-    // Se check_only=true, apenas verifica sem criar
-    if (check_only) return NextResponse.json({ ok: true, message: 'Nenhum duplicado encontrado.' });
+    if (b.check_only)
+      return NextResponse.json({
+        ok: true,
+        message: "Nenhum duplicado encontrado.",
+      });
 
-    const candidato = await prisma.candidato.create({
-      data: {
-        nome: nomeNorm,
-        partido: partido?.trim() || null,
-        numero: numero?.trim() || null,
-        cargo: cargo.trim(),
-        cidade: cidade.trim(),
-        bairro: bairro?.trim() || null,
-        foto_url: foto_url?.trim() || null,
-        campanha_id,
-        ano_eleicao: ano_eleicao ? parseInt(ano_eleicao) : 2026,
-      },
-    });
+    const partido = str(b.partido) || null;
+    const [candidato] = await db
+      .insert(candidatos)
+      .values({
+        nome,
+        partido,
+        numero: str(b.numero) || null,
+        cargo,
+        cidade,
+        bairro: str(b.bairro) || null,
+        foto_url: str(b.foto_url) || null,
+        campanha_id: String(b.campanha_id),
+        ano_eleicao: b.ano_eleicao ? parseInt(b.ano_eleicao) : 2026,
+        busca: buildBusca(nome, cargo, partido, cidade),
+      })
+      .returning();
 
     await recordAuditLog({
       admin: auth,
-      acao: 'CANDIDATO_CRIADO',
-      entidade: 'Candidato',
+      acao: "CANDIDATO_CRIADO",
+      entidade: "Candidato",
       entidadeId: candidato.id,
-      detalhes: { nome: candidato.nome, cargo: candidato.cargo, cidade: candidato.cidade, campanha_id: candidato.campanha_id },
+      detalhes: {
+        nome: candidato.nome,
+        cargo: candidato.cargo,
+        cidade: candidato.cidade,
+        campanha_id: candidato.campanha_id,
+      },
     });
-
     return NextResponse.json(candidato, { status: 201 });
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }
 
-
-// PATCH update a candidate
+// PATCH: atualiza candidato
 export async function PATCH(req: NextRequest) {
-  const auth = await getAdminIdentityWithRole(req, ['admin', 'editor']);
-  if ('error' in auth) return auth.error;
+  const auth = await getAdminIdentityWithRole(req, ["admin", "editor"]);
+  if ("error" in auth) return auth.error;
 
   try {
-    const body = await req.json();
-    const { id, nome, partido, numero, cargo, cidade, foto_url, status_verificacao } = body;
+    const b = await req.json();
+    if (!b.id)
+      return NextResponse.json({ error: "id obrigatório" }, { status: 400 });
+    const db = getDb();
+    const [atual] = await db
+      .select()
+      .from(candidatos)
+      .where(eq(candidatos.id, String(b.id)))
+      .limit(1);
+    if (!atual)
+      return NextResponse.json({ error: "Não encontrado" }, { status: 404 });
 
-    const candidato = await prisma.candidato.update({
-      where: { id },
-      data: {
-        nome,
-        partido,
-        numero,
-        cargo,
-        cidade,
-        foto_url,
-        ...(status_verificacao !== undefined && { status_verificacao }),
-      },
-    });
+    const set: Partial<typeof candidatos.$inferInsert> = {};
+    if (b.nome !== undefined) set.nome = str(b.nome);
+    if (b.partido !== undefined) set.partido = b.partido;
+    if (b.numero !== undefined) set.numero = b.numero;
+    if (b.cargo !== undefined) set.cargo = str(b.cargo);
+    if (b.cidade !== undefined) set.cidade = str(b.cidade);
+    if (b.foto_url !== undefined) set.foto_url = b.foto_url;
+    if (b.status_verificacao !== undefined)
+      set.status_verificacao = Boolean(b.status_verificacao);
+    set.busca = buildBusca(
+      set.nome ?? atual.nome,
+      atual.nome_urna,
+      set.cargo ?? atual.cargo,
+      set.partido ?? atual.partido,
+      set.cidade ?? atual.cidade,
+    );
+
+    const [candidato] = await db
+      .update(candidatos)
+      .set(set)
+      .where(eq(candidatos.id, atual.id))
+      .returning();
     await recordAuditLog({
       admin: auth,
-      acao: 'CANDIDATO_ATUALIZADO',
-      entidade: 'Candidato',
+      acao: "CANDIDATO_ATUALIZADO",
+      entidade: "Candidato",
       entidadeId: candidato.id,
       detalhes: {
         nome: candidato.nome,
@@ -151,10 +212,12 @@ export async function PATCH(req: NextRequest) {
         cidade: candidato.cidade,
       },
     });
-
     return NextResponse.json(candidato);
   } catch (error) {
-    console.error('Erro ao atualizar candidato:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error("Erro ao atualizar candidato:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }

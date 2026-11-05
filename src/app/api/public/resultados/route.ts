@@ -86,7 +86,8 @@ export async function GET(req: NextRequest) {
   // atributos: lista separada por vírgula, ou "todos"
   const atributosParam = searchParams.get('atributos') || 'todos';
   const atributosFiltro = atributosParam === 'todos' ? null : atributosParam.split(',').map(s => s.trim()).filter(Boolean);
-  const limite = parseBoundedInt(searchParams.get('limite'), 20, 1, 100);
+  // D1 aceita até 100 parâmetros por consulta (o ranking usa inArray com até `limite` ids)
+  const limite = parseBoundedInt(searchParams.get('limite'), 20, 1, 90);
 
   const desde = new Date();
   desde.setDate(desde.getDate() - dias);

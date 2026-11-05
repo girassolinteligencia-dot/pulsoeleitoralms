@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { and, count, desc, eq } from 'drizzle-orm';
+import { getDb } from '@/server/db/client';
+import { atributos as atributosT, avaliacoes, candidatos, manifestacoes, rodadasMetodologicas } from '@/server/db/schema';
 import { getAdminIdentity } from '@/lib/adminAuth';
-import { resolveRodadaScope } from '@/lib/rodadaScope';
+import { resolveRodadaScope } from '@/server/repos/rodadaScope';
 import { recordAuditLog } from '@/lib/auditLog';
 
 type SegmentData = {
@@ -163,21 +165,14 @@ export async function GET(req: NextRequest, segmentData: SegmentData) {
 
   try {
     const { id } = await segmentData.params;
-    const scope = await resolveRodadaScope({ rodadaId: id });
+    const db = getDb();
+    const scope = await resolveRodadaScope(db, { rodadaId: id });
 
     if (!scope.rodada) {
       return NextResponse.json({ error: 'Rodada metodológica não encontrada' }, { status: 404 });
     }
 
-    const invalidManifestacaoWhere = {
-      ...scope.manifestacaoWhere,
-      is_valid: false,
-    };
-    const invalidAvaliacaoWhere = {
-      ...scope.avaliacaoWhere,
-      is_valid: false,
-    };
-
+    const contar = async (q: Promise<{ n: number }[]>) => (await q)[0]?.n ?? 0;
     const [
       manifestacoesValidas,
       manifestacoesInvalidas,
@@ -186,24 +181,20 @@ export async function GET(req: NextRequest, segmentData: SegmentData) {
       candidatosAtivos,
       atributosRaw,
     ] = await Promise.all([
-      prisma.manifestacao.count({ where: scope.manifestacaoWhere }),
-      prisma.manifestacao.count({ where: invalidManifestacaoWhere }),
-      prisma.avaliacao.count({ where: scope.avaliacaoWhere }),
-      prisma.avaliacao.count({ where: invalidAvaliacaoWhere }),
-      prisma.candidato.count({ where: scope.candidatoWhere }),
-      prisma.avaliacao.groupBy({
-        by: ['atributo_id'],
-        where: scope.avaliacaoWhere,
-        _count: { _all: true },
-        orderBy: { _count: { atributo_id: 'desc' } },
-        take: 10,
-      }),
+      contar(db.select({ n: count() }).from(manifestacoes).where(scope.manifestacaoWhere)),
+      contar(db.select({ n: count() }).from(manifestacoes).where(and(scope.manifestacaoBase, eq(manifestacoes.is_valid, false)))),
+      contar(db.select({ n: count() }).from(avaliacoes).where(scope.avaliacaoWhere)),
+      contar(db.select({ n: count() }).from(avaliacoes).where(and(scope.avaliacaoBase, eq(avaliacoes.is_valid, false)))),
+      contar(db.select({ n: count() }).from(candidatos).where(scope.candidatoWhere)),
+      db
+        .select({ atributo_id: avaliacoes.atributo_id, nome: atributosT.nome, polaridade: atributosT.polaridade, total: count() })
+        .from(avaliacoes)
+        .innerJoin(atributosT, eq(atributosT.id, avaliacoes.atributo_id))
+        .where(scope.avaliacaoWhere)
+        .groupBy(avaliacoes.atributo_id, atributosT.nome, atributosT.polaridade)
+        .orderBy(desc(count()))
+        .limit(10),
     ]);
-
-    const atributos = await prisma.atributo.findMany({
-      where: { id: { in: atributosRaw.map((item) => item.atributo_id) } },
-      select: { id: true, nome: true, polaridade: true },
-    });
     const totalManifestacoes = manifestacoesValidas + manifestacoesInvalidas;
     const taxaInvalidacao = totalManifestacoes
       ? Number(((manifestacoesInvalidas / totalManifestacoes) * 100).toFixed(2))
@@ -235,15 +226,12 @@ export async function GET(req: NextRequest, segmentData: SegmentData) {
         avaliacoes_invalidas: avaliacoesInvalidas,
         taxa_invalidacao_percentual: taxaInvalidacao,
       },
-      atributos_mais_frequentes: atributosRaw.map((item) => {
-        const atributo = atributos.find((candidate) => candidate.id === item.atributo_id);
-        return {
-          id: item.atributo_id,
-          nome: atributo?.nome || 'Atributo não encontrado',
-          polaridade: atributo?.polaridade ?? null,
-          total: item._count._all,
-        };
-      }),
+      atributos_mais_frequentes: atributosRaw.map((item) => ({
+        id: item.atributo_id,
+        nome: item.nome || 'Atributo não encontrado',
+        polaridade: item.polaridade ?? null,
+        total: item.total,
+      })),
       metodologia_declarada: {
         objetivo: null,
         publico_alvo: null,
@@ -267,21 +255,22 @@ export async function GET(req: NextRequest, segmentData: SegmentData) {
           },
     };
 
-    const rodadaCompleta = await prisma.rodadaMetodologica.findUnique({
-      where: { id },
-      select: {
-        objetivo: true,
-        publico_alvo: true,
-        abrangencia: true,
-        tamanho_amostra: true,
-        margem_erro: true,
-        nivel_confianca: true,
-        plano_amostral: true,
-        ponderacao: true,
-        questionario: true,
-        observacoes: true,
-      },
-    });
+    const [rodadaCompleta] = await db
+      .select({
+        objetivo: rodadasMetodologicas.objetivo,
+        publico_alvo: rodadasMetodologicas.publico_alvo,
+        abrangencia: rodadasMetodologicas.abrangencia,
+        tamanho_amostra: rodadasMetodologicas.tamanho_amostra,
+        margem_erro: rodadasMetodologicas.margem_erro,
+        nivel_confianca: rodadasMetodologicas.nivel_confianca,
+        plano_amostral: rodadasMetodologicas.plano_amostral,
+        ponderacao: rodadasMetodologicas.ponderacao,
+        questionario: rodadasMetodologicas.questionario,
+        observacoes: rodadasMetodologicas.observacoes,
+      })
+      .from(rodadasMetodologicas)
+      .where(eq(rodadasMetodologicas.id, id))
+      .limit(1);
 
     const dossieCompleto = {
       ...dossie,

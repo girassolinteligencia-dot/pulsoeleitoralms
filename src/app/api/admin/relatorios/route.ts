@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { and, eq, isNotNull, type SQL } from 'drizzle-orm';
+import { getDb, type DB } from '@/server/db/client';
+import { atributos as atributosT, avaliacoes, candidatos as candidatosT, manifestacoes as manifestacoesT, orgaosPublicos, servicosPublicos } from '@/server/db/schema';
 import { startOfDay } from 'date-fns';
 import { requireAdmin } from '@/lib/adminAuth';
-import { resolveRodadaScope } from '@/lib/rodadaScope';
+import { resolveRodadaScope } from '@/server/repos/rodadaScope';
 
 function countProfileField(manifestacoes: { perfil: unknown }[], field: string) {
   const counts = new Map<string, number>();
@@ -161,11 +163,66 @@ function buildCandidatoCidadeStats(
 
 type CategoriaFiltro = 'todos' | 'politico' | 'orgao_publico' | 'servico_publico';
 
-function buildCategoriaWhere(categoria: CategoriaFiltro, base: Record<string, unknown>) {
-  if (categoria === 'politico') return { ...base, candidato_id: { not: null } };
-  if (categoria === 'orgao_publico') return { ...base, orgao_id: { not: null } };
-  if (categoria === 'servico_publico') return { ...base, servico_id: { not: null } };
-  return base;
+type ColId = Parameters<typeof isNotNull>[0];
+function categoriaCond(categoria: CategoriaFiltro, cols: { c: ColId; o: ColId; s: ColId }) {
+  if (categoria === 'politico') return isNotNull(cols.c);
+  if (categoria === 'orgao_publico') return isNotNull(cols.o);
+  if (categoria === 'servico_publico') return isNotNull(cols.s);
+  return undefined;
+}
+
+/** Agrupa linhas por chave, somando valor e contando (equivalente ao groupBy do Prisma). */
+function agrupar<T>(rows: T[], key: (r: T) => string | null, valor: (r: T) => number = () => 0) {
+  const m = new Map<string, { soma: number; total: number }>();
+  for (const r of rows) {
+    const k = key(r);
+    if (k == null) continue;
+    const cur = m.get(k) ?? { soma: 0, total: 0 };
+    cur.soma += valor(r);
+    cur.total += 1;
+    m.set(k, cur);
+  }
+  return m;
+}
+
+/** Carrega avaliações e manifestações do recorte com os dados das entidades já juntados. */
+async function carregarRecorte(db: DB, avWhere: SQL | undefined, manWhere: SQL | undefined) {
+  const [avRows, manRows, atributosData] = await Promise.all([
+    db
+      .select({
+        valor: avaliacoes.valor,
+        criado_em: avaliacoes.criado_em,
+        atributo_id: avaliacoes.atributo_id,
+        candidato_id: avaliacoes.candidato_id,
+        orgao_id: avaliacoes.orgao_id,
+        servico_id: avaliacoes.servico_id,
+        cNome: candidatosT.nome,
+        cCargo: candidatosT.cargo,
+        cPartido: candidatosT.partido,
+        oNome: orgaosPublicos.nome,
+        oTipo: orgaosPublicos.tipo,
+        sNome: servicosPublicos.nome,
+        sTipo: servicosPublicos.tipo,
+      })
+      .from(avaliacoes)
+      .leftJoin(candidatosT, eq(candidatosT.id, avaliacoes.candidato_id))
+      .leftJoin(orgaosPublicos, eq(orgaosPublicos.id, avaliacoes.orgao_id))
+      .leftJoin(servicosPublicos, eq(servicosPublicos.id, avaliacoes.servico_id))
+      .where(avWhere),
+    db
+      .select({
+        perfil: manifestacoesT.perfil,
+        aprovacao: manifestacoesT.aprovacao,
+        expectativa_vitoria: manifestacoesT.expectativa_vitoria,
+        candidato_id: manifestacoesT.candidato_id,
+        cNome: candidatosT.nome,
+      })
+      .from(manifestacoesT)
+      .leftJoin(candidatosT, eq(candidatosT.id, manifestacoesT.candidato_id))
+      .where(manWhere),
+    db.select({ id: atributosT.id, nome: atributosT.nome, polaridade: atributosT.polaridade }).from(atributosT),
+  ]);
+  return { avRows, manRows, atributosData };
 }
 
 export async function GET(req: NextRequest) {
@@ -177,39 +234,37 @@ export async function GET(req: NextRequest) {
     const dias = parseInt(searchParams.get('dias') || '30');
     const rodadaId = searchParams.get('rodadaId');
     const categoria = (searchParams.get('categoria') || 'todos') as CategoriaFiltro;
-    const scope = await resolveRodadaScope({ rodadaId, dias });
+    const db = getDb();
+    const scope = await resolveRodadaScope(db, { rodadaId, dias });
 
     if (rodadaId && !scope.rodada) {
       return NextResponse.json({ error: 'Rodada metodológica não encontrada' }, { status: 404 });
     }
 
-    const avaliacaoWhere = buildCategoriaWhere(categoria, scope.avaliacaoWhere as Record<string, unknown>);
-    const manifestacaoWhere = buildCategoriaWhere(categoria, scope.manifestacaoWhere as Record<string, unknown>);
+    const { avRows, manRows, atributosData } = await carregarRecorte(
+      db,
+      and(scope.avaliacaoWhere, categoriaCond(categoria, { c: avaliacoes.candidato_id, o: avaliacoes.orgao_id, s: avaliacoes.servico_id })),
+      and(scope.manifestacaoWhere, categoriaCond(categoria, { c: manifestacoesT.candidato_id, o: manifestacoesT.orgao_id, s: manifestacoesT.servico_id })),
+    );
+    const quer = (c: CategoriaFiltro) => categoria === 'todos' || categoria === c;
+    type RawGroup = { _sum: { valor: number }; _count: { _all: number } };
+    const toRaw = <K extends string>(m: Map<string, { soma: number; total: number }>, campo: K) =>
+      [...m.entries()].map(([id, v]) => ({ [campo]: id, _sum: { valor: v.soma }, _count: { _all: v.total } }) as Record<K, string> & RawGroup);
 
     // 1. Ranking Líquido — todas as entidades
-    const [rankingCandRaw, rankingOrgRaw, rankingSvcRaw] = await Promise.all([
-      categoria === 'todos' || categoria === 'politico'
-        ? prisma.avaliacao.groupBy({ by: ['candidato_id'], _sum: { valor: true }, _count: { _all: true }, where: { ...avaliacaoWhere, candidato_id: { not: null } } })
-        : Promise.resolve([]),
-      categoria === 'todos' || categoria === 'orgao_publico'
-        ? prisma.avaliacao.groupBy({ by: ['orgao_id'], _sum: { valor: true }, _count: { _all: true }, where: { ...avaliacaoWhere, orgao_id: { not: null } } })
-        : Promise.resolve([]),
-      categoria === 'todos' || categoria === 'servico_publico'
-        ? prisma.avaliacao.groupBy({ by: ['servico_id'], _sum: { valor: true }, _count: { _all: true }, where: { ...avaliacaoWhere, servico_id: { not: null } } })
-        : Promise.resolve([]),
-    ]);
+    const rankingCandRaw = quer('politico') ? toRaw(agrupar(avRows, (r) => r.candidato_id, (r) => r.valor), 'candidato_id') : [];
+    const rankingOrgRaw = quer('orgao_publico') ? toRaw(agrupar(avRows, (r) => r.orgao_id, (r) => r.valor), 'orgao_id') : [];
+    const rankingSvcRaw = quer('servico_publico') ? toRaw(agrupar(avRows, (r) => r.servico_id, (r) => r.valor), 'servico_id') : [];
 
-    const [candidatos, orgaos, servicos] = await Promise.all([
-      rankingCandRaw.length > 0
-        ? prisma.candidato.findMany({ where: scope.rodada?.campanha_id ? { campanha_id: scope.rodada.campanha_id } : {}, select: { id: true, nome: true, cargo: true, partido: true } })
-        : Promise.resolve([]),
-      rankingOrgRaw.length > 0
-        ? prisma.orgaoPublico.findMany({ select: { id: true, nome: true, tipo: true } })
-        : Promise.resolve([]),
-      rankingSvcRaw.length > 0
-        ? prisma.servicoPublico.findMany({ select: { id: true, nome: true, tipo: true } })
-        : Promise.resolve([]),
+    const unicos = <T extends { id: string }>(xs: (T | null)[]) =>
+      [...new Map(xs.filter((x): x is T => !!x).map((x) => [x.id, x])).values()];
+    const candidatos = unicos([
+      ...avRows.map((r) => (r.candidato_id && r.cNome ? { id: r.candidato_id, nome: r.cNome, cargo: r.cCargo ?? '', partido: r.cPartido } : null)),
+      ...manRows.map((r) => (r.candidato_id && r.cNome ? { id: r.candidato_id, nome: r.cNome, cargo: '', partido: null as string | null } : null)),
     ]);
+    const orgaos = unicos(avRows.map((r) => (r.orgao_id && r.oNome ? { id: r.orgao_id, nome: r.oNome, tipo: r.oTipo ?? '' } : null)));
+    const servicos = unicos(avRows.map((r) => (r.servico_id && r.sNome ? { id: r.servico_id, nome: r.sNome, tipo: r.sTipo ?? '' } : null)));
+    const manifestacoes = manRows;
 
     const candidatoNomeById = new Map(candidatos.map(c => [c.id, c.nome]));
     const orgaoNomeById = new Map(orgaos.map(o => [o.id, o.nome]));
@@ -230,14 +285,12 @@ export async function GET(req: NextRequest) {
     ].sort((a, b) => b.liquidScore - a.liquidScore);
 
     // 2. Sentimento por Categoria/Cargo
-    const cargoRaw = await prisma.avaliacao.findMany({
-      where: avaliacaoWhere,
-      include: {
-        candidato: { select: { cargo: true } },
-        orgao: { select: { tipo: true } },
-        servico: { select: { tipo: true } },
-      }
-    });
+    const cargoRaw = avRows.map((r) => ({
+      valor: r.valor,
+      candidato: r.cCargo != null ? { cargo: r.cCargo } : null,
+      orgao: r.oTipo != null ? { tipo: r.oTipo } : null,
+      servico: r.sTipo != null ? { tipo: r.sTipo } : null,
+    }));
 
     const cargoMap: Record<string, { apoio: number; neutro: number; rejeicao: number; total: number }> = {};
     cargoRaw.forEach(av => {
@@ -257,18 +310,11 @@ export async function GET(req: NextRequest) {
     }));
 
     // 3. Temas (Atributos)
-    const temasRaw = await prisma.avaliacao.groupBy({
-      by: ['atributo_id'],
-      _count: { _all: true },
-      where: avaliacaoWhere,
-      orderBy: { _count: { atributo_id: 'desc' } },
-      take: 8
-    });
-
-    const atributos = await prisma.atributo.findMany({
-      where: { id: { in: temasRaw.map(t => t.atributo_id) } },
-      select: { id: true, nome: true }
-    });
+    const temasRaw = [...agrupar(avRows, (r) => r.atributo_id).entries()]
+      .map(([atributo_id, v]) => ({ atributo_id, _count: { _all: v.total } }))
+      .sort((x, y) => y._count._all - x._count._all)
+      .slice(0, 8);
+    const atributos = atributosData;
 
     const temas = temasRaw.map(t => ({
       name: atributos.find(a => a.id === t.atributo_id)?.nome || 'Outro',
@@ -276,10 +322,7 @@ export async function GET(req: NextRequest) {
     }));
 
     // 4. Tendência de Sentimento (Últimos 30 dias)
-    const tendenciaRaw = await prisma.avaliacao.findMany({
-      where: avaliacaoWhere,
-      select: { valor: true, criado_em: true }
-    });
+    const tendenciaRaw = avRows;
 
     const dailyStats: Record<string, { score: number; count: number }> = {};
     tendenciaRaw.forEach(av => {
@@ -311,11 +354,6 @@ export async function GET(req: NextRequest) {
     });
 
     // 6. Dados Demográficos e de Aprovação (da tabela Manifestacao)
-    const manifestacoes = await prisma.manifestacao.findMany({
-      where: manifestacaoWhere,
-      select: { perfil: true, aprovacao: true, expectativa_vitoria: true, candidato_id: true }
-    });
-
     const demoStats: Record<string, Record<string, number>> = {
       sexo: {},
       escolaridade: {},
@@ -363,15 +401,7 @@ export async function GET(req: NextRequest) {
     }).length;
 
     // 8. Top Atributos (Virtudes vs Defeitos)
-    const atributosData = await prisma.atributo.findMany({
-      select: { id: true, nome: true, polaridade: true }
-    });
-
-    const avAtributosRaw = await prisma.avaliacao.groupBy({
-      by: ['atributo_id'],
-      _count: { _all: true },
-      where: avaliacaoWhere
-    });
+    const avAtributosRaw = [...agrupar(avRows, (r) => r.atributo_id).entries()].map(([atributo_id, v]) => ({ atributo_id, _count: { _all: v.total } }));
 
     const virtudes = avAtributosRaw
       .map(av => {
@@ -399,11 +429,14 @@ export async function GET(req: NextRequest) {
     );
 
     // 9. Atributos por entidade (acordeão) — todas as categorias
-    const [avPorCandAtrib, avPorOrgAtrib, avPorSvcAtrib] = await Promise.all([
-      prisma.avaliacao.groupBy({ by: ['candidato_id', 'atributo_id'], _count: { _all: true }, where: { ...avaliacaoWhere, candidato_id: { not: null } } }),
-      prisma.avaliacao.groupBy({ by: ['orgao_id', 'atributo_id'], _count: { _all: true }, where: { ...avaliacaoWhere, orgao_id: { not: null } } }),
-      prisma.avaliacao.groupBy({ by: ['servico_id', 'atributo_id'], _count: { _all: true }, where: { ...avaliacaoWhere, servico_id: { not: null } } }),
-    ]);
+    const porEntidadeAtributo = <K extends 'candidato_id' | 'orgao_id' | 'servico_id'>(campo: K) =>
+      [...agrupar(avRows, (r) => (r[campo] ? r[campo] + '::' + r.atributo_id : null)).entries()].map(([k, v]) => {
+        const [id, atributo_id] = k.split('::');
+        return { [campo]: id, atributo_id, _count: { _all: v.total } } as Record<K, string> & { atributo_id: string; _count: { _all: number } };
+      });
+    const avPorCandAtrib = porEntidadeAtributo('candidato_id');
+    const avPorOrgAtrib = porEntidadeAtributo('orgao_id');
+    const avPorSvcAtrib = porEntidadeAtributo('servico_id');
 
     const buildAtributosEntidade = (entityId: string, rows: { atributo_id: string; _count: { _all: number } }[]) =>
       rows.map(av => {

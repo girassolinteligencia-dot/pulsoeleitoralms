@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { adminFetch, downloadAdminCsv } from '@/lib/adminClient';
 
@@ -169,43 +168,12 @@ export default function AdminDashboard() {
   }, []);
 
   useEffect(() => {
-    let channel: ReturnType<typeof supabase.channel> | null = null;
-    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-
-    const init = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) { router.push('/admin/login'); return; }
-
-        await fetchData();
-      } catch (err) {
-        console.error('Dashboard auth check error:', err);
-        setError('Erro na verificação de autenticação');
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const handleInsert = () => {
-          if (debounceTimer) clearTimeout(debounceTimer);
-          debounceTimer = setTimeout(fetchData, 2000);
-        };
-
-        channel = supabase
-          .channel('avaliacoes_realtime')
-          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'avaliacoes' }, handleInsert)
-          .subscribe();
-      } catch (err) {
-        console.warn('Dashboard realtime disabled:', err);
-      }
-    };
-
-    init();
-
-    return () => {
-      if (debounceTimer) clearTimeout(debounceTimer);
-      if (channel) supabase.removeChannel(channel);
-    };
+    // Atualização periódica (substitui o Realtime do Supabase); pausa com a aba oculta.
+    fetchData();
+    const timer = setInterval(() => {
+      if (document.visibilityState === "visible") fetchData();
+    }, 30_000);
+    return () => clearInterval(timer);
   }, [router, fetchData]);
 
   if (loading) return (

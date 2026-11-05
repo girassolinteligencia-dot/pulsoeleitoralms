@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { and, count, desc, eq, like, ne } from 'drizzle-orm';
+import { getDb } from '@/server/db/client';
+import { campanhas, rodadasMetodologicas as rodadas } from '@/server/db/schema';
 import { getAdminIdentityWithRole, requireAdmin } from '@/lib/adminAuth';
 import { recordAuditLog } from '@/lib/auditLog';
 
@@ -97,17 +99,12 @@ function validateRodadaGovernance(data: ReturnType<typeof buildRodadaData>) {
 async function findConflictingActiveRodada(campanhaId: string | null, ignoreId?: string) {
   if (!campanhaId) return null;
 
-  return prisma.rodadaMetodologica.findFirst({
-    where: {
-      campanha_id: campanhaId,
-      status: 'ativa',
-      ...(ignoreId && { id: { not: ignoreId } }),
-    },
-    select: {
-      id: true,
-      titulo: true,
-    },
-  });
+  const [r] = await getDb()
+    .select({ id: rodadas.id, titulo: rodadas.titulo })
+    .from(rodadas)
+    .where(and(eq(rodadas.campanha_id, campanhaId), eq(rodadas.status, 'ativa'), ignoreId ? ne(rodadas.id, ignoreId) : undefined))
+    .limit(1);
+  return r ?? null;
 }
 
 export async function GET(req: NextRequest) {
@@ -121,40 +118,29 @@ export async function GET(req: NextRequest) {
     const tipo = searchParams.get('tipo') || '';
     const status = searchParams.get('status') || '';
     const search = searchParams.get('search') || '';
-    const skip = (page - 1) * limit;
-
-    const where = {
-      ...(tipo && TIPOS_PERMITIDOS.has(tipo) && { tipo }),
-      ...(status && STATUS_PERMITIDOS.has(status) && { status }),
-      ...(search && {
-        titulo: {
-          contains: search,
-          mode: 'insensitive' as const,
-        },
-      }),
-    };
-
-    const [rodadas, total] = await Promise.all([
-      prisma.rodadaMetodologica.findMany({
-        where,
-        include: {
-          campanha: {
-            select: {
-              id: true,
-              nome: true,
-              slug: true,
-            },
-          },
-        },
-        orderBy: { criado_em: 'desc' },
-        take: limit,
-        skip,
-      }),
-      prisma.rodadaMetodologica.count({ where }),
+    const busca = search.trim().replace(/[%_]/g, '');
+    const where = and(
+      tipo && TIPOS_PERMITIDOS.has(tipo) ? eq(rodadas.tipo, tipo) : undefined,
+      status && STATUS_PERMITIDOS.has(status) ? eq(rodadas.status, status) : undefined,
+      busca ? like(rodadas.titulo, `%${busca}%`) : undefined,
+    );
+    const db = getDb();
+    const [rows, [tot]] = await Promise.all([
+      db
+        .select({ r: rodadas, campanha: { id: campanhas.id, nome: campanhas.nome, slug: campanhas.slug } })
+        .from(rodadas)
+        .leftJoin(campanhas, eq(campanhas.id, rodadas.campanha_id))
+        .where(where)
+        .orderBy(desc(rodadas.criado_em))
+        .limit(limit)
+        .offset((page - 1) * limit),
+      db.select({ n: count() }).from(rodadas).where(where),
     ]);
+    const lista = rows.map(({ r, campanha }) => ({ ...r, campanha: campanha?.id ? campanha : null }));
+    const total = tot?.n ?? 0;
 
     return NextResponse.json({
-      data: rodadas,
+      data: lista,
       total,
       page,
       totalPages: Math.ceil(total / limit),
@@ -189,7 +175,7 @@ export async function POST(req: NextRequest) {
       }, { status: 409 });
     }
 
-    const rodada = await prisma.rodadaMetodologica.create({ data });
+    const [rodada] = await getDb().insert(rodadas).values(data).returning();
     await recordAuditLog({
       admin: auth,
       acao: 'RODADA_CRIADA',
@@ -222,7 +208,7 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: 'ID é obrigatório' }, { status: 400 });
     }
 
-    const current = await prisma.rodadaMetodologica.findUnique({ where: { id } });
+    const [current] = await getDb().select().from(rodadas).where(eq(rodadas.id, id)).limit(1);
     if (!current) {
       return NextResponse.json({ error: 'Rodada não encontrada' }, { status: 404 });
     }
@@ -251,10 +237,7 @@ export async function PATCH(req: NextRequest) {
       }, { status: 409 });
     }
 
-    const rodada = await prisma.rodadaMetodologica.update({
-      where: { id },
-      data,
-    });
+    const [rodada] = await getDb().update(rodadas).set(data).where(eq(rodadas.id, id)).returning();
     await recordAuditLog({
       admin: auth,
       acao: 'RODADA_ATUALIZADA',

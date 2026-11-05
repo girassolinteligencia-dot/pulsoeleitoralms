@@ -1,181 +1,124 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { requireAdmin } from '@/lib/adminAuth';
+import { NextRequest, NextResponse } from "next/server";
+import { sql } from "drizzle-orm";
+import { requireAdmin } from "@/lib/adminAuth";
+import { getDb } from "@/server/db/client";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
+
+// Campo Grande (MS) é UTC-4 o ano todo (sem horário de verão desde 2019).
+const OFFSET_MS = "-4 hours";
 
 function formatCampoGrandeDate(date: Date) {
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'America/Campo_Grande',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Campo_Grande",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
   }).format(date);
 }
 
-function normalizeSqlDateKey(value: Date | string) {
-  if (value instanceof Date) return value.toISOString().slice(0, 10);
-  return value.slice(0, 10);
-}
+type Top = {
+  id: string;
+  nome: string | null;
+  sub: string | null;
+  cidade: string | null;
+  total: number;
+  soma: number;
+};
 
 export async function GET(req: NextRequest) {
   const authError = await requireAdmin(req);
   if (authError) return authError;
 
   try {
-    const agora = new Date();
-    const inicio24h = new Date(agora.getTime() - 24 * 60 * 60 * 1000);
-    const inicio7d = new Date(agora.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const db = getDb();
+    const agora = Date.now();
+    const inicio24h = agora - 24 * 60 * 60 * 1000;
+    const inicio7d = agora - 7 * 24 * 60 * 60 * 1000;
 
-    const [
-      totalEvaluations,
-      totalCandidatos,
-      totalCampanhas,
-      totalAtributos,
-      totalOrgaos,
-      totalServicos,
-      avaliacoes24h,
-      bloqueiosAtivos,
-      topCandidatosRaw,
-      topOrgaosRaw,
-      topServicosRaw,
-      topAtributosRaw,
-      atividadeSemanalRaw,
-    ] = await Promise.all([
-      prisma.manifestacao.count(),
-      prisma.candidato.count({ where: { status: 'Ativo' } }),
-      prisma.campanha.count(),
-      prisma.atributo.count({ where: { visivel: true } }),
-      prisma.orgaoPublico.count({ where: { status: 'Ativo' } }),
-      prisma.servicoPublico.count({ where: { status: 'Ativo' } }),
-      prisma.manifestacao.count({ where: { criado_em: { gte: inicio24h } } }),
-      prisma.bloqueio.count({
-        where: { OR: [{ expira_em: null }, { expira_em: { gt: agora } }] },
-      }),
-      prisma.avaliacao.groupBy({
-        by: ['candidato_id'],
-        where: { candidato_id: { not: null } },
-        _count: { _all: true },
-        _sum: { valor: true },
-        orderBy: { _count: { candidato_id: 'desc' } },
-        take: 5,
-      }),
-      prisma.avaliacao.groupBy({
-        by: ['orgao_id'],
-        where: { orgao_id: { not: null } },
-        _count: { _all: true },
-        _sum: { valor: true },
-        orderBy: { _count: { orgao_id: 'desc' } },
-        take: 5,
-      }),
-      prisma.avaliacao.groupBy({
-        by: ['servico_id'],
-        where: { servico_id: { not: null } },
-        _count: { _all: true },
-        _sum: { valor: true },
-        orderBy: { _count: { servico_id: 'desc' } },
-        take: 5,
-      }),
-      prisma.avaliacao.groupBy({
-        by: ['atributo_id'],
-        _count: { _all: true },
-        orderBy: { _count: { atributo_id: 'desc' } },
-        take: 5,
-      }),
-      prisma.$queryRaw<{ dia: Date | string; total: number }[]>`
-        SELECT DATE(criado_em AT TIME ZONE 'America/Campo_Grande') AS dia,
-               COUNT(*)::int AS total
-        FROM manifestacoes
-        WHERE criado_em >= ${inicio7d}
-        GROUP BY dia
-        ORDER BY dia ASC
-      `,
-    ]);
+    const top = (col: string, tabela: string, sub: string) =>
+      db.all<Top>(sql`
+        select a.${sql.raw(col)} as id, e.nome as nome, e.${sql.raw(sub)} as sub, e.cidade as cidade,
+               count(*) as total, coalesce(sum(a.valor), 0) as soma
+        from avaliacoes a left join ${sql.raw(tabela)} e on e.id = a.${sql.raw(col)}
+        where a.${sql.raw(col)} is not null
+        group by a.${sql.raw(col)}
+        order by total desc
+        limit 5
+      `);
 
-    const candidatoIds = topCandidatosRaw.map(r => r.candidato_id).filter(Boolean) as string[];
-    const candidatos = await prisma.candidato.findMany({
-      where: { id: { in: candidatoIds } },
-      select: { id: true, nome: true, cargo: true, cidade: true },
-    });
-    const candidatoMap = Object.fromEntries(candidatos.map(c => [c.id, c]));
-    const topCandidatos = topCandidatosRaw.map(r => ({
-      id: r.candidato_id,
-      nome: candidatoMap[r.candidato_id!]?.nome ?? '—',
-      cargo: candidatoMap[r.candidato_id!]?.cargo ?? '—',
-      cidade: candidatoMap[r.candidato_id!]?.cidade ?? '—',
-      total: r._count._all,
-      liquidScore: r._sum.valor ?? 0,
-    }));
+    const [[tot], topCand, topOrg, topSvc, topAtrib, semana] =
+      await Promise.all([
+        db.all<Record<string, number>>(sql`
+        select
+          (select count(*) from manifestacoes) as totalEvaluations,
+          (select count(*) from candidatos where status = 'Ativo') as totalCandidatos,
+          (select count(*) from campanhas) as totalCampanhas,
+          (select count(*) from atributos where visivel = 1) as totalAtributos,
+          (select count(*) from orgaos_publicos where status = 'Ativo') as totalOrgaos,
+          (select count(*) from servicos_publicos where status = 'Ativo') as totalServicos,
+          (select count(*) from manifestacoes where criado_em >= ${inicio24h}) as avaliacoes24h,
+          (select count(*) from bloqueios where expira_em is null or expira_em > ${agora}) as bloqueiosAtivos
+      `),
+        top("candidato_id", "candidatos", "cargo"),
+        top("orgao_id", "orgaos_publicos", "tipo"),
+        top("servico_id", "servicos_publicos", "tipo"),
+        db.all<{
+          id: string;
+          nome: string | null;
+          polaridade: number | null;
+          total: number;
+        }>(sql`
+        select a.atributo_id as id, t.nome as nome, t.polaridade as polaridade, count(*) as total
+        from avaliacoes a left join atributos t on t.id = a.atributo_id
+        group by a.atributo_id order by total desc limit 5
+      `),
+        db.all<{ dia: string; total: number }>(sql`
+        select date(criado_em / 1000, 'unixepoch', ${OFFSET_MS}) as dia, count(*) as total
+        from manifestacoes where criado_em >= ${inicio7d}
+        group by dia order by dia asc
+      `),
+      ]);
 
-    const orgaoIds = topOrgaosRaw.map(r => r.orgao_id).filter(Boolean) as string[];
-    const orgaosTop = await prisma.orgaoPublico.findMany({
-      where: { id: { in: orgaoIds } },
-      select: { id: true, nome: true, tipo: true, cidade: true },
-    });
-    const orgaoMap = Object.fromEntries(orgaosTop.map(o => [o.id, o]));
-    const topOrgaos = topOrgaosRaw.map(r => ({
-      id: r.orgao_id,
-      nome: orgaoMap[r.orgao_id!]?.nome ?? '—',
-      tipo: orgaoMap[r.orgao_id!]?.tipo ?? '—',
-      cidade: orgaoMap[r.orgao_id!]?.cidade ?? '—',
-      total: r._count._all,
-      liquidScore: r._sum.valor ?? 0,
-    }));
-
-    const servicoIds = topServicosRaw.map(r => r.servico_id).filter(Boolean) as string[];
-    const servicosTop = await prisma.servicoPublico.findMany({
-      where: { id: { in: servicoIds } },
-      select: { id: true, nome: true, tipo: true, cidade: true },
-    });
-    const servicoMap = Object.fromEntries(servicosTop.map(s => [s.id, s]));
-    const topServicos = topServicosRaw.map(r => ({
-      id: r.servico_id,
-      nome: servicoMap[r.servico_id!]?.nome ?? '—',
-      tipo: servicoMap[r.servico_id!]?.tipo ?? '—',
-      cidade: servicoMap[r.servico_id!]?.cidade ?? '—',
-      total: r._count._all,
-      liquidScore: r._sum.valor ?? 0,
-    }));
-
-    const atributoIds = topAtributosRaw.map(r => r.atributo_id);
-    const atributos = await prisma.atributo.findMany({
-      where: { id: { in: atributoIds } },
-      select: { id: true, nome: true, polaridade: true },
-    });
-    const atributoMap = Object.fromEntries(atributos.map(a => [a.id, a]));
-    const topAtributos = topAtributosRaw.map(r => ({
-      id: r.atributo_id,
-      nome: atributoMap[r.atributo_id]?.nome ?? '—',
-      polaridade: atributoMap[r.atributo_id]?.polaridade ?? 1,
-      total: r._count._all,
-    }));
+    const mapTop = (rows: Top[], subKey: "cargo" | "tipo") =>
+      rows.map((r) => ({
+        id: r.id,
+        nome: r.nome ?? "—",
+        [subKey]: r.sub ?? "—",
+        cidade: r.cidade ?? "—",
+        total: r.total,
+        liquidScore: r.soma ?? 0,
+      }));
 
     const atividadeSemanal: { dia: string; total: number }[] = [];
     for (let i = 6; i >= 0; i--) {
-      const d = new Date(agora);
-      d.setDate(d.getDate() - i);
-      const diaStr = formatCampoGrandeDate(d);
-      const encontrado = atividadeSemanalRaw.find(r => normalizeSqlDateKey(r.dia) === diaStr);
-      atividadeSemanal.push({ dia: diaStr, total: encontrado ? Number(encontrado.total) : 0 });
+      const diaStr = formatCampoGrandeDate(
+        new Date(agora - i * 24 * 60 * 60 * 1000),
+      );
+      atividadeSemanal.push({
+        dia: diaStr,
+        total: Number(semana.find((r) => r.dia === diaStr)?.total ?? 0),
+      });
     }
 
     return NextResponse.json({
-      totalEvaluations,
-      totalCandidatos,
-      totalCampanhas,
-      totalAtributos,
-      totalOrgaos,
-      totalServicos,
-      avaliacoes24h,
-      bloqueiosAtivos,
-      topCandidatos,
-      topOrgaos,
-      topServicos,
-      topAtributos,
+      ...tot,
+      topCandidatos: mapTop(topCand, "cargo"),
+      topOrgaos: mapTop(topOrg, "tipo"),
+      topServicos: mapTop(topSvc, "tipo"),
+      topAtributos: topAtrib.map((r) => ({
+        id: r.id,
+        nome: r.nome ?? "—",
+        polaridade: r.polaridade ?? 1,
+        total: r.total,
+      })),
       atividadeSemanal,
     });
   } catch (error) {
-    console.error('Error fetching admin stats:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error("Error fetching admin stats:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }

@@ -14,7 +14,9 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     "scratch/**",
     "scripts/**",
-    "check_*.js",
+    "legado/**",
+    ".open-next/**",
+    ".wrangler/**",
   ]),
   {
     rules: {

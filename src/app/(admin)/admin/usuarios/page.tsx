@@ -11,6 +11,7 @@ type AdminUser = {
   nome: string | null;
   role: AdminRole;
   ativo: boolean;
+  tem_senha?: boolean;
   ultimo_login_em: string | null;
   criado_em: string;
   atualizado_em: string;
@@ -45,7 +46,7 @@ export default function AdminUsersPage() {
   const [savingId, setSavingId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const [newUser, setNewUser] = useState({ nome: '', email: '', role: 'viewer' as AdminRole });
+  const [newUser, setNewUser] = useState({ nome: '', email: '', senha: '', role: 'viewer' as AdminRole });
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -78,7 +79,7 @@ export default function AdminUsersPage() {
       });
       const payload = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(payload.error || 'Falha ao criar usuário');
-      setNewUser({ nome: '', email: '', role: 'viewer' });
+      setNewUser({ nome: '', email: '', senha: '', role: 'viewer' });
       await fetchUsers();
       setMessage('Usuário administrativo criado.');
     } catch (error) {
@@ -106,6 +107,27 @@ export default function AdminUsersPage() {
     }
   };
 
+  const definirSenha = async (user: AdminUser) => {
+    const senha = window.prompt(`Nova senha para ${user.email} (mínimo 10 caracteres):`);
+    if (!senha) return;
+    setSavingId(user.id);
+    setMessage(null);
+    try {
+      const res = await adminFetch('/api/admin/users', {
+        method: 'PATCH',
+        body: JSON.stringify({ id: user.id, senha }),
+      });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(payload.error || 'Falha ao definir senha');
+      setUsers((current) => current.map((u) => (u.id === user.id ? payload : u)));
+      setMessage(`Senha de ${user.email} atualizada.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Falha ao definir senha');
+    } finally {
+      setSavingId(null);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-8 pb-32">
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
@@ -121,7 +143,7 @@ export default function AdminUsersPage() {
 
       <form
         onSubmit={createUser}
-        className="border border-border rounded-[2rem] bg-surface-1 p-6 md:p-8 grid grid-cols-1 lg:grid-cols-[1fr_1.2fr_220px_auto] gap-4 items-end"
+        className="border border-border rounded-[2rem] bg-surface-1 p-6 md:p-8 grid grid-cols-1 lg:grid-cols-[1fr_1.2fr_1fr_200px_auto] gap-4 items-end"
       >
         <label className="flex flex-col gap-2">
           <span className="text-[9px] uppercase font-bold tracking-widest text-text-muted">Nome</span>
@@ -140,6 +162,18 @@ export default function AdminUsersPage() {
             onChange={(event) => setNewUser((current) => ({ ...current, email: event.target.value }))}
             className="bg-white/5 border border-white/10 focus:border-primary/50 outline-none rounded-2xl px-5 py-4 text-xs text-white transition-all placeholder:text-white/20"
             placeholder="usuario@dominio.com"
+            required
+          />
+        </label>
+        <label className="flex flex-col gap-2">
+          <span className="text-[9px] uppercase font-bold tracking-widest text-text-muted">Senha (mín. 10)</span>
+          <input
+            type="password"
+            autoComplete="new-password"
+            minLength={10}
+            value={newUser.senha}
+            onChange={(event) => setNewUser((current) => ({ ...current, senha: event.target.value }))}
+            className="bg-white/5 border border-white/10 focus:border-primary/50 outline-none rounded-2xl px-5 py-4 text-xs text-white transition-all"
             required
           />
         </label>
@@ -226,6 +260,14 @@ export default function AdminUsersPage() {
                   >
                     {savingId === user.id ? 'Salvando...' : user.ativo ? 'Desativar' : 'Ativar'}
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => definirSenha(user)}
+                    disabled={savingId === user.id}
+                    className="mt-2 px-4 py-2 rounded-full border border-primary/30 bg-primary/5 text-primary text-[9px] font-bold uppercase tracking-widest disabled:opacity-40"
+                  >
+                    {user.tem_senha ? 'Trocar senha' : 'Definir senha'}
+                  </button>
                 </td>
               </tr>
             ))}
@@ -274,6 +316,14 @@ export default function AdminUsersPage() {
               className={`px-4 py-3 rounded-full border text-[9px] font-bold uppercase tracking-widest transition-all disabled:opacity-40 ${user.ativo ? 'text-negative border-negative/30 bg-negative/5' : 'text-positive border-positive/30 bg-positive/5'}`}
             >
               {savingId === user.id ? 'Salvando...' : user.ativo ? 'Desativar' : 'Ativar'}
+            </button>
+            <button
+              type="button"
+              onClick={() => definirSenha(user)}
+              disabled={savingId === user.id}
+              className="px-4 py-3 rounded-full border border-primary/30 bg-primary/5 text-primary text-[9px] font-bold uppercase tracking-widest disabled:opacity-40"
+            >
+              {user.tem_senha ? 'Trocar senha' : 'Definir senha'}
             </button>
           </div>
         ))}

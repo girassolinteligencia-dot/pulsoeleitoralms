@@ -15,6 +15,13 @@
       "when": 1793824956821,
       "tag": "0001_busca_normalizada",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1793905049395,
+      "tag": "0002_senha_admin",
+      "breakpoints": true
     }
   ]
 }

@@ -9,8 +9,9 @@ import { recordAuditLog } from "@/lib/auditLog";
 import { getDb } from "@/server/db/client";
 import { adminUsers } from "@/server/db/schema";
 
-// Observação: além de estar ativo aqui, o e-mail precisa estar liberado na policy
-// "Admins" da aplicação Pulso Admin no Cloudflare Access para conseguir entrar.
+import { gerarHashSenha, validarSenhaNova } from "@/server/senha";
+
+// Login do admin: e-mail + senha definidos aqui (hash PBKDF2; a senha nunca é devolvida).
 
 const normalizeEmail = (email: string) => email.toLowerCase().trim();
 const parseRole = (role: unknown): AdminRole | null =>
@@ -25,6 +26,7 @@ const serialize = (u: AdminUserRow) => ({
   nome: u.nome,
   role: u.role,
   ativo: u.ativo,
+  tem_senha: !!u.senha_hash,
   ultimo_login_em: u.ultimo_login_em,
   criado_em: u.criado_em,
   atualizado_em: u.atualizado_em,
@@ -92,6 +94,9 @@ export async function POST(req: NextRequest) {
         ? body.nome.trim()
         : null;
     const role = parseRole(body.role) || "viewer";
+    const erroSenha = validarSenhaNova(body.senha);
+    if (erroSenha)
+      return NextResponse.json({ error: erroSenha }, { status: 400 });
     if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
       return NextResponse.json(
         { error: "E-mail válido é obrigatório" },
@@ -114,7 +119,13 @@ export async function POST(req: NextRequest) {
 
     const [user] = await db
       .insert(adminUsers)
-      .values({ email, nome, role, ativo: true })
+      .values({
+        email,
+        nome,
+        role,
+        ativo: true,
+        senha_hash: await gerarHashSenha(body.senha),
+      })
       .returning();
     await recordAuditLog({
       admin: auth,
@@ -177,6 +188,12 @@ export async function PATCH(req: NextRequest) {
     if (typeof body.nome === "string") set.nome = body.nome.trim() || null;
     if (typeof body.role === "string") set.role = nextRole;
     if (typeof body.ativo === "boolean") set.ativo = nextAtivo;
+    if (body.senha !== undefined) {
+      const erroSenha = validarSenhaNova(body.senha);
+      if (erroSenha)
+        return NextResponse.json({ error: erroSenha }, { status: 400 });
+      set.senha_hash = await gerarHashSenha(body.senha);
+    }
     if (Object.keys(set).length === 0)
       return NextResponse.json(serialize(current));
 
@@ -194,6 +211,7 @@ export async function PATCH(req: NextRequest) {
         email: user.email,
         antes: { nome: current.nome, role: current.role, ativo: current.ativo },
         depois: { nome: user.nome, role: user.role, ativo: user.ativo },
+        senha_alterada: body.senha !== undefined,
       },
     });
     return NextResponse.json(serialize(user));

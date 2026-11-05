@@ -8,8 +8,6 @@ const EnvSchema = z.object({
   ENCRYPTION_KEY: z.string().min(32),
   JWT_SECRET: z.string().min(32),
   // Cloudflare Access (Etapa 3)
-  CF_ACCESS_TEAM_DOMAIN: z.string().optional(),
-  CF_ACCESS_AUD: z.string().optional(),
   ADMIN_EMAILS: z.string().default(""),
   // Turnstile (Etapa 3)
   TURNSTILE_SECRET_KEY: z.string().optional(),

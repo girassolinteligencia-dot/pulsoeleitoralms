@@ -21,7 +21,6 @@ export default function AdminLayout({
   const router = useRouter();
   const pathname = usePathname();
 
-  // Login é feito pelo Cloudflare Access antes da página carregar; /admin/login só redireciona.
   const isLoginPage = pathname === '/admin/login';
   const [loading, setLoading] = useState(!isLoginPage);
 
@@ -33,6 +32,7 @@ export default function AdminLayout({
     adminFetch('/api/admin/me')
       .then(async (res) => {
         if (cancel) return;
+        if (res.status === 401) return; // adminFetch já redireciona para /admin/login
         if (!res.ok) {
           setAccessDenied(true);
           setLoading(false);
@@ -58,7 +58,7 @@ export default function AdminLayout({
   if (accessDenied) return (
     <div className="w-full h-[100svh] bg-dark flex flex-col items-center justify-center gap-4 text-center px-4">
       <p className="text-primary font-display uppercase tracking-widest">Acesso administrativo negado</p>
-      <p className="text-text-muted text-sm max-w-sm">Seu e-mail foi autenticado, mas não está ativo na lista de usuários administrativos.</p>
+      <p className="text-text-muted text-sm max-w-sm">Não foi possível validar seu acesso. Entre novamente.</p>
       <button onClick={handleLogout} className="px-4 py-2 border border-primary/40 text-primary text-xs uppercase tracking-widest">Sair</button>
     </div>
   );

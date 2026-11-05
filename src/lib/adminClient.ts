@@ -1,7 +1,7 @@
 "use client";
 
-// Com o Cloudflare Access, a sessão do admin é o cookie CF_Authorization (mesma origem),
-// enviado automaticamente pelo navegador. Não há token a anexar.
+// A sessão do admin é o cookie HttpOnly "pulso_admin" (mesma origem), enviado
+// automaticamente pelo navegador. Não há token a anexar.
 
 export async function getAdminHeaders(init?: HeadersInit) {
   return new Headers(init);
@@ -24,9 +24,13 @@ export async function adminFetch(
     headers,
     credentials: "same-origin",
   });
-  // Sessão do Access expirada: recarrega para o Access pedir login de novo.
-  if (res.status === 401 && typeof window !== "undefined")
-    window.location.reload();
+  // Sessão expirada: volta para a tela de login.
+  if (
+    res.status === 401 &&
+    typeof window !== "undefined" &&
+    window.location.pathname !== "/admin/login"
+  )
+    window.location.href = "/admin/login";
   return res;
 }
 
@@ -49,7 +53,7 @@ export async function downloadAdminCsv(url: string, filename: string) {
   return downloadAdminFile(url, filename);
 }
 
-/** Logout do Cloudflare Access. */
-export function adminLogout() {
-  window.location.href = "/cdn-cgi/access/logout";
+export async function adminLogout() {
+  await fetch("/api/admin/auth/logout", { method: "POST", credentials: "same-origin" }).catch(() => {});
+  window.location.href = "/admin/login";
 }

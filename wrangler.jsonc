@@ -50,8 +50,6 @@
   "observability": { "enabled": true },
   "vars": {
     "NEXT_PUBLIC_APP_URL": "https://pulsoms.ia.br",
-    "CF_ACCESS_TEAM_DOMAIN": "girassolteam.cloudflareaccess.com",
-    "CF_ACCESS_AUD": "6de365fb1d7316cf905506c6fc35e4f9f456b4e4023ea77ef1c136e89a26962d",
     "AUDIT_LOG_RETENTION_DAYS": "365",
     "PROFILE_RETENTION_DAYS": "730",
   },

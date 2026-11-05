@@ -256,6 +256,7 @@ export const adminUsers = sqliteTable(
     nome: text("nome"),
     role: text("role").notNull().default("viewer"), // admin | editor | viewer
     ativo: bool("ativo").notNull().default(true),
+    senha_hash: text("senha_hash"), // pbkdf2$iter$salt$hash
     ultimo_login_em: ts("ultimo_login_em"),
     criado_em: now("criado_em"),
     atualizado_em: updatedAt("atualizado_em"),

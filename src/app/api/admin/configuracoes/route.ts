@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { asc } from "drizzle-orm";
+import { asc, ne } from "drizzle-orm";
 import { getAdminIdentityWithRole, requireAdmin } from "@/lib/adminAuth";
 import { recordAuditLog } from "@/lib/auditLog";
 import { getDb } from "@/server/db/client";
@@ -13,6 +13,8 @@ export async function GET(req: NextRequest) {
       await getDb()
         .select()
         .from(parametrosPlataforma)
+        // tokens de API têm rota própria (somente admin); nunca listar seus hashes aqui
+        .where(ne(parametrosPlataforma.grupo, "api_tokens"))
         .orderBy(asc(parametrosPlataforma.grupo)),
     );
   } catch {
@@ -29,7 +31,13 @@ export async function POST(req: NextRequest) {
 
   try {
     const { chave, valor, grupo, descricao } = await req.json();
-    if (typeof chave !== "string" || !chave || valor === undefined) {
+    if (
+      typeof chave !== "string" ||
+      !chave ||
+      valor === undefined ||
+      chave.startsWith("api_token_") ||
+      grupo === "api_tokens"
+    ) {
       return NextResponse.json({ error: "Payload inválido" }, { status: 400 });
     }
     const set = {

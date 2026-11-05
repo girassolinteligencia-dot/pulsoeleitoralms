@@ -1,83 +1,105 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { getAdminIdentityWithRole, requireAdminRole } from '@/lib/adminAuth';
-import { recordAuditLog } from '@/lib/auditLog';
-import { randomBytes } from 'crypto';
-import { hashApiToken, maskApiToken } from '@/lib/apiTokens';
+import { NextRequest, NextResponse } from "next/server";
+import { and, desc, eq } from "drizzle-orm";
+import { randomBytes } from "crypto";
+import { getAdminIdentityWithRole, requireAdminRole } from "@/lib/adminAuth";
+import { recordAuditLog } from "@/lib/auditLog";
+import { hashApiToken, maskApiToken } from "@/lib/apiTokens";
+import { getDb } from "@/server/db/client";
+import { parametrosPlataforma } from "@/server/db/schema";
 
-function readTokenValue(value: unknown) {
-  return (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
+const GRUPO = "api_tokens";
+const readTokenValue = (value: unknown) =>
+  (value && typeof value === "object" ? value : {}) as Record<string, unknown>;
+
+async function findToken(id: string) {
+  const [p] = await getDb()
+    .select()
+    .from(parametrosPlataforma)
+    .where(
+      and(
+        eq(parametrosPlataforma.id, id),
+        eq(parametrosPlataforma.grupo, GRUPO),
+      ),
+    )
+    .limit(1);
+  return p ?? null;
 }
 
 export async function GET(req: NextRequest) {
-  const authError = await requireAdminRole(req, ['admin']);
+  const authError = await requireAdminRole(req, ["admin"]);
   if (authError) return authError;
-
   try {
-    const params = await prisma.parametroPlataforma.findMany({
-      where: { grupo: 'api_tokens' },
-      orderBy: { updatedAt: 'desc' },
-    });
+    const params = await getDb()
+      .select()
+      .from(parametrosPlataforma)
+      .where(eq(parametrosPlataforma.grupo, GRUPO))
+      .orderBy(desc(parametrosPlataforma.updatedAt));
 
-    const tokens = params.map(p => {
-      const v = readTokenValue(p.valor);
-      const tokenPrefix = typeof v.tokenPrefix === 'string' ? v.tokenPrefix : undefined;
-      const legado = typeof v.token === 'string' && typeof v.tokenHash !== 'string';
-
-      return {
-        id: p.id,
-        chave: p.chave,
-        descricao: p.descricao ?? '',
-        token: legado ? 'Token legado em texto — revogue e gere um novo' : maskApiToken(tokenPrefix),
-        ativo: v.ativo === true,
-        legado,
-        criado_em: (v.criado_em as string) ?? p.updatedAt,
-      };
-    });
-
-    return NextResponse.json(tokens);
+    return NextResponse.json(
+      params.map((p) => {
+        const v = readTokenValue(p.valor);
+        const tokenPrefix =
+          typeof v.tokenPrefix === "string" ? v.tokenPrefix : undefined;
+        const legado =
+          typeof v.token === "string" && typeof v.tokenHash !== "string";
+        return {
+          id: p.id,
+          chave: p.chave,
+          descricao: p.descricao ?? "",
+          token: legado
+            ? "Token legado em texto — revogue e gere um novo"
+            : maskApiToken(tokenPrefix),
+          ativo: v.ativo === true,
+          legado,
+          criado_em: (v.criado_em as string) ?? p.updatedAt,
+        };
+      }),
+    );
   } catch {
-    return NextResponse.json({ error: 'Erro ao buscar tokens' }, { status: 500 });
+    return NextResponse.json(
+      { error: "Erro ao buscar tokens" },
+      { status: 500 },
+    );
   }
 }
 
 export async function POST(req: NextRequest) {
-  const auth = await getAdminIdentityWithRole(req, ['admin']);
-  if ('error' in auth) return auth.error;
-
+  const auth = await getAdminIdentityWithRole(req, ["admin"]);
+  if ("error" in auth) return auth.error;
   try {
     const { descricao } = await req.json();
-    if (!descricao?.trim()) {
-      return NextResponse.json({ error: 'Descrição obrigatória' }, { status: 400 });
+    if (typeof descricao !== "string" || !descricao.trim()) {
+      return NextResponse.json(
+        { error: "Descrição obrigatória" },
+        { status: 400 },
+      );
     }
+    const token = "pms_" + randomBytes(24).toString("hex");
+    const chave = "api_token_" + randomBytes(6).toString("hex");
 
-    const token = 'pms_' + randomBytes(24).toString('hex');
-    const chave = 'api_token_' + randomBytes(6).toString('hex');
-    const tokenPrefix = token.slice(0, 8);
-
-    const parametro = await prisma.parametroPlataforma.create({
-      data: {
+    const [parametro] = await getDb()
+      .insert(parametrosPlataforma)
+      .values({
         chave,
         valor: {
           tokenHash: hashApiToken(token),
-          tokenPrefix,
+          tokenPrefix: token.slice(0, 8),
           ativo: true,
           criado_em: new Date().toISOString(),
         },
-        grupo: 'api_tokens',
+        grupo: GRUPO,
         descricao: descricao.trim(),
-      },
-    });
+      })
+      .returning();
 
     await recordAuditLog({
       admin: auth,
-      acao: 'API_TOKEN_CRIADO',
-      entidade: 'ParametroPlataforma',
+      acao: "API_TOKEN_CRIADO",
+      entidade: "ParametroPlataforma",
       entidadeId: parametro.id,
       detalhes: { descricao: parametro.descricao },
     });
-
-    // Retorna o token completo apenas na criação
+    // O token completo só é exibido na criação
     return NextResponse.json({
       id: parametro.id,
       chave,
@@ -86,77 +108,86 @@ export async function POST(req: NextRequest) {
       ativo: true,
     });
   } catch {
-    return NextResponse.json({ error: 'Erro ao criar token' }, { status: 500 });
+    return NextResponse.json({ error: "Erro ao criar token" }, { status: 500 });
   }
 }
 
 export async function PATCH(req: NextRequest) {
-  const auth = await getAdminIdentityWithRole(req, ['admin']);
-  if ('error' in auth) return auth.error;
-
+  const auth = await getAdminIdentityWithRole(req, ["admin"]);
+  if ("error" in auth) return auth.error;
   try {
     const { id, ativo } = await req.json();
-
-    const existing = await prisma.parametroPlataforma.findUnique({ where: { id } });
-    if (!existing || existing.grupo !== 'api_tokens') {
-      return NextResponse.json({ error: 'Token não encontrado' }, { status: 404 });
+    if (typeof id !== "string" || typeof ativo !== "boolean") {
+      return NextResponse.json({ error: "Payload inválido" }, { status: 400 });
     }
+    const existing = await findToken(id);
+    if (!existing)
+      return NextResponse.json(
+        { error: "Token não encontrado" },
+        { status: 404 },
+      );
 
     const valorAtual = readTokenValue(existing.valor);
-    const isLegacy = typeof valorAtual.token === 'string' && typeof valorAtual.tokenHash !== 'string';
-
-    if (ativo === true && isLegacy) {
+    const isLegacy =
+      typeof valorAtual.token === "string" &&
+      typeof valorAtual.tokenHash !== "string";
+    if (ativo && isLegacy) {
       return NextResponse.json(
-        { error: 'Token legado não pode ser reativado. Gere um novo token.' },
-        { status: 409 }
+        { error: "Token legado não pode ser reativado. Gere um novo token." },
+        { status: 409 },
       );
     }
 
-    const parametro = await prisma.parametroPlataforma.update({
-      where: { id },
-      data: { valor: { ...valorAtual, ativo } },
-    });
+    await getDb()
+      .update(parametrosPlataforma)
+      .set({ valor: { ...valorAtual, ativo }, updatedAt: new Date() })
+      .where(eq(parametrosPlataforma.id, id));
 
     await recordAuditLog({
       admin: auth,
-      acao: ativo ? 'API_TOKEN_ATIVADO' : 'API_TOKEN_REVOGADO',
-      entidade: 'ParametroPlataforma',
-      entidadeId: parametro.id,
-      detalhes: { descricao: parametro.descricao },
+      acao: ativo ? "API_TOKEN_ATIVADO" : "API_TOKEN_REVOGADO",
+      entidade: "ParametroPlataforma",
+      entidadeId: id,
+      detalhes: { descricao: existing.descricao },
     });
-
     return NextResponse.json({ ok: true });
   } catch {
-    return NextResponse.json({ error: 'Erro ao atualizar token' }, { status: 500 });
+    return NextResponse.json(
+      { error: "Erro ao atualizar token" },
+      { status: 500 },
+    );
   }
 }
 
 export async function DELETE(req: NextRequest) {
-  const auth = await getAdminIdentityWithRole(req, ['admin']);
-  if ('error' in auth) return auth.error;
-
+  const auth = await getAdminIdentityWithRole(req, ["admin"]);
+  if ("error" in auth) return auth.error;
   try {
-    const { searchParams } = new URL(req.url);
-    const id = searchParams.get('id');
-    if (!id) return NextResponse.json({ error: 'ID obrigatório' }, { status: 400 });
+    const id = req.nextUrl.searchParams.get("id");
+    if (!id)
+      return NextResponse.json({ error: "ID obrigatório" }, { status: 400 });
+    const existing = await findToken(id);
+    if (!existing)
+      return NextResponse.json(
+        { error: "Token não encontrado" },
+        { status: 404 },
+      );
 
-    const existing = await prisma.parametroPlataforma.findUnique({ where: { id } });
-    if (!existing || existing.grupo !== 'api_tokens') {
-      return NextResponse.json({ error: 'Token não encontrado' }, { status: 404 });
-    }
-
-    await prisma.parametroPlataforma.delete({ where: { id } });
-
+    await getDb()
+      .delete(parametrosPlataforma)
+      .where(eq(parametrosPlataforma.id, id));
     await recordAuditLog({
       admin: auth,
-      acao: 'API_TOKEN_EXCLUIDO',
-      entidade: 'ParametroPlataforma',
+      acao: "API_TOKEN_EXCLUIDO",
+      entidade: "ParametroPlataforma",
       entidadeId: id,
       detalhes: { descricao: existing.descricao },
     });
-
     return NextResponse.json({ ok: true });
   } catch {
-    return NextResponse.json({ error: 'Erro ao excluir token' }, { status: 500 });
+    return NextResponse.json(
+      { error: "Erro ao excluir token" },
+      { status: 500 },
+    );
   }
 }

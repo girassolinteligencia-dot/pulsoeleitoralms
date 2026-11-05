@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { asc, count, eq, like } from "drizzle-orm";
 import { getAdminIdentityWithRole, requireAdmin } from "@/lib/adminAuth";
 import { recordAuditLog } from "@/lib/auditLog";
-import { getFotoUrl } from "@/lib/fotoUrl";
+import { getFotoUrl, sanitizeFotoUrl } from "@/lib/fotoUrl";
 import { buildBusca, likePattern } from "@/lib/normalize-search";
 import { getDb } from "@/server/db/client";
 import {
@@ -93,9 +93,12 @@ export function entidadesAdminRoute(tipo: Tipo) {
         cidade: str(b.cidade),
         uf: (str(b.uf) || "MS").toUpperCase().slice(0, 2),
         descricao: str(b.descricao) || null,
-        foto_url: str(b.foto_url) || null,
+        foto_url: sanitizeFotoUrl(b.foto_url),
         campanha_id: b.campanha_id || null,
       };
+      if (values.foto_url === undefined) {
+        return NextResponse.json({ error: "foto_url inválido" }, { status: 400 });
+      }
       if (!values.nome || !values.tipo || !values.cidade) {
         return NextResponse.json(
           { error: "Campos obrigatórios: nome, tipo, cidade" },
@@ -148,7 +151,11 @@ export function entidadesAdminRoute(tipo: Tipo) {
       if (b.cidade !== undefined) set.cidade = str(b.cidade);
       if (b.uf !== undefined) set.uf = str(b.uf).toUpperCase().slice(0, 2);
       if (b.descricao !== undefined) set.descricao = str(b.descricao) || null;
-      if (b.foto_url !== undefined) set.foto_url = str(b.foto_url) || null;
+      if (b.foto_url !== undefined) {
+        const fotoUrl = sanitizeFotoUrl(b.foto_url);
+        if (fotoUrl === undefined) return NextResponse.json({ error: "foto_url inválido" }, { status: 400 });
+        set.foto_url = fotoUrl;
+      }
       if (b.campanha_id !== undefined) set.campanha_id = b.campanha_id || null;
       if (b.status !== undefined) set.status = String(b.status);
       set.busca = buildBusca(

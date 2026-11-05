@@ -3,6 +3,7 @@ import { and, asc, count, eq, like, sql } from "drizzle-orm";
 import { getAdminIdentityWithRole, requireAdmin } from "@/lib/adminAuth";
 import { recordAuditLog } from "@/lib/auditLog";
 import { buildBusca, likePattern } from "@/lib/normalize-search";
+import { sanitizeFotoUrl } from "@/lib/fotoUrl";
 import { getDb } from "@/server/db/client";
 import { campanhas, candidatos } from "@/server/db/schema";
 import {
@@ -116,6 +117,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const fotoUrl = sanitizeFotoUrl(b.foto_url);
+
+    if (fotoUrl === undefined) {
+
+      return NextResponse.json({ error: "foto_url inválido" }, { status: 400 });
+
+    }
+
     if (b.check_only)
       return NextResponse.json({
         ok: true,
@@ -132,7 +141,7 @@ export async function POST(req: NextRequest) {
         cargo,
         cidade,
         bairro: str(b.bairro) || null,
-        foto_url: str(b.foto_url) || null,
+        foto_url: fotoUrl,
         campanha_id: String(b.campanha_id),
         ano_eleicao: b.ano_eleicao ? parseInt(b.ano_eleicao) : 2026,
         busca: buildBusca(nome, cargo, partido, cidade),
@@ -185,7 +194,11 @@ export async function PATCH(req: NextRequest) {
     if (b.numero !== undefined) set.numero = b.numero;
     if (b.cargo !== undefined) set.cargo = str(b.cargo);
     if (b.cidade !== undefined) set.cidade = str(b.cidade);
-    if (b.foto_url !== undefined) set.foto_url = b.foto_url;
+    if (b.foto_url !== undefined) {
+      const fotoUrl = sanitizeFotoUrl(b.foto_url);
+      if (fotoUrl === undefined) return NextResponse.json({ error: "foto_url inválido" }, { status: 400 });
+      set.foto_url = fotoUrl;
+    }
     if (b.status_verificacao !== undefined)
       set.status_verificacao = Boolean(b.status_verificacao);
     set.busca = buildBusca(

@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
 
     const antiga = typeof anterior?.valor === "string" ? anterior.valor : "";
     if (antiga.startsWith("/fotos/site/"))
-      await removerImagem(antiga.slice("/fotos/".length));
+      await removerImagem(antiga.slice("/fotos/".length), `site/${chave}`);
 
     await recordAuditLog({
       admin: auth,

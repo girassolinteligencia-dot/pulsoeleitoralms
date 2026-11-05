@@ -45,9 +45,22 @@ export async function gravarImagem(
   return key;
 }
 
-/** Remove do R2 um objeto gerenciado (ignora URLs externas e arquivos de /public). */
-export async function removerImagem(key: string | null | undefined) {
-  if (!key || key.startsWith("/") || /^https?:/.test(key)) return;
+const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/**
+ * Remove do R2 somente um objeto gerado pelo upload deste registro:
+ * `<prefixo>-<versão>.<ext>` (ex.: "orgaos/<id>-lx3k2.webp"). Qualquer outra chave
+ * (legado, outra entidade, identidade visual) é ignorada.
+ */
+export async function removerImagem(
+  key: string | null | undefined,
+  prefixo: string,
+) {
+  if (!key) return;
+  const gerenciada = new RegExp(
+    `^${escapeRe(prefixo)}-[0-9a-z]+\\.(webp|png|jpg|ico)$`,
+  );
+  if (!gerenciada.test(key)) return;
   try {
     await bindings().FOTOS.delete(key);
   } catch (e) {
@@ -129,7 +142,7 @@ export function fotoAdminRoute(tipo: keyof typeof cfg) {
 
       const foto_url = await gravarImagem(`${pasta}/${id}`, bytes, "webp");
       await db.update(t).set({ foto_url }).where(eq(t.id, id));
-      await removerImagem(atual.foto_url);
+      await removerImagem(atual.foto_url, `${pasta}/${id}`);
       await recordAuditLog({
         admin: auth,
         acao: "FOTO_ATUALIZADA",
@@ -169,7 +182,7 @@ export function fotoAdminRoute(tipo: keyof typeof cfg) {
           { status: 404 },
         );
       await db.update(t).set({ foto_url: null }).where(eq(t.id, id));
-      await removerImagem(atual.foto_url);
+      await removerImagem(atual.foto_url, `${pasta}/${id}`);
       await recordAuditLog({
         admin: auth,
         acao: "FOTO_REMOVIDA",

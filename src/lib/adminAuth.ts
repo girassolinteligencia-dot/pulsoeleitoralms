@@ -50,10 +50,31 @@ function teamDomain() {
     : `https://${raw.replace(/\/$/, "")}`;
 }
 
+const isSafeMethod = (m: string) => m === "GET" || m === "HEAD" || m === "OPTIONS";
+
+/** Aceita só requisições do próprio site (Sec-Fetch-Site ou Origin igual ao host). */
+function isSameOrigin(req: Request) {
+  const site = req.headers.get("sec-fetch-site");
+  if (site) return site === "same-origin";
+  const origin = req.headers.get("origin");
+  if (!origin) return false;
+  try {
+    return new URL(origin).host === new URL(req.url).host;
+  } catch {
+    return false;
+  }
+}
+
 /** Valida o JWT do Access e devolve { sub, email }. */
 async function verifyAccessJwt(
   req: Request,
 ): Promise<{ sub: string; email: string } | { error: NextResponse }> {
+  // CSRF: o cookie do Access viaja em requisições cross-site e o Access injeta o JWT
+  // mesmo assim; por isso toda operação que altera dados exige origem própria.
+  if (!isSafeMethod(req.method) && !isSameOrigin(req)) {
+    return fail(403, "Origem da requisição não permitida");
+  }
+
   // Desenvolvimento local (next dev): sem Access na frente. Nunca ativo em produção.
   if (process.env.NODE_ENV === "development" && process.env.ADMIN_DEV_EMAIL) {
     return { sub: "dev", email: normalizeEmail(process.env.ADMIN_DEV_EMAIL) };
@@ -63,9 +84,8 @@ async function verifyAccessJwt(
   const aud = process.env.CF_ACCESS_AUD?.trim();
   if (!team || !aud) return fail(500, "Cloudflare Access não configurado");
 
-  const token =
-    req.headers.get("cf-access-jwt-assertion") ||
-    req.headers.get("cookie")?.match(/(?:^|;\s*)CF_Authorization=([^;]+)/)?.[1];
+  // Somente o header injetado pelo Access na borda (sem fallback para cookie).
+  const token = req.headers.get("cf-access-jwt-assertion");
   if (!token) return fail(401, "Authentication required");
 
   if (!jwks || jwksTeam !== team) {

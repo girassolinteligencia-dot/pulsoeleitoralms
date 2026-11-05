@@ -1,18 +1,34 @@
-import { createHash } from 'crypto';
+import { createHash } from "crypto";
 
-/**
- * Utility for generating secure hashes for IPs and Fingerprints.
- */
-export function generateSecureHash(input: string, salt: string = process.env.ENCRYPTION_KEY || ''): string {
-  return createHash('sha256')
-    .update(input + salt)
-    .digest('hex');
+function getSalt() {
+  const salt = process.env.ENCRYPTION_KEY;
+  if (salt) return salt;
+  // Sem sal, hashes de IP seriam reversíveis por força bruta (espaço de IPv4 pequeno).
+  if (process.env.NODE_ENV === "development") return "pulso-dev-only-salt";
+  throw new Error(
+    "ENCRYPTION_KEY ausente: necessária para anonimizar IP e fingerprint.",
+  );
 }
 
 /**
- * Validates if the evaluation duration is suspicious (e.g. < 8s).
+ * Hash SHA-256 com sal para IPs e fingerprints (anonimização).
  */
-export function isSuspiciousTiming(startTime: number, endTime: number): boolean {
+export function generateSecureHash(
+  input: string,
+  salt: string = getSalt(),
+): string {
+  return createHash("sha256")
+    .update(input + salt)
+    .digest("hex");
+}
+
+/**
+ * Indica se o tempo de avaliação é suspeito (ex.: < 8s).
+ */
+export function isSuspiciousTiming(
+  startTime: number,
+  endTime: number,
+): boolean {
   const durationInSeconds = (endTime - startTime) / 1000;
   return durationInSeconds < 8;
 }

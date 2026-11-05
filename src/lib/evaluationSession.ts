@@ -1,4 +1,4 @@
-import { createHmac, randomUUID, timingSafeEqual } from 'crypto';
+import { createHmac, randomUUID, timingSafeEqual } from "crypto";
 
 const SESSION_TTL_MS = 30 * 60 * 1000;
 
@@ -11,29 +11,36 @@ interface EvaluationSessionPayload {
 }
 
 function getSessionSecret() {
-  return (
-    process.env.EVALUATION_SESSION_SECRET ||
-    process.env.ENCRYPTION_KEY ||
-    process.env.DATABASE_URL ||
-    'pulso-eleitoral-ms-local-session-secret'
+  const secret =
+    process.env.EVALUATION_SESSION_SECRET || process.env.ENCRYPTION_KEY;
+  if (secret && secret.length >= 32) return secret;
+  // Nunca usar valor fixo fora do desenvolvimento: o repositório é público e
+  // qualquer um poderia forjar sessões de avaliação.
+  if (process.env.NODE_ENV === "development")
+    return "pulso-eleitoral-ms-dev-only-session-secret";
+  throw new Error(
+    "EVALUATION_SESSION_SECRET ausente ou curto (mínimo 32 caracteres).",
   );
 }
 
 function toBase64Url(value: string) {
-  return Buffer.from(value).toString('base64url');
+  return Buffer.from(value).toString("base64url");
 }
 
 function fromBase64Url(value: string) {
-  return Buffer.from(value, 'base64url').toString('utf8');
+  return Buffer.from(value, "base64url").toString("utf8");
 }
 
 function signPayload(encodedPayload: string) {
-  return createHmac('sha256', getSessionSecret())
+  return createHmac("sha256", getSessionSecret())
     .update(encodedPayload)
-    .digest('base64url');
+    .digest("base64url");
 }
 
-export function createEvaluationSession(candidatoId: string, fingerprintHash: string) {
+export function createEvaluationSession(
+  candidatoId: string,
+  fingerprintHash: string,
+) {
   const startedAt = Date.now();
   const payload: EvaluationSessionPayload = {
     candidatoId,
@@ -54,7 +61,7 @@ export function createEvaluationSession(candidatoId: string, fingerprintHash: st
 }
 
 export function verifyEvaluationSession(token: string) {
-  const [encodedPayload, signature] = token.split('.');
+  const [encodedPayload, signature] = token.split(".");
   if (!encodedPayload || !signature) return null;
 
   const expectedSignature = signPayload(encodedPayload);
@@ -69,12 +76,14 @@ export function verifyEvaluationSession(token: string) {
   }
 
   try {
-    const payload = JSON.parse(fromBase64Url(encodedPayload)) as EvaluationSessionPayload;
+    const payload = JSON.parse(
+      fromBase64Url(encodedPayload),
+    ) as EvaluationSessionPayload;
     if (
-      typeof payload.candidatoId !== 'string' ||
-      typeof payload.fingerprintHash !== 'string' ||
-      typeof payload.startedAt !== 'number' ||
-      typeof payload.expiresAt !== 'number' ||
+      typeof payload.candidatoId !== "string" ||
+      typeof payload.fingerprintHash !== "string" ||
+      typeof payload.startedAt !== "number" ||
+      typeof payload.expiresAt !== "number" ||
       Date.now() > payload.expiresAt
     ) {
       return null;

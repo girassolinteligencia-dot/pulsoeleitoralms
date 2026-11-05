@@ -2,6 +2,8 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "pulso-eleitoral",
   "main": "worker.ts", // app OpenNext + scheduled (Cron)
+  // `wrangler deploy` (local ou Workers Builds) gera o bundle OpenNext antes de publicar.
+  "build": { "command": "npx opennextjs-cloudflare build" },
   "compatibility_date": "2026-11-01",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": {

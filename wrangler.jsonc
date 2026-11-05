@@ -1,7 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "pulso-eleitoral",
-  "main": ".open-next/worker.js",
+  "main": "worker.ts", // app OpenNext + scheduled (Cron)
   "compatibility_date": "2026-11-01",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": {
@@ -45,10 +45,14 @@
       "simple": { "limit": 120, "period": 60 },
     },
   ],
+  // Cron: resumos a cada 15 min; retenção LGPD diária (07:00 UTC = 03:00 em Campo Grande)
+  "triggers": { "crons": ["*/15 * * * *", "0 7 * * *"] },
   "observability": { "enabled": true },
   "vars": {
     "NEXT_PUBLIC_APP_URL": "https://pulsoms.ia.br",
     "CF_ACCESS_TEAM_DOMAIN": "girassolteam.cloudflareaccess.com",
     "CF_ACCESS_AUD": "6de365fb1d7316cf905506c6fc35e4f9f456b4e4023ea77ef1c136e89a26962d",
+    "AUDIT_LOG_RETENTION_DAYS": "365",
+    "PROFILE_RETENTION_DAYS": "730",
   },
 }

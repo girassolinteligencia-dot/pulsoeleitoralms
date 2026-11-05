@@ -53,6 +53,10 @@ async function getSiteIdentidade() {
 export async function generateMetadata(): Promise<Metadata> {
   const { faviconUrl, ogImageUrl, ogFrase } = await getSiteIdentidade();
   return {
+    // URLs absolutas de og:image/ícones (sem isto o Next usa localhost)
+    metadataBase: new URL(
+      process.env.NEXT_PUBLIC_APP_URL || "https://pulsoms.ia.br",
+    ),
     title: "PULSOMS.IA | Percepção Pública de Mato Grosso do Sul",
     description: ogFrase,
     icons: {

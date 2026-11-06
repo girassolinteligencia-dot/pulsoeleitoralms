@@ -7,9 +7,6 @@ const EnvSchema = z.object({
   EVALUATION_SESSION_SECRET: z.string().min(32),
   ENCRYPTION_KEY: z.string().min(32),
   JWT_SECRET: z.string().min(32),
-  // Cloudflare Access (Etapa 3)
-  ADMIN_EMAILS: z.string().default(""),
-  // Turnstile (Etapa 3)
   TURNSTILE_SECRET_KEY: z.string().optional(),
   RESEND_API_KEY: z.string().optional(),
   AUDIT_LOG_RETENTION_DAYS: z.coerce.number().int().positive().default(365),

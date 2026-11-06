@@ -1,5 +1,7 @@
 # Auditoria Tecnica - PULSO ELEITORAL MS
 
+> **Nota (2026-11):** este relatório é histórico e descreve a fase Supabase/Prisma/Vercel. A plataforma migrou para Cloudflare Workers (D1, R2, KV) com login admin próprio. Situação atual: [README.md](README.md) e [docs/deploy-cloudflare.md](docs/deploy-cloudflare.md).
+
 Data da auditoria: 2026-05-18  
 Workspace: `C:\.PULSOELEITORAL`  
 Escopo: estrutura, stack, build, lint, dependencias, seguranca, banco, APIs, fluxo publico, admin, CI e prontidao para finalizar no VS Code.

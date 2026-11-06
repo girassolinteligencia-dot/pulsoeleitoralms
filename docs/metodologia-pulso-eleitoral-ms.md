@@ -2,6 +2,15 @@
 
 Este documento separa dois modos de uso da plataforma para evitar mistura entre percepção pública espontânea e pesquisa eleitoral formal.
 
+## Série histórica
+
+A série histórica da plataforma começa do zero na migração para a Cloudflare. A base de produção foi zerada em 06/11/2026.
+
+- **Início da coleta atual:** 06/11/2026. Ponto de restauração anterior ao reset (D1 Time Travel, válido por 30 dias): `000000a3-00000000-0000511b-636225fa8e369f9de196f6159cf84e77`.
+- As 68 manifestações e 508 avaliações coletadas de 02/06 a 18/08/2026, na versão anterior (Supabase), **não** fazem parte da série. Elas foram coletadas sob outras regras (sem Turnstile e com outros limites de envio), e por isso não são comparáveis com os dados novos.
+- Esses dados ficam só no backup offline de 04/11/2026 e não aparecem em resultados, relatórios ou na API pública. O prazo de guarda do backup segue [lgpd-retencao.md](lgpd-retencao.md).
+- Recomendação: abrir a primeira rodada em `/admin/metodologia` na data de início, para que relatórios e dossiês tenham esse marco explícito.
+
 ## Modo 1: Percepção Pública Espontânea
 
 Uso atual da plataforma.
@@ -118,3 +127,5 @@ Esse dossiê é um artefato técnico de auditoria interna. Para divulgação ext
 - Validação de candidato ativo e atributos da campanha.
 - Trilhas de auditoria para invalidações.
 - Indicador de amostra bruta, válida e descartada.
+- Envios de teste: uma avaliação enviada com sessão de admin aberta no mesmo navegador é gravada como inválida e marcada `TESTE` na moderação. Ela não entra em resultados, resumos nem na API pública. Para testar o fluxo público, faça o envio logado no admin.
+- Turnstile invisível e rate limit nativo do Workers no envio.

@@ -71,16 +71,11 @@ function BotaoCompartilhar({ nome }: { nome: string }) {
   );
 }
 
-function ComparativoCard({ userEvaluations, results, candidatoNome }: {
+function ComparativoCard({ userEvaluations, results }: {
   userEvaluations: UserEvaluation[];
   results: ResultData[];
-  candidatoNome: string;
 }) {
   if (!results || results.length === 0 || userEvaluations.length === 0) return null;
-
-  // Monta mapa de atributo_nome → % coletivo
-  const coletivoMap = new Map(results.map(r => [r.atributo, r.total]));
-  const totalVozes = results.length > 0 ? Math.max(...results.map(r => r.total), 1) : 1;
 
   // Atributos que o usuário marcou, cruzados com dados coletivos
   // results usa nome do atributo; userEvaluations usa ID — precisamos do nome via results
@@ -199,7 +194,6 @@ export const Etapa6: React.FC<Etapa6Props> = ({
         <ComparativoCard
           userEvaluations={userEvaluations}
           results={results}
-          candidatoNome={candidatoNome}
         />
       )}
 

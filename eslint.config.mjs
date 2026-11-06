@@ -22,6 +22,8 @@ const eslintConfig = defineConfig([
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
       "react-hooks/set-state-in-effect": "off",
+      // No Workers não há o otimizador do next/image; as fotos já vêm em WebP do R2.
+      "@next/next/no-img-element": "off",
     },
   },
 ]);

@@ -52,6 +52,14 @@ Mensalmente:
 2. Revisar as contagens e registrar no changelog operacional.
 3. Antes de diminuir uma janela de retencao, exportar um backup do D1, porque a reducao e irreversivel fora do Time Travel (30 dias).
 
+## Backup da versao anterior (Supabase)
+
+O backup completo de 04/11/2026 (`supabase-2026-11-04-16-02-19`) fica fora do repositorio, em armazenamento local do responsavel tecnico. Ele contem dados pessoais pseudonimizados das manifestacoes antigas (hash de IP e de fingerprint, user agent e perfil).
+
+- Uso: so para auditoria ou recuperacao. Nao e importado na base de producao (ver "Serie historica" em [metodologia-pulso-eleitoral-ms.md](metodologia-pulso-eleitoral-ms.md)).
+- Prazo de guarda proposto: 12 meses (ate 04/11/2027), a confirmar pelo responsavel juridico. Depois disso, apagar o backup e registrar a eliminacao no changelog operacional.
+- Nao copiar o backup para servicos de nuvem nem para o repositorio.
+
 ## Pendencias juridicas
 
 - Revisar textos de `/privacidade` e `/termos`.

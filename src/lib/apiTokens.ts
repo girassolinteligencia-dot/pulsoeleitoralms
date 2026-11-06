@@ -6,8 +6,7 @@ function getTokenHashSecret() {
   const secret =
     process.env.API_TOKEN_HASH_SECRET ||
     process.env.ENCRYPTION_KEY ||
-    process.env.JWT_SECRET ||
-    process.env.DATABASE_URL;
+    process.env.JWT_SECRET;
 
   if (!secret) {
     throw new Error('API token hash secret is not configured.');

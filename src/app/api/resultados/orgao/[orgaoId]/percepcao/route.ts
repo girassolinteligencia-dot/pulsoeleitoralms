@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/server/db/client';
-import { entidadeInfo, manifestacoesComAvaliacoes } from '@/server/repos/resultados';
+import { manifestacoesComAvaliacoes } from '@/server/repos/resultados';
 
 function percent(part: number, total: number) {
   return total > 0 ? Math.round((part / total) * 100) : 0;
@@ -72,10 +72,7 @@ export async function GET(
     const inicio48h = new Date(agora.getTime() - 48 * 60 * 60 * 1000);
 
     const db = getDb();
-    const [manifestacoes, orgao] = await Promise.all([
-      manifestacoesComAvaliacoes(db, { tipo: 'orgao', id: orgaoId }),
-      entidadeInfo(db, 'orgao', orgaoId),
-    ]);
+    const manifestacoes = await manifestacoesComAvaliacoes(db, { tipo: 'orgao', id: orgaoId });
 
     const vozesValidas = manifestacoes.length;
     const aprovacoes = manifestacoes.filter((m) => m.aprovacao === true).length;

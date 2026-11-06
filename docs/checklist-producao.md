@@ -1,158 +1,85 @@
 # Checklist de Produção - PULSO ELEITORAL MS
 
-Use este checklist antes de considerar a plataforma pronta para operação contínua.
+Use este checklist antes de considerar a plataforma pronta para operação contínua e depois de cada deploy relevante. Detalhes de infraestrutura: [deploy-cloudflare.md](deploy-cloudflare.md).
 
-## Ambiente
+## Ambiente (Cloudflare)
 
-- `NEXT_PUBLIC_SUPABASE_URL` configurado.
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY` configurada com anon/publishable key válida.
-- `DATABASE_URL` configurada com pooler Supabase.
-- `DIRECT_URL` configurada para conexão de migration funcional; em manutenção local pode usar o session pooler Supabase na porta `5432`.
-- `NEXT_PUBLIC_APP_URL` configurada para o domínio real.
-- `ADMIN_EMAILS` contém somente e-mails de bootstrap/fallback autorizados.
-- `EVALUATION_SESSION_SECRET` definido com segredo forte.
-- `ENCRYPTION_KEY` definido com segredo forte.
-- `ADMIN_SMOKE_TOKEN` não fica salvo em produção; use apenas em smoke temporário.
-- `NEXT_PUBLIC_PRIVACY_CONTACT_EMAIL` configurado para contato real de privacidade.
-- `PROFILE_RETENTION_DAYS` definido conforme política operacional.
+- `npx wrangler secret list` mostra `EVALUATION_SESSION_SECRET`, `ENCRYPTION_KEY`, `JWT_SECRET` e `TURNSTILE_SECRET_KEY`, todos com 32 caracteres ou mais quando exigido.
+- `NEXT_PUBLIC_TURNSTILE_SITE_KEY` configurada como variável de build no Workers Builds.
+- `vars` do `wrangler.jsonc`: `NEXT_PUBLIC_APP_URL=https://pulsoms.ia.br` e janelas de retenção conferidas.
+- Bindings ativos: D1 `pulso-db`, R2 `pulso-fotos`, KV e os três rate limits.
+- Custom domains `pulsoms.ia.br` e `www.pulsoms.ia.br` ativos, com certificado válido.
+- Cron Triggers `*/15 * * * *` e `0 7 * * *` listados no Worker.
+- O último build do Workers Builds terminou com sucesso.
 
-## Supabase Auth
-
-- Usuários admin criados em **Authentication > Users**.
-- Usuários administrativos ativos em `/admin/usuarios`.
-- Pelo menos um usuário com role `admin` ativo.
-- Senhas definidas ou login magic link configurado.
-- Redirect URLs incluem:
-  - domínio de produção `/admin/dashboard`;
-  - URLs locais necessárias para manutenção.
-- SMTP próprio configurado se houver uso frequente de magic link.
-
-## Banco e RLS
-
-Execute:
+## Banco (D1)
 
 ```bash
-npm run db:status
-npm run db:preflight
+npx wrangler d1 migrations list pulso-db --remote
 ```
 
-Critérios:
+- Nenhuma migração pendente.
+- Time Travel disponível (`npx wrangler d1 time-travel info pulso-db`).
+- Antes de qualquer mudança destrutiva: exporte um backup (`npx wrangler d1 export pulso-db --remote --output backup.sql`).
 
-- Todas as migrações aplicadas.
-- Migration `20260616090000_add_admin_users` registrada em `_prisma_migrations`.
-- Tabela `admin_users` criada e com admin inicial ativo.
-- RLS habilitado nas 11 tabelas esperadas.
-- Tabelas sensíveis restritas:
-  - `manifestacoes`
-  - `avaliacoes`
-  - `bloqueios`
-  - `audit_logs`
-  - `admin_users`
+## Admin
 
-Pendência conhecida em 2026-06-16: a Supabase CLI alertou RLS desabilitado em `admin_users`, `_prisma_migrations`, `orgaos_publicos` e `servicos_publicos`. Não habilite RLS sem policies adequadas, pois isso pode bloquear a aplicação. Tratar em sprint de hardening.
+- Pelo menos um usuário com papel `admin` ativo em `/admin/usuarios`.
+- Login em `/admin/login` funciona, e o logout encerra a sessão.
+- Usuários de teste foram desativados após a validação.
 
-## Validação Técnica
-
-Execute:
+## Validação técnica
 
 ```bash
-npx prisma validate
 npm run lint
-npm run build
+npx tsc --noEmit
+npx opennextjs-cloudflare build
 npm audit --omit=dev
-npm run smoke:ops
-npm run smoke
-npm run smoke:public
-npm run smoke:security
-npm run smoke:admin
 ```
 
-`npm run smoke:admin` exige um `ADMIN_SMOKE_TOKEN` válido e temporário.
+Smokes, um de cada vez, nesta ordem:
 
-Evite executar smokes pesados em paralelo. A ordem recomendada é:
-
-1. `npm run smoke:ops`
-2. `npm run smoke`
-3. `npm run smoke:public`
-4. `npm run smoke:security`
-5. `npm run smoke:admin`
-
-Em `SMOKE_BASE_URL=https://...`, os smokes HTTP aguardam alguns instantes entre chamadas por padrão para não pressionar o pool do banco. Se a produção estiver sensível, aumente a pausa:
-
-```powershell
-$env:SMOKE_DELAY_MS="2500"
+```bash
+SMOKE_BASE_URL=https://pulsoms.ia.br npm run smoke:ops
+SMOKE_BASE_URL=https://pulsoms.ia.br npm run smoke
+SMOKE_BASE_URL=https://pulsoms.ia.br npm run smoke:public
 ```
+
+Os smokes esperam alguns instantes entre as chamadas. Os rate limits (`RL_PUBLICO`: 120/min, `RL_ENVIO`: 10/min) podem devolver 429 se a pausa for curta demais. Nesse caso, aumente `SMOKE_DELAY_MS` (ex.: `2500`).
 
 ## Observabilidade
-
-- Confirmar healthcheck de produção:
 
 ```bash
 curl https://pulsoms.ia.br/api/health
 ```
 
-Critérios:
-
-- `status` deve ser `ok`.
-- `checks.database` deve ser `ok`.
-- `checks.activeCampaigns` deve ser `ok`.
-- `checks.publicCandidates` deve ser `ok`.
-- `checks.cepsMs` deve ser `ok`.
+- `status` = `ok`.
+- `checks.database`, `checks.activeCampaigns`, `checks.publicCandidates` e `checks.cepsMs` = `ok`.
+- Workers Observability sem erros novos depois do deploy (`npx wrangler tail pulso-eleitoral`).
+- Logs do Cron mostram `[cron] resumos atualizados` a cada 15 min e `[cron] retenção LGPD` uma vez por dia.
 
 ## Auditoria
 
-- Acessar `/admin/auditoria`.
-- Confirmar eventos recentes de login operacional indireto:
-  - criação/edição de rodadas;
-  - exportações;
-  - dossiês;
-  - moderação;
-  - alterações administrativas.
-- Rodar retenção em modo dry-run:
+- `/admin/auditoria` mostra eventos recentes: rodadas, exportações, dossiês, moderação e alterações administrativas.
 
-```bash
-npm run audit:retention
-npm run profile:retention
-```
+## LGPD e transparência
 
-Para aplicar limpeza, use somente em janela operacional:
-
-```bash
-npm run audit:retention:apply
-npm run profile:retention:apply
-```
-
-## LGPD e Transparência
-
-- Revisar `/privacidade`.
-- Revisar `/termos`.
-- Confirmar texto do fluxo público sobre uso do CEP.
-- Confirmar que a manifestação não salva CEP completo.
-- Confirmar que a política pública diferencia percepção espontânea de pesquisa eleitoral registrada.
-- Revisar `docs/lgpd-retencao.md` com responsável jurídico/operacional.
+- Revisar `/privacidade` e `/termos`.
+- Confirmar o texto do fluxo público sobre o uso do CEP.
+- Confirmar que a manifestação não guarda o CEP completo.
+- Confirmar que a comunicação diferencia percepção espontânea de pesquisa eleitoral registrada.
+- Revisar [lgpd-retencao.md](lgpd-retencao.md) com o responsável jurídico ou operacional.
 
 ## Produto
 
-- Acessar `/avaliar` em desktop e mobile.
-- Criar avaliação completa de teste.
-- Confirmar candidatos ativos em `/api/candidatos`.
-- Confirmar configurações públicas em `/api/configuracoes/public`.
-- Acessar painel admin.
-- Acessar `/admin/usuarios` com role `admin`.
-- Criar usuário administrativo de teste e desativá-lo após validação.
-- Abrir:
-  - Dashboard;
-  - Metodologia;
-  - Relatórios;
-  - Auditoria;
-  - Moderação;
-  - Segurança.
-  - Usuários.
+- `/avaliar` funciona em desktop e mobile, com o Turnstile passando de forma invisível.
+- Fazer uma avaliação completa de teste.
+- `/api/candidatos` devolve candidatos ativos, com fotos carregando de `/fotos/...`.
+- `/api/configuracoes/public` responde.
+- Painel admin: Dashboard, Metodologia, Relatórios, Auditoria, Moderação, Sistema e Usuários abrem sem erro.
 
 ## Pós-deploy
 
-- Fazer logout de sessões usadas para smoke.
-- Revogar tokens colados em ferramentas externas.
-- Confirmar logs de erro da Vercel.
-- Confirmar Supabase Auth e Postgres sem alertas.
-- Registrar versão/data de deploy no relatório operacional.
+- Encerrar as sessões usadas nos testes.
+- Revogar tokens de API de teste em `/admin/api-tokens`.
+- Registrar a versão e a data do deploy no relatório operacional.

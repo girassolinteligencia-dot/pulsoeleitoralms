@@ -123,6 +123,7 @@ export async function listarEntidadesPublicas(
   const fallback: AtributosWrap = {
     atributos: globais.map((a) => ({ atributo: a })),
   };
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- remove a coluna de busca da resposta
   return rows.map(({ busca: _busca, ...e }) => {
     const daCampanha = e.campanha_id ? attrs.get(e.campanha_id) : undefined;
     return {

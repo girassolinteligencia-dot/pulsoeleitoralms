@@ -30,6 +30,7 @@ export async function adminFetch(
     typeof window !== "undefined" &&
     window.location.pathname !== "/admin/login"
   )
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- recarga completa proposital (cookie de sessão)
     window.location.href = "/admin/login";
   return res;
 }
@@ -55,5 +56,6 @@ export async function downloadAdminCsv(url: string, filename: string) {
 
 export async function adminLogout() {
   await fetch("/api/admin/auth/logout", { method: "POST", credentials: "same-origin" }).catch(() => {});
+  // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- recarga completa proposital (cookie de sessão)
   window.location.href = "/admin/login";
 }

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Building2, UserSquare2, Wrench, Heart, GraduationCap, Bus, Shield, HardHat, Leaf } from 'lucide-react';
+import { ArrowLeft, Building2, UserSquare2, Wrench, Heart, GraduationCap, Shield } from 'lucide-react';
 
 export type Categoria = 'politico' | 'orgao_publico' | 'servico_publico' | 'saude' | 'educacao' | 'transporte' | 'seguranca' | 'infraestrutura' | 'meio_ambiente';
 

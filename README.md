@@ -2,156 +2,94 @@
 
 Plataforma de inteligência eleitoral e percepção pública para Mato Grosso do Sul.
 
+Produção: <https://pulsoms.ia.br>
+
 ## Stack
 
-- Next.js 16 / React 19 / App Router
-- TypeScript
-- Tailwind CSS 3
-- Prisma 6
-- Supabase Postgres, Auth e RLS
-- Vercel
+- Next.js 16 / React 19 / App Router, publicado com OpenNext (`@opennextjs/cloudflare`)
+- TypeScript, Tailwind CSS 3
+- Cloudflare Workers, com:
+  - **D1** (`pulso-db`): banco SQLite, schema e migrações via Drizzle
+  - **R2** (`pulso-fotos`): fotos de candidatos, órgãos, serviços e identidade visual
+  - **KV**: cache
+  - **Rate Limiting** (`RL_SESSAO`, `RL_ENVIO`, `RL_PUBLICO`)
+  - **Cron Triggers**: resumos a cada 15 min e retenção LGPD diária
+  - **Turnstile**: proteção invisível no envio de avaliações
+- Deploy automático pelo Workers Builds a cada push
 
-## Setup Local
+Configuração em [wrangler.jsonc](wrangler.jsonc). Deploy e operação: [docs/deploy-cloudflare.md](docs/deploy-cloudflare.md).
 
-1. Instale dependências:
+## Setup local
 
 ```bash
 npm install
+cp .dev.vars.example .dev.vars   # preencha os segredos
+npm run db:migrate:local         # cria o D1 local
+npm run dev                      # Next.js em modo dev (bindings via OpenNext)
+npm run preview                  # build OpenNext + wrangler dev (mais próximo da produção)
 ```
 
-2. Configure `.env.local` com base em `.env.example`.
+Variáveis e segredos: ver [docs/deploy-cloudflare.md](docs/deploy-cloudflare.md#segredos-e-variáveis).
 
-Variáveis mínimas:
+## Banco (D1 + Drizzle)
 
-```env
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-DATABASE_URL=
-DIRECT_URL=
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-ADMIN_EMAILS=
-EVALUATION_SESSION_SECRET=
-ENCRYPTION_KEY=
-```
-
-3. Gere o Prisma Client:
+- Schema: [src/server/db/schema.ts](src/server/db/schema.ts)
+- Migrações: [drizzle/migrations](drizzle/migrations)
 
 ```bash
-npx prisma generate
+npm run db:generate        # gera migração a partir do schema
+npm run db:migrate:local   # aplica no D1 local
+npm run db:migrate:remote  # aplica no D1 de produção
 ```
 
-4. Rode em desenvolvimento:
-
-```bash
-npm run dev
-```
-
-## Banco e RLS
-
-O projeto usa migrações Prisma versionadas. Não use `prisma db push` no banco real.
-
-Comandos operacionais:
-
-```bash
-npm run db:status
-npm run db:deploy
-npm run db:rls:apply
-npm run db:preflight
-```
-
-Runbook: [docs/banco-real-rls-runbook.md](docs/banco-real-rls-runbook.md)
+Limites do D1 a lembrar: até 100 parâmetros por instrução e ~100 KB por instrução SQL.
 
 ## Admin
 
-O painel admin fica em:
+Painel em `/admin/login`. Login próprio por e-mail e senha (hash PBKDF2 no D1, sessão em cookie HttpOnly assinado de 12 h).
 
-```text
-/admin/login
+Papéis (`admin_users`): `admin`, `editor` e `viewer`.
+
+```bash
+npm run admin:senha -- email@dominio.com   # cria ou redefine a senha de um admin no D1 remoto
 ```
-
-O login principal usa Supabase Auth com e-mail e senha. Magic link permanece disponível como alternativa.
-
-O acesso administrativo é controlado pela tabela `admin_users`:
-
-- `admin`: gerencia usuários, tokens, configurações sensíveis e exclusões destrutivas;
-- `editor`: edita conteúdo operacional;
-- `viewer`: acesso de leitura ao painel.
-
-`ADMIN_EMAILS` permanece como bootstrap/fallback para criar o primeiro administrador autorizado.
 
 Guia: [docs/acesso-admin.md](docs/acesso-admin.md)
 
-## Metodologia
+## Dados
 
-A plataforma separa:
+- Candidaturas e fotos do TSE: [docs/tse-importacao.md](docs/tse-importacao.md) (`npm run tse:importar`)
+- Fotos e mídia no R2: [docs/assets-candidatos.md](docs/assets-candidatos.md)
+- CEPs de MS (IBGE): `npm run ceps:import:ibge -- <arquivo.parquet> --remote` (use `--dry-run` antes)
 
-- percepção pública espontânea;
-- pesquisa registrável.
+## Metodologia e LGPD
 
-Guia metodológico: [docs/metodologia-pulso-eleitoral-ms.md](docs/metodologia-pulso-eleitoral-ms.md)
+A plataforma separa percepção pública espontânea de pesquisa registrável.
 
-## Auditoria
+- [docs/metodologia-pulso-eleitoral-ms.md](docs/metodologia-pulso-eleitoral-ms.md)
+- [docs/lgpd-retencao.md](docs/lgpd-retencao.md): retenção automática pelo Cron
 
-Eventos administrativos são registrados em `audit_logs` e podem ser consultados em:
-
-```text
-/admin/auditoria
-```
-
-Retenção em modo dry-run:
-
-```bash
-npm run audit:retention
-```
-
-Aplicar retenção:
-
-```bash
-npm run audit:retention:apply
-```
+Eventos administrativos ficam em `audit_logs`, consultáveis em `/admin/auditoria`.
 
 ## Observabilidade
 
-Healthcheck público e seguro:
-
-```text
-/api/health
-```
-
-Ele valida conexão com banco, campanhas ativas e candidatos disponíveis no escopo público sem expor credenciais ou dados sensíveis.
-
-Produção atual:
-
-```text
-https://pulsoms.ia.br
-```
+- Healthcheck público: `/api/health` (banco, campanhas ativas e candidatos no escopo público, sem expor dados sensíveis)
+- Logs: Workers Observability no painel Cloudflare, ou `npx wrangler tail`
 
 ## Validação
 
-Execute antes de deploy:
+Antes de publicar:
 
 ```bash
-npx prisma validate
 npm run lint
-npm run build
+npx opennextjs-cloudflare build
 npm audit --omit=dev
-npm run smoke
-npm run smoke:public
-npm run smoke:security
+SMOKE_BASE_URL=https://pulsoms.ia.br npm run smoke:ops
+SMOKE_BASE_URL=https://pulsoms.ia.br npm run smoke
+SMOKE_BASE_URL=https://pulsoms.ia.br npm run smoke:public
 ```
 
-Smoke autenticado real:
-
-```bash
-ADMIN_SMOKE_TOKEN=ey... npm run smoke:admin
-```
-
-Checklist final: [docs/checklist-producao.md](docs/checklist-producao.md)
-
-## Relatórios Técnicos
-
-- [AUDITORIA_TECNICA.md](AUDITORIA_TECNICA.md)
-- [docs/checklist-producao.md](docs/checklist-producao.md)
+Checklist: [docs/checklist-producao.md](docs/checklist-producao.md)
 
 ---
 

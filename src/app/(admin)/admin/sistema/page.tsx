@@ -865,7 +865,7 @@ function AbaConfiguracoes() {
           </div>
           <div className="pt-2 border-t border-border/40">
             <p className="text-[9px] text-text-muted uppercase tracking-widest">
-              O envio requer <span className="text-primary font-bold">RESEND_API_KEY</span> configurada nas variáveis de ambiente da Vercel.
+              O envio requer <span className="text-primary font-bold">RESEND_API_KEY</span> configurada como segredo do Worker (wrangler secret put).
             </p>
           </div>
         </section>

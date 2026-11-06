@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/server/db/client';
-import { entidadeInfo, manifestacoesComAvaliacoes } from '@/server/repos/resultados';
+import { manifestacoesComAvaliacoes } from '@/server/repos/resultados';
 
 function percent(part: number, total: number) {
   return total > 0 ? Math.round((part / total) * 100) : 0;

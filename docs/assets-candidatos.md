@@ -1,56 +1,31 @@
-# Assets de Candidatos - PULSO ELEITORAL MS
+# Fotos e Mídia - PULSO ELEITORAL MS
 
-## Decisão operacional
+## Onde ficam
 
-As fotos de candidatos devem ser servidas pelo **Supabase Storage**, bucket público `candidatos`.
+Todas as imagens (candidatos, órgãos, serviços e identidade visual) ficam no bucket R2 `pulso-fotos` (binding `FOTOS`). O próprio Worker as serve pela rota `/fotos/<chave>` ([src/app/fotos/[...key]](../src/app/fotos)).
 
-O diretório local `public/candidatos` é tratado como acervo/importação e não deve ser enviado à Vercel. O arquivo `.vercelignore` mantém:
+- Fotos de candidatos do TSE: `candidatos/<ANO>/<SQ_CANDIDATO>.webp` (WebP, até 400×533), importadas por `npm run tse:importar` ([tse-importacao.md](tse-importacao.md)).
+- Uploads do admin (órgãos, serviços, identidade): gravados no R2 pelas rotas `/api/admin/**/upload`.
 
-```text
-public/candidatos/**
-```
+O diretório `public/` contém apenas os assets fixos do site (logo, favicon). Não coloque acervo de fotos ali, porque tudo em `public/` vai para o bundle de assets do Worker.
 
-## Por que isso importa
+## Segurança da rota `/fotos`
 
-O acervo local possui milhares de arquivos e centenas de MB. Publicar esses arquivos junto do app:
+- Só serve imagens raster (WebP, JPEG, PNG, ICO). SVG e outros tipos são recusados.
+- As respostas saem com `Content-Security-Policy: default-src 'none'; sandbox` e `X-Content-Type-Options: nosniff`.
+- O upload só pode substituir a foto do próprio registro.
 
-- aumenta o tempo de deploy;
-- aumenta o risco de falha por limite de arquivos;
-- torna o pacote da aplicação mais pesado;
-- mistura código da plataforma com acervo de mídia.
+## Auditar e manter
 
-## Como auditar
-
-Execute:
+Baixar um objeto:
 
 ```bash
-npm run assets:audit
+npx wrangler r2 object get pulso-fotos/<chave> --remote --file saida.webp
 ```
 
-O relatório informa:
+Para inventários completos, use o painel R2 ou a API S3 compatível do R2 (com rclone ou aws-cli e um token R2 de leitura).
 
-- quantidade de arquivos locais;
-- tamanho total local;
-- referências `foto_url` no banco;
-- referências legadas `/candidatos/...`;
-- URLs remotas já migradas;
-- arquivos locais órfãos;
-- referências sem arquivo local correspondente.
+Antes de apagar objetos:
 
-## Regra atual da aplicação
-
-A API pública `/api/candidatos` resolve caminhos legados `/candidatos/arquivo.jpg` para:
-
-```text
-https://<projeto>.supabase.co/storage/v1/object/public/candidatos/arquivo.jpg
-```
-
-Assim o frontend não depende de `public/candidatos` em produção.
-
-## Checklist antes de remover arquivos locais
-
-1. Rodar `npm run assets:audit`.
-2. Confirmar que as fotos necessárias existem no Supabase Storage.
-3. Fazer backup do diretório local, se ele ainda for a única cópia.
-4. Nunca remover `public/candidatos` sem confirmar a migração para Storage.
-5. Rodar `npm run smoke` e `npm run smoke:public` após qualquer mudança.
+1. Confirme que nenhum registro no D1 aponta para a chave (`foto_url`).
+2. Rode `SMOKE_BASE_URL=https://pulsoms.ia.br npm run smoke:public`.

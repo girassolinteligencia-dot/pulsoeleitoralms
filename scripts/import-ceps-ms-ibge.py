@@ -1,19 +1,23 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
+import shutil
+import subprocess
 import sys
+import tempfile
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 import duckdb
-import psycopg2
-from psycopg2.extras import Json, execute_values
 
 
-BATCH_SIZE = 500
+# D1: limite de ~100 KB por instrucao SQL; 50 linhas por INSERT fica bem abaixo.
+BATCH_SIZE = 50
+D1_DATABASE = "pulso-db"
 TOP_LOCALIDADES = 12
 ORIGEM = "ibge_enderecos"
 
@@ -56,12 +60,19 @@ def as_float(value: Any) -> float | None:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Importa a base IBGE de enderecos/CEP de MS para a tabela agregada ceps_ms."
+        description="Importa a base IBGE de enderecos/CEP de MS para a tabela agregada ceps_ms (Cloudflare D1)."
     )
     parser.add_argument(
         "parquet",
         nargs="?",
         help="Caminho do arquivo Parquet. Tambem pode vir de IBGE_CEPS_MS_PARQUET_PATH.",
+    )
+    destino = parser.add_mutually_exclusive_group()
+    destino.add_argument("--remote", action="store_true", help="Aplica no D1 de producao.")
+    destino.add_argument("--local", action="store_true", help="Aplica no D1 local (wrangler dev).")
+    parser.add_argument(
+        "--sql-out",
+        help="Salva o SQL gerado neste arquivo (sem --remote/--local, apenas gera o arquivo).",
     )
     parser.add_argument(
         "--dry-run",
@@ -153,7 +164,7 @@ def fetch_aggregates(parquet_path: Path) -> list[tuple[Any, ...]]:
         if cep and logradouro
     }
 
-    now = datetime.now(timezone.utc)
+    now = int(datetime.now(timezone.utc).timestamp() * 1000)  # epoch ms (schema D1)
     values: list[tuple[Any, ...]] = []
 
     for (
@@ -203,7 +214,7 @@ def fetch_aggregates(parquet_path: Path) -> list[tuple[Any, ...]]:
                 logradouro,
                 ORIGEM,
                 str(ibge_municipio_id or "").strip() or None,
-                Json(localidades_payload),
+                json.dumps(localidades_payload, ensure_ascii=False),
                 bairro_confianca,
                 total,
                 int(localidades_count),
@@ -219,52 +230,47 @@ def fetch_aggregates(parquet_path: Path) -> list[tuple[Any, ...]]:
     return values
 
 
-def upsert_values(database_url: str, values: list[tuple[Any, ...]]) -> None:
-    sql = """
-    INSERT INTO ceps_ms (
-      cep,
-      uf,
-      cidade,
-      bairro,
-      logradouro,
-      origem,
-      ibge_municipio_id,
-      localidades,
-      bairro_confianca,
-      total_registros,
-      localidades_count,
-      logradouros_count,
-      latitude,
-      longitude,
-      importado_em,
-      criado_em,
-      atualizado_em
-    )
-    VALUES %s
-    ON CONFLICT (cep) DO UPDATE SET
-      uf = EXCLUDED.uf,
-      cidade = EXCLUDED.cidade,
-      bairro = EXCLUDED.bairro,
-      logradouro = EXCLUDED.logradouro,
-      origem = EXCLUDED.origem,
-      ibge_municipio_id = EXCLUDED.ibge_municipio_id,
-      localidades = EXCLUDED.localidades,
-      bairro_confianca = EXCLUDED.bairro_confianca,
-      total_registros = EXCLUDED.total_registros,
-      localidades_count = EXCLUDED.localidades_count,
-      logradouros_count = EXCLUDED.logradouros_count,
-      latitude = EXCLUDED.latitude,
-      longitude = EXCLUDED.longitude,
-      importado_em = EXCLUDED.importado_em,
-      atualizado_em = EXCLUDED.atualizado_em
-    """
+COLUMNS = (
+    "cep", "uf", "cidade", "bairro", "logradouro", "origem", "ibge_municipio_id",
+    "localidades", "bairro_confianca", "total_registros", "localidades_count",
+    "logradouros_count", "latitude", "longitude", "importado_em", "criado_em", "atualizado_em",
+)
+UPDATE_COLUMNS = [c for c in COLUMNS if c not in ("cep", "criado_em")]
 
-    with psycopg2.connect(database_url) as conn:
-        with conn.cursor() as cur:
-            for index in range(0, len(values), BATCH_SIZE):
-                batch = values[index:index + BATCH_SIZE]
-                execute_values(cur, sql, batch, page_size=len(batch))
-                print(f"upsert {min(index + len(batch), len(values))}/{len(values)}")
+
+def sql_literal(value: Any) -> str:
+    if value is None:
+        return "NULL"
+    if isinstance(value, bool):
+        return "1" if value else "0"
+    if isinstance(value, (int, float)):
+        return repr(value)
+    return "'" + str(value).replace("'", "''") + "'"
+
+
+def build_sql(values: list[tuple[Any, ...]]) -> str:
+    cols = ", ".join(COLUMNS)
+    updates = ",\n  ".join(f"{c} = excluded.{c}" for c in UPDATE_COLUMNS)
+    statements = []
+    for index in range(0, len(values), BATCH_SIZE):
+        batch = values[index:index + BATCH_SIZE]
+        rows = ",\n".join("(" + ", ".join(sql_literal(v) for v in row) + ")" for row in batch)
+        statements.append(
+            f"INSERT INTO ceps_ms ({cols}) VALUES\n{rows}\n"
+            f"ON CONFLICT (cep) DO UPDATE SET\n  {updates};"
+        )
+    return "\n\n".join(statements) + "\n"
+
+
+def apply_sql(sql_file: Path, remote: bool) -> int:
+    npx = shutil.which("npx") or shutil.which("npx.cmd")
+    if not npx:
+        print("npx nao encontrado no PATH.", file=sys.stderr)
+        return 2
+    cmd = [npx, "wrangler", "d1", "execute", D1_DATABASE, "--remote" if remote else "--local",
+           "--file", str(sql_file), "--yes"]
+    print("Executando:", " ".join(cmd))
+    return subprocess.call(cmd)
 
 
 def main() -> int:
@@ -282,9 +288,8 @@ def main() -> int:
         print(f"Arquivo nao encontrado: {parquet_path}", file=sys.stderr)
         return 2
 
-    database_url = os.getenv("DATABASE_URL")
-    if not database_url:
-        print("DATABASE_URL nao configurada.", file=sys.stderr)
+    if not args.dry_run and not (args.remote or args.local or args.sql_out):
+        print("Informe --remote, --local ou --sql-out (ou use --dry-run).", file=sys.stderr)
         return 2
 
     values = fetch_aggregates(parquet_path)
@@ -304,7 +309,26 @@ def main() -> int:
         print("Dry-run concluido. Nenhum dado foi gravado.")
         return 0
 
-    upsert_values(database_url, values)
+    sql = build_sql(values)
+    if args.sql_out:
+        sql_file = Path(args.sql_out)
+        sql_file.write_text(sql, encoding="utf-8")
+        print(f"SQL salvo em {sql_file}")
+    else:
+        tmp = tempfile.NamedTemporaryFile("w", suffix=".sql", delete=False, encoding="utf-8")
+        tmp.write(sql)
+        tmp.close()
+        sql_file = Path(tmp.name)
+
+    if not (args.remote or args.local):
+        return 0
+
+    code = apply_sql(sql_file, remote=args.remote)
+    if not args.sql_out:
+        sql_file.unlink(missing_ok=True)
+    if code != 0:
+        print("Falha ao aplicar no D1.", file=sys.stderr)
+        return code
     print("Importacao concluida.")
     return 0
 

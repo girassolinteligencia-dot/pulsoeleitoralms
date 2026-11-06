@@ -25,6 +25,7 @@ interface Manifestacao {
   ip_hash: string;
   duration_ms: number | null;
   honeypot_triggered: boolean;
+  perfil?: Record<string, unknown> | null;
   criado_em: string;
 }
 
@@ -66,10 +67,10 @@ export default function ModeracaoAdmin() {
   const [abertosManif, setAbertosManif] = useState<Set<string>>(new Set());
 
   const toggleAberto = (chave: string) =>
-    setAbertos(prev => { const n = new Set(prev); n.has(chave) ? n.delete(chave) : n.add(chave); return n; });
+    setAbertos(prev => { const n = new Set(prev); if (n.has(chave)) n.delete(chave); else n.add(chave); return n; });
 
   const toggleManif = (id: string) =>
-    setAbertosManif(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+    setAbertosManif(prev => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
 
   const fetchData = async () => {
     try {
@@ -219,6 +220,9 @@ export default function ModeracaoAdmin() {
                                 )}
                                 {m.honeypot_triggered && (
                                   <span className="text-[7px] font-bold text-red-400 bg-red-400/10 px-1.5 py-0.5 rounded-full">BOT</span>
+                                )}
+                                {m.perfil?.teste === 1 && (
+                                  <span className="text-[7px] font-bold text-sky-400 bg-sky-400/10 px-1.5 py-0.5 rounded-full">TESTE</span>
                                 )}
                               </div>
                               <div className="flex items-center gap-3 shrink-0">

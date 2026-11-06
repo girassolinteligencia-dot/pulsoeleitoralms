@@ -225,7 +225,7 @@ export default function ManageOrgaos() {
           <button key={id} type="button" onClick={() => setAba(id)}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${aba === id ? 'bg-primary/10 text-primary border border-primary/20' : 'text-text-muted hover:text-white border border-transparent hover:border-white/10'}`}
           >
-            <span>{id === 'lista' ? '🏛️' : '🏷️'}</span><span>{id === 'lista' ? 'Órgãos' : 'Atributos'}</span>
+            <span>{icon}</span><span>{label}</span>
           </button>
         ))}
       </nav>

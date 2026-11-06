@@ -55,3 +55,7 @@ cloudflare-env.d.ts
 
 # Valores PÚBLICOS usados no build (NEXT_PUBLIC_*). Nunca colocar segredos aqui.
 !.env.production
+
+# cache da Supabase CLI (legado)
+supabase/
+__pycache__/

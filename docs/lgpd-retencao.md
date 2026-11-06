@@ -30,58 +30,35 @@ A manifestacao pode guardar:
 
 O CEP completo fica apenas na tabela auxiliar `ceps_ms`, como base territorial, e nao no perfil da manifestacao.
 
-## Scripts de retencao
+## Retencao automatica (Cron)
 
-### AuditLog
+A retencao roda sozinha todos os dias as 07:00 UTC (03:00 em Campo Grande), pelo Cron Trigger `0 7 * * *` do Worker ([src/server/cron.ts](../src/server/cron.ts), funcao `aplicarRetencao`). Ela:
 
-Dry-run:
+- apaga registros de `audit_logs` mais antigos que `AUDIT_LOG_RETENTION_DAYS` (padrao 365; minimo 30);
+- reduz o `perfil` das manifestacoes mais antigas que `PROFILE_RETENTION_DAYS` (padrao 730; minimo 90), mantendo apenas:
+  - cidade;
+  - bairro;
+  - UF;
+  - a marca `retencaoPerfilAplicada` e a data em que a reducao foi aplicada;
+- apaga bloqueios ja vencidos.
 
-```bash
-npm run audit:retention
-```
-
-Aplicar:
-
-```bash
-npm run audit:retention:apply
-```
-
-Janela padrao: `AUDIT_LOG_RETENTION_DAYS=365`.
-
-### Perfil demografico
-
-Dry-run:
-
-```bash
-npm run profile:retention
-```
-
-Aplicar:
-
-```bash
-npm run profile:retention:apply
-```
-
-Janela padrao: `PROFILE_RETENTION_DAYS=730`.
-
-O script reduz perfis antigos, preservando apenas:
-
-- cidade;
-- bairro;
-- UF;
-- origem territorial;
-- confianca do bairro;
-- metadado de aplicacao da retencao.
+As janelas ficam em `vars` no [wrangler.jsonc](../wrangler.jsonc). Cada execucao registra no log do Worker a linha `[cron] retenção LGPD` com as contagens (`auditLogsApagados`, `perfisMinimizados`, `bloqueiosVencidos`).
 
 ## Rotina recomendada
 
 Mensalmente:
 
-1. Rodar `npm run audit:retention`.
-2. Rodar `npm run profile:retention`.
-3. Revisar contagens.
-4. Aplicar com `:apply` somente apos conferencia.
-5. Registrar a execucao no changelog operacional.
+1. Conferir nos logs do Worker (Workers Observability) que a retencao rodou todos os dias.
+2. Revisar as contagens e registrar no changelog operacional.
+3. Antes de diminuir uma janela de retencao, exportar um backup do D1, porque a reducao e irreversivel fora do Time Travel (30 dias).
+
+## Backup da versao anterior (Supabase)
+
+O backup completo de 04/11/2026 (`supabase-2026-11-04-16-02-19`) fica fora do repositorio, em armazenamento local do responsavel tecnico. Ele contem dados pessoais pseudonimizados das manifestacoes antigas (hash de IP e de fingerprint, user agent e perfil).
+
+- Uso: so para auditoria ou recuperacao. Nao e importado na base de producao (ver "Serie historica" em [metodologia-pulso-eleitoral-ms.md](metodologia-pulso-eleitoral-ms.md)).
+- Prazo de guarda proposto: 12 meses (ate 04/11/2027), a confirmar pelo responsavel juridico. Depois disso, apagar o backup e registrar a eliminacao no changelog operacional.
+- Nao copiar o backup para servicos de nuvem nem para o repositorio.
 
 ## Pendencias juridicas
 

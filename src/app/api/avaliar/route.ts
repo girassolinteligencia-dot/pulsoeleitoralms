@@ -12,6 +12,7 @@ import {
 import { generateSecureHash, isSuspiciousTiming } from "@/lib/hash";
 import { verifyEvaluationSession } from "@/lib/evaluationSession";
 import { verificarTurnstile } from "@/server/turnstile";
+import { cookieDaRequisicao, lerSessao } from "@/server/adminSession";
 
 interface AvaliacaoInput {
   atributoId: string;
@@ -218,15 +219,22 @@ export async function POST(req: NextRequest) {
     }
 
     const isBot = !!honeypot;
+    // Envio feito com sessão de admin aberta = teste operacional: grava como
+    // inválido (fora de resultados e resumos), visível na moderação.
+    const isTeste = lerSessao(cookieDaRequisicao(req)) !== null;
     const isValid =
-      !isBot && !isSuspiciousTiming(evaluationSession.startedAt, endTime);
+      !isBot &&
+      !isTeste &&
+      !isSuspiciousTiming(evaluationSession.startedAt, endTime);
+    const perfilFinal = sanitizePerfil(perfil);
+    if (isTeste) perfilFinal.teste = 1;
 
     await registrarManifestacao(db, {
       alvo,
       campanhaId: regras.campanhaId,
       aprovacao: asBoolOrNull(aprovacao),
       expectativaVitoria: asBoolOrNull(expectativaVitoria),
-      perfil: sanitizePerfil(perfil),
+      perfil: perfilFinal,
       fingerprintHash,
       ipHash,
       userAgent,
@@ -242,7 +250,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      status: isValid ? "confirmed" : "flagged",
+      status: isTeste ? "test" : isValid ? "confirmed" : "flagged",
     });
   } catch (error) {
     console.error("Erro ao processar voz:", error);

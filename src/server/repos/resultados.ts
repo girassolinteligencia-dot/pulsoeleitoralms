@@ -8,6 +8,7 @@ import {
   candidatos,
   manifestacoes,
   orgaosPublicos,
+  resumoAlvo,
   servicosPublicos,
 } from "@/server/db/schema";
 import type { Alvo } from "./avaliacoes";
@@ -117,19 +118,22 @@ export async function atributosDaCampanhaDoCandidato(
   return { cargo: c.cargo, atributos: attrs };
 }
 
-/** Saldo (soma de valores) e total de avaliações válidas por candidato do mesmo cargo. */
+/**
+ * Saldo (soma de valores) e total de avaliações válidas por candidato do mesmo cargo.
+ * Lê resumo_alvo (recalculado pelo Cron a cada 15 min) em vez de varrer todas as
+ * avaliações do cargo a cada requisição.
+ */
 export async function rankingPorCargo(db: DB, cargo: string) {
   if (!cargo) return [];
   return db
     .select({
-      candidato_id: avaliacoes.candidato_id,
-      soma: sum(avaliacoes.valor).mapWith(Number),
-      total: count(),
+      candidato_id: resumoAlvo.alvo_id,
+      soma: resumoAlvo.saldo_atributos,
+      total: resumoAlvo.total_avaliacoes,
     })
-    .from(avaliacoes)
-    .innerJoin(candidatos, eq(candidatos.id, avaliacoes.candidato_id))
-    .where(and(eq(avaliacoes.is_valid, true), eq(candidatos.cargo, cargo)))
-    .groupBy(avaliacoes.candidato_id);
+    .from(resumoAlvo)
+    .innerJoin(candidatos, eq(candidatos.id, resumoAlvo.alvo_id))
+    .where(and(eq(resumoAlvo.alvo_tipo, "candidato"), eq(candidatos.cargo, cargo)));
 }
 
 export async function entidadeInfo(

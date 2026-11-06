@@ -1,0 +1,12 @@
+# Copie para .dev.vars (não versionado) para rodar `npm run dev` / `npm run preview` localmente.
+# Em produção: `npx wrangler secret put <NOME>`. Ver docs/deploy-cloudflare.md.
+NEXT_PUBLIC_APP_URL=http://localhost:8787
+EVALUATION_SESSION_SECRET=
+ENCRYPTION_KEY=
+JWT_SECRET=
+TURNSTILE_SECRET_KEY=
+NEXT_PUBLIC_TURNSTILE_SITE_KEY=
+# Opcionais
+API_TOKEN_HASH_SECRET=
+RESEND_API_KEY=
+PUBLIC_API_ALLOWED_ORIGINS=

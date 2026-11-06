@@ -1,0 +1,9 @@
+{
+  "name": "pulso-eleitoral",
+  "main": "worker.js",
+  "compatibility_date": "2026-11-01",
+  "routes": [
+    { "pattern": "pulsoms.ia.br", "custom_domain": true },
+    { "pattern": "www.pulsoms.ia.br", "custom_domain": true }
+  ]
+}

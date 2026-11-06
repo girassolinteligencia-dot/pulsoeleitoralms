@@ -1,0 +1,17 @@
+// Config usada só pelo importador do TSE (getPlatformProxy com bindings remotos):
+// grava direto no D1 e no R2 de produção a partir da máquina local.
+{
+  "name": "pulso-importador-tse",
+  "compatibility_date": "2026-11-01",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "pulso-db",
+      "database_id": "a10eace2-40a9-4850-8490-b9b9bebd164e",
+      "remote": true,
+    },
+  ],
+  "r2_buckets": [
+    { "binding": "FOTOS", "bucket_name": "pulso-fotos", "remote": true },
+  ],
+}

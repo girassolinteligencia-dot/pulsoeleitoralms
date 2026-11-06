@@ -1,0 +1,47 @@
+/* PULSO ELEITORAL MS - Fragmento de Plasma Styles */
+
+.fragmentContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  
+  /* Física Flutuante (Camadas 1-5 se movem juntas) */
+  animation: floatX var(--dur-x, 4000ms) ease-in-out infinite alternate,
+             floatY var(--dur-y, 5000ms) ease-in-out infinite alternate;
+  animation-delay: var(--fase-x, 0deg), var(--fase-y, 0deg);
+}
+
+@keyframes floatX {
+  from { transform: translateX(calc(var(--amp-x, 10px) * -1)); }
+  to { transform: translateX(var(--amp-x, 10px)); }
+}
+
+@keyframes floatY {
+  from { transform: translateY(calc(var(--amp-y, 10px) * -1)); }
+  to { transform: translateY(var(--amp-y, 10px)); }
+}
+
+/* Layer 1: Nucleus (SVG Plasma) */
+.nucleus {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  overflow: hidden;
+  z-index: 2;
+}
+
+.plasmaFilter {
+  width: 100%;
+  height: 100%;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

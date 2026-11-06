@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { comCache, type RespostaCacheavel } from '@/server/cache';
 import { getDb } from '@/server/db/client';
 import { atributosDaCampanhaDoCandidato, manifestacoesComAvaliacoes, rankingPorCargo } from '@/server/repos/resultados';
 
@@ -63,7 +64,7 @@ function leituraRapida(total: number, saldo: number) {
   return { titulo: 'Percepção dividida', descricao: 'A leitura coletiva aparece equilibrada, sem vantagem forte de aprovação ou desaprovação.', tom: 'neutro' };
 }
 
-export async function GET(
+async function calcularPercepcao(
   req: NextRequest,
   { params }: { params: Promise<{ candidatoId: string }> }
 ) {
@@ -181,4 +182,22 @@ export async function GET(
     console.error('Error fetching perception results:', error);
     return NextResponse.json({ error: 'Erro interno' }, { status: 500 });
   }
+}
+
+/** Percepção agregada (sem dados pessoais): cache de 2 min (Cache API do Workers). */
+export async function GET(req: NextRequest, ctx: { params: Promise<{ candidatoId: string }> }) {
+  const { candidatoId } = await ctx.params;
+  const { valor, hit } = await comCache<RespostaCacheavel>(
+    `percepcao:candidato:${candidatoId}`,
+    120,
+    async () => {
+      const res = await calcularPercepcao(req, { params: Promise.resolve({ candidatoId }) });
+      return { status: res.status, body: await res.json() };
+    },
+    (r) => r.status === 200,
+  );
+  return NextResponse.json(valor.body, {
+    status: valor.status,
+    headers: { 'X-Cache': hit ? 'HIT' : 'MISS' },
+  });
 }

@@ -67,10 +67,10 @@ export default function ModeracaoAdmin() {
   const [abertosManif, setAbertosManif] = useState<Set<string>>(new Set());
 
   const toggleAberto = (chave: string) =>
-    setAbertos(prev => { const n = new Set(prev); n.has(chave) ? n.delete(chave) : n.add(chave); return n; });
+    setAbertos(prev => { const n = new Set(prev); if (n.has(chave)) n.delete(chave); else n.add(chave); return n; });
 
   const toggleManif = (id: string) =>
-    setAbertosManif(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+    setAbertosManif(prev => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
 
   const fetchData = async () => {
     try {

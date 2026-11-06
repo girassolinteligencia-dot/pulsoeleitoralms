@@ -22,6 +22,7 @@ export default function AdminLoginPage() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Não foi possível entrar.");
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- recarga completa proposital (cookie de sessão)
       window.location.href = "/admin/dashboard";
     } catch (err) {
       setErro(err instanceof Error ? err.message : "Não foi possível entrar.");

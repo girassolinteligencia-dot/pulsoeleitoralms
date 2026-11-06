@@ -85,8 +85,6 @@ export const EtapaFinal: React.FC<EtapaFinalProps> = ({
   const [aprovacao, setAprovacao] = useState<boolean | null>(null);
   const [expectativa, setExpectativa] = useState<boolean | null>(null);
 
-  const ambosRespondidos = aprovacao !== null && expectativa !== null;
-
   const handleAprovacao = (val: boolean) => {
     setAprovacao(val);
   };

@@ -351,7 +351,7 @@ export const Etapa1: React.FC<Etapa1Props> = ({ userData, setUserData, onNext, c
               {config?.geral_patrocinio_label || 'Realizado com apoio de'}
             </span>
             <div className="relative w-full h-[60px] overflow-hidden">
-              <img src={String(config.geral_patrocinio_imagem_url)} alt="Patrocinador" draggable={false} style={imgStyle} />
+              <img src={String(config.geral_patrocinio_imagem_url)} alt="Patrocinador" draggable={false} style={imgStyle} className={extraClass} />
             </div>
           </>
         );

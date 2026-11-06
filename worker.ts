@@ -9,7 +9,7 @@ import type {
 import { default as handler } from "./.open-next/worker.js";
 import { executarCron, type CronEnv } from "./src/server/cron";
 
-export default {
+const worker = {
   fetch: handler.fetch,
   async scheduled(
     controller: ScheduledController,
@@ -19,3 +19,5 @@ export default {
     ctx.waitUntil(executarCron(controller.cron, env));
   },
 };
+
+export default worker;

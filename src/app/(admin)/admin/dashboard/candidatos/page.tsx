@@ -49,7 +49,6 @@ const novoVazio = () => ({
   ano_eleicao: '2026',
 });
 
-const MAX_FOTO_KB = 300;
 
 export default function ManageCandidatos() {
   const [aba, setAba] = useState<Aba>('lista');

@@ -20,12 +20,6 @@ const CATEGORIAS: { id: CategoriaTab; label: string; icon: string }[] = [
   { id: 'servico',  label: 'Serviços Públicos', icon: '🔧' },
 ];
 
-const CATEGORIA_LABEL: Record<CategoriaTab, string> = {
-  politico: 'Políticos',
-  orgao: 'Órgãos Públicos',
-  servico: 'Serviços Públicos',
-};
-
 const VAZIO: Omit<Atributo, 'id'> = { nome: '', descricao: '', polaridade: 1, visivel: true, categoria: 'politico' };
 
 interface GestaoAtributosProps {
